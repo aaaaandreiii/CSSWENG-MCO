@@ -1,0 +1,25 @@
+{
+  "name": "cssweng-mco",
+  "version": "1.0.0",
+  "description": "Product Owner:",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aaaaandreiii/CSSWENG-MCO.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/aaaaandreiii/CSSWENG-MCO/issues"
+  },
+  "homepage": "https://github.com/aaaaandreiii/CSSWENG-MCO#readme",
+  "dependencies": {
+    "argon2": "^0.43.0",
+    "mysql2": "^3.14.1"
+  }
+}
