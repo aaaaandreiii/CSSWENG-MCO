@@ -7,7 +7,8 @@
 			name: 'Analytics',
 			link: '/analytics',
 			icon: 'https://www.svgrepo.com/show/524649/home-1.svg'
-		}
+		},
+        { name: 'Settings', link: '/settings', icon: 'https://www.svgrepo.com/show/522557/home.svg'}
 	];
 </script>
 
@@ -17,28 +18,27 @@
     <ul><div class="justify-items-start">
             {#each tabs as tab, index}
                     <li class="flex items-center">
-                        <a href={tab.link} class ="flex">
+                        <a href={tab.link} class ="flex gap-x-6">
                                 <img src={tab.icon} alt="home" style="width: 30px" />
-                                <p class="pl-4 py-6">{tab.name}</p>
+                                <p class="py-6">{tab.name}</p>
                         </a>
                     </li>
             {/each}
         </div>
     </ul>
     <ul class="absolute bottom-18">
-        <li class="flex items-center">
-            <img src="settings" alt = "settings" style = "width:30px"/>
-            <p class="pl-6">Settings</p>
-        </li>
-        <li class = "flex pt-10 items-center">
-            <img src="pfp" alt = "pfp" class = "profile"/>
+        <li class = "flex pt-10 pb-5 items-center">
+            <img src="https://www.svgrepo.com/show/522557/home.svg" alt = "pfp" class = "profile"/>
             <div class = "flex-col pl-2.5">
                 <h2>Username</h2>
                 <p>Auditor</p>
             </div>
         </li>
-        <li>
-            <p class = "absolute right-0 pt-6" style = "font-size: 14px">Log out</p>
+        <li class = "flex items-center gap-x-2">
+  
+            <img src= "https://www.svgrepo.com/show/522557/home.svg" alt="home" style="width: 23px"/>
+            <p style = "font-size: 14px">Log out</p>
+
         </li>
     </ul>
 </nav>

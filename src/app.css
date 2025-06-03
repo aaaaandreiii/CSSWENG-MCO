@@ -27,7 +27,9 @@
 	margin-left: 260px;
 	padding: 1%
 }
-
+.header {
+	margin-left: 260px;
+}
 .sidebar ul {
 	padding: 0px;
 }

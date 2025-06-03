@@ -7,9 +7,9 @@
 </script>
 
 <div class = "flex">
-	<!-- <div>
+	<div>
 		<Header />
-	</div> -->
+	</div>
 	
 	<aside class = "sidebar">
 		<Sidebar />
