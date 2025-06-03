@@ -36,7 +36,7 @@
             </a>
         </li>
         <li >
-            <a href= /logout class = "flex items-center gap-x-2">
+            <a href= /login class = "flex items-center gap-x-2">
                 <img src= "https://www.svgrepo.com/show/522557/home.svg" alt="home" style="width: 23px"/>
                 <p style = "font-size: 14px">Log out</p>
             </a>
