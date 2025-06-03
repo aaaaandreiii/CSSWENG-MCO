@@ -1,1 +1,13 @@
 @import 'tailwindcss';
+
+.gray1 {
+	background-color: #EEEEEE;
+}
+.green1 {
+    display: block;
+	background-color: #3d843f;
+}
+
+.green2 {
+	background-color: #006937;
+}
