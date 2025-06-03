@@ -11,3 +11,38 @@
 .green2 {
 	background-color: #006937;
 }
+
+.sidebar {
+	width: 260px;
+	height: 100%;
+	position: fixed;
+	padding: 30px;
+	background-color: #3d843f;
+	z-index: 0;
+	overflow-x: hidden;
+	color: white;
+}
+/* adjust main margin acc to sidebar */
+.main {
+	margin-left: 260px;
+	padding: 1%
+}
+
+.sidebar ul {
+	padding: 0px;
+}
+
+.block {
+	position:static;
+}
+
+
+
+.profile {
+	border-radius: 50%;
+	border: 1px solid #000; 
+	box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+	width: 70px;
+	height: 70px;
+	margin-left: -1%;
+}

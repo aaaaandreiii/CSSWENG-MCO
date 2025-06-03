@@ -6,16 +6,16 @@
 	let { children } = $props();
 </script>
 
-<div>
+<div class = "flex">
 	<!-- <div>
 		<Header />
 	</div> -->
 	
-	<div>
+	<aside class = "sidebar">
 		<Sidebar />
-	</div>
+	</aside>
 
-	<div>
+	<div class = "main">
 		{@render children()}
 	</div>
 	
