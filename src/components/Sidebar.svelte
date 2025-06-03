@@ -14,30 +14,32 @@
 
 
 <nav>
-    <img src = "../src/images/logo.png" alt = "logo" class = "pb-7"/>
+    <img src = "../src/images/logo.png" alt = "logo" class = "pb-5"/>
     <ul><div class="justify-items-start">
             {#each tabs as tab, index}
                     <li class="flex items-center">
                         <a href={tab.link} class ="flex gap-x-6">
                                 <img src={tab.icon} alt="home" style="width: 30px" />
-                                <p class="py-6">{tab.name}</p>
+                                <p class="py-4">{tab.name}</p>
                         </a>
                     </li>
             {/each}
         </div>
     </ul>
-    <ul class="absolute bottom-18">
-        <li class = "flex pt-10 pb-5 items-center">
-            <img src="https://www.svgrepo.com/show/522557/home.svg" alt = "pfp" class = "profile"/>
-            <div class = "flex-col pl-2.5">
-                <h2>Username</h2>
-                <p>Auditor</p>
-            </div>
+    <ul class="absolute bottom-7">
+        <li>
+            <a href= "/profile" class ="items-center pb-8 flex gap-3">
+                <img src="https://www.svgrepo.com/show/522557/home.svg" alt = "pfp" class = "profile"/>
+                <div class = "flex-col">
+                    <h2>Username</h2><p>Auditor</p>
+                </div>
+            </a>
         </li>
-        <li class = "flex items-center gap-x-2">
-  
-            <img src= "https://www.svgrepo.com/show/522557/home.svg" alt="home" style="width: 23px"/>
-            <p style = "font-size: 14px">Log out</p>
+        <li >
+            <a href= /logout class = "flex items-center gap-x-2">
+                <img src= "https://www.svgrepo.com/show/522557/home.svg" alt="home" style="width: 23px"/>
+                <p style = "font-size: 14px">Log out</p>
+            </a>
 
         </li>
     </ul>

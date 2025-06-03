@@ -13,7 +13,7 @@
 }
 
 .sidebar {
-	width: 260px;
+	width: 250px;
 	height: 100%;
 	position: fixed;
 	padding: 30px;
@@ -24,11 +24,11 @@
 }
 /* adjust main margin acc to sidebar */
 .main {
-	margin-left: 260px;
+	margin-left: 250px;
 	padding: 1%
 }
 .header {
-	margin-left: 260px;
+	margin-left: 250px;
 }
 .sidebar ul {
 	padding: 0px;
