@@ -1,15 +1,19 @@
 @import 'tailwindcss';
 
+
+.gray3_txt {
+	color:#B8B9BB;
+}
+.gray2_txt {
+	color: #79747E;
+}
 .gray1 {
 	background-color: #EEEEEE;
 }
-.green1 {
-    display: block;
-	background-color: #3d843f;
-}
 
-.green2 {
-	background-color: #006937;
+
+body.login-page {
+  background-color: #3d843f; 
 }
 
 .sidebar {
@@ -22,29 +26,67 @@
 	overflow-x: hidden;
 	color: white;
 }
+.hidden{
+	display: none;
+}
+
 /* adjust main margin acc to sidebar */
 .main {
 	margin-left: 250px;
-	padding: 1%
 }
 .header {
-	margin-left: 250px;
-}
-.sidebar ul {
-	padding: 0px;
+	font-size: 35px;
+	font-weight: 450;
 }
 
-.block {
-	position:static;
-}
+/* ELEMENTS */
 
-
-
-.profile {
-	border-radius: 50%;
-	border: 1px solid #000; 
+.button {
+	background-color: #3D843F;
+	border-radius: 6px;
 	box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-	width: 70px;
-	height: 70px;
-	margin-left: -1%;
+	width: 60%;
+	padding: 2%;
+	justify-self:center;
+	color:white;
+}
+
+.stock {
+	background-color: white;
+	border-radius: 10px;
+	width: 130px;
+	padding: 20px;
+	justify-items:center;
+	color:black;
+}
+#pfp {
+	border-radius: 50%;
+	border: 2px solid #000; 
+	/* box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); */
+	padding: 5%;
+	background-color: #EEEEEE;
+}
+
+#input {
+	padding: 2%;
+	border-bottom: 2px solid;
+	border-color: #EEEEEE;
+	background-color: transparent;
+	width: 100%;
+	margin: 1%;
+	justify-self:center;
+}
+
+#white_box {
+	background-color: white;
+	width: 35%;
+	padding: 3.5%;
+	margin: auto;
+	border-radius: 20px;
+}
+
+#bg_faded{
+	background-color: rgba(61, 132, 63, 0.35);
+	width: full;
+	height: 20%;
 }

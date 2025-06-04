@@ -1,24 +1,24 @@
 <script>
     
 	let tabs = [
-		{ name: 'Dashboard', link: '/dashboard', icon: 'https://www.svgrepo.com/show/522557/home.svg' },
-		{ name: 'Inventory', link: '/inventory', icon: 'https://www.svgrepo.com/show/522557/home.svg' },
+		{ name: 'Dashboard', link: '/dashboard', icon: '../src/icons/home.svg' },
+		{ name: 'Inventory', link: '/inventory', icon: '../src/icons/inventory.svg' },
 		{
 			name: 'Analytics',
 			link: '/analytics',
-			icon: 'https://www.svgrepo.com/show/524649/home-1.svg'
+			icon: '../src/icons/analytics.svg'
 		},
-        { name: 'Settings', link: '/settings', icon: 'https://www.svgrepo.com/show/522557/home.svg'}
+        { name: 'Settings', link: '/settings', icon: '../src/icons/settings.svg'}
 	];
 </script>
 
 
-<nav>
+<nav >
     <img src = "../src/images/logo.png" alt = "logo" class = "pb-5"/>
     <ul><div class="justify-items-start">
             {#each tabs as tab, index}
                     <li class="flex items-center">
-                        <a href={tab.link} class ="flex gap-x-6">
+                        <a href={tab.link} class ="flex gap-x-5">
                                 <img src={tab.icon} alt="home" style="width: 30px" />
                                 <p class="py-4">{tab.name}</p>
                         </a>
@@ -26,19 +26,21 @@
             {/each}
         </div>
     </ul>
-    <ul class="absolute bottom-7">
+    <ul class="absolute bottom-7 " >
         <li>
-            <a href= "/profile" class ="items-center pb-8 flex gap-3">
-                <img src="https://www.svgrepo.com/show/522557/home.svg" alt = "pfp" class = "profile"/>
+            <a href= "/profile" class ="items-center pb-8 flex gap-2">
+                <div id = "pfp" class = "profile flex ">
+                    <img  src="../src/icons/user.svg" alt = "pfp" style = "width:65px;"/>
+                </div>
                 <div class = "flex-col">
-                    <h2>Username</h2><p>Auditor</p>
+                    <h2 class = "text-lg">Username123</h2><p class = "gray3_txt text-sm">Auditor</p>
                 </div>
             </a>
         </li>
         <li >
             <a href= /login class = "flex items-center gap-x-2">
-                <img src= "https://www.svgrepo.com/show/522557/home.svg" alt="home" style="width: 23px"/>
-                <p style = "font-size: 14px">Log out</p>
+                <img src= "../src/icons/logout.svg" alt="home" style="width: 23px"/>
+                <p style = "font-size: 14px; color:#DE0101">Log out</p>
             </a>
 
         </li>
