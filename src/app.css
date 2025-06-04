@@ -41,7 +41,7 @@ body.login-page {
 
 /* ELEMENTS */
 
-.button {
+#button {
 	background-color: #3D843F;
 	border-radius: 6px;
 	box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
@@ -59,6 +59,58 @@ body.login-page {
 	justify-items:center;
 	color:black;
 }
+
+.tag {
+	background-color: #3D843F;
+	color:white;
+	border-radius: 50px;
+	height: 21px;
+	width:fit-content;
+	white-space: nowrap;
+}
+
+
+.whitebox {
+	background-color: white;
+	border-radius: 10px;
+	width: 300px;
+	padding: 20px;
+	justify-items:start;
+	color:black;
+}
+.circle {
+	border-radius: 50%;
+	width: 10px;
+	padding: 7px;
+}
+.search {
+	background-color: #EEEEEE;
+	width: fit-content;
+	height:fit-content;
+	margin: 0%;
+	color:#79747E;
+	border-radius: 50px;
+}
+.search input:focus {
+	outline: none;
+	border:none;
+	color:black;
+}
+
+#input:focus {
+	outline: none;
+	border:none;
+}
+
+#nostock {
+	background-color: #F8C7C7;
+	border-radius: 20px;
+}
+#lowstock {
+	background-color: #FFF1BB;
+	border-radius: 10px;
+}
+
 #pfp {
 	border-radius: 50%;
 	border: 2px solid #000; 
@@ -75,6 +127,7 @@ body.login-page {
 	width: 100%;
 	margin: 1%;
 	justify-self:center;
+	color:black;
 }
 
 #white_box {
@@ -89,4 +142,31 @@ body.login-page {
 	background-color: rgba(61, 132, 63, 0.35);
 	width: full;
 	height: 20%;
+}
+
+.button {
+	background-color: #EEEEEE;
+	padding: 10px;
+	margin: 2%;
+	border: none;
+	border-radius: 8px;
+	box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+	width: 120px;
+	justify-self:center;
+}
+
+.button.pressed {
+	background-color: white;
+	color: black;
+}
+
+#report {
+	background-color: white;
+	width: 40%;
+	padding: 2%;
+	border-radius: 20px;
+}
+
+#topimg {
+	width: 400px;
 }
