@@ -1,5 +1,6 @@
 # Product Description:
-in cmd, use ``npm run dev`` to run
+in cmd, run ``npm i`` 
+then use ``npm run dev`` to run
 then go to localhost
 
 # Client: 

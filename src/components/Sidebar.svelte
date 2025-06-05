@@ -18,7 +18,7 @@
     <ul><div class="justify-items-start">
             {#each tabs as tab, index}
                     <li class="flex items-center">
-                        <a href={tab.link} class ="flex gap-x-5">
+                        <a href={tab.link} class ="flex gap-x-5" id = "">
                                 <img src={tab.icon} alt="home" style="width: 30px" />
                                 <p class="py-4">{tab.name}</p>
                         </a>

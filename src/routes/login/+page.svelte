@@ -34,7 +34,7 @@
     </div>
 
 
-    <div id = "button" class = "text-center font-semibold">
+    <div id = "button" class = " text-center font-semibold">
         <a href = '/dashboard'>LOG IN</a>
     </div>
     <div class = "text-center p-5 mb-12">
