@@ -113,19 +113,19 @@
             <h1 class = "font-bold text-base text-start">Sales Report</h1>
             <div class = "flex">
                 <button 
-                class="button {selectedButton === '12months' ? 'pressed' : ''}"
+                class="buttons {selectedButton === '12months' ? 'pressed' : ''}"
                 onclick={() => handleClick('12months')}>
                 12 months
                 </button>
 
                 <button 
-                class="button {selectedButton === '6months' ? 'pressed' : ''}"
+                class="buttons {selectedButton === '6months' ? 'pressed' : ''}"
                 onclick={() => handleClick('6months')}>
                 6 months
                 </button>
 
                 <button 
-                class="button {selectedButton === '30days' ? 'pressed' : ''}"
+                class="buttons {selectedButton === '30days' ? 'pressed' : ''}"
                 onclick={() => handleClick('30days')}>
                 30 days
                 </button>
