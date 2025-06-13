@@ -9,15 +9,15 @@ then go to localhost
 
 # Team Roles:
 
-Product Owner: 
+Product Owner: Henry Villanueva @ShrekIsGoat
 
-Scrum Master/Team Leader: Henry Villanueva (@)
+Scrum Master/Team Leader: Andrei Balingit @aaaaandreiii
 
-Designer: 
+UI/UX Designers: Sophia Avelino @Gl1tch8, Marcus Apetreor @Marcus-Apetreor
 
-Developer: 
+Developers: Ching Man @ChingManWong, Rafael Navarro, Deo Diamante @DeoZD
 
-Quality Assurance: 
+Quality Assurance Engineer: Lance Medina @limborock12
 
 
 # Links:
