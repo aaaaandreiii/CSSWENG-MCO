@@ -188,3 +188,36 @@ body.login-page {
 #topimg {
 	width: 400px;
 }
+
+.switch-toggle {
+  position: relative;
+  width: 40px;
+  height: 20px;
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: #ccc;
+  outline: none;
+  border-radius: 20px;
+  transition: background-color 0.3s;
+  cursor: pointer;
+}
+
+.switch-toggle:checked {
+  background-color: #4caf50;
+}
+
+.switch-toggle::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  background-color: white;
+  border-radius: 50%;
+  top: 1px;
+  left: 1px;
+  transition: transform 0.3s;
+}
+
+.switch-toggle:checked::before {
+  transform: translateX(20px);
+}
