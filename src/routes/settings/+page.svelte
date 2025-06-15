@@ -116,8 +116,8 @@
         
         <!-- permissions section, change roles as needed -->
 		{#if selected === 'admin' || selected === 'staff' || selected === 'auditor' || selected === 'manager'}
-			<section class="bg-white rounded-lg p-8 mt-8 w-1/8">
-				<h2 class="text-lg font-bold mb-4 flex items-center justify-between">
+			<section class="bg-white rounded-lg p-8 mt-8 w-fit">
+				<h2 class="text-lg font-bold mb-4 flex items-center justify-between gap-25">
 					<span>Permissions</span>
 					<button class="bg-gray-200 text-black font-bold px-6 py-2 rounded-lg">Edit</button>
 				</h2>
