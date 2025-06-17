@@ -30,15 +30,15 @@
                 class="gray3_txt"
             />
         </div>
-        <h1 class = "gray2_txt font-bold text-right">Forgot password</h1>
+        <h1 class = "gray2_txt font-bold text-right"><a href = '/forgot_password'>Forgot password</a></h1>
     </div>
 
 
-    <div id = "button" class = " text-center font-semibold">
-        <a href = '/dashboard'>LOG IN</a>
+    <div class="text-center p-5 mb-12">
+            <a href="/dashboard" id="button" class="text-center font-semibold w-full mt-4" style="display: block;">LOGIN</a>
     </div>
     <div class = "text-center p-5 mb-12">
-        SIGN UP
+        <a href = '/signup'>SIGN UP</a>
     </div>
 </div>
 </div>
