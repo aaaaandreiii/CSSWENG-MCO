@@ -1,33 +1,23 @@
-const mysql = require("./model/db");
-//test
-const date = new Date("2015-02-03");
-(async () => {
-    await mysql.createUser("Ang, Helen", "admin", "sycn", "123", date, "active");
-    mysql.createProduct("PingPong", "table tennis", "paddle", "supplier", "active", 100, 150); 
-    mysql.createStockEntry("branch1", date, 100, 1234, 1, 1); 
-    mysql.createStockWithdrawal(date, 3, "damaged", 1, 1, 1);
-    mysql.createOrders(0.2, "Amira", 1); 
-    mysql.createOrderInfo(3, 1, 1); 
-    mysql.createReturnExchange(date, "refunded", 1, 1, 1); 
-    mysql.createReturnExchangeInfo(1, 2, 1, 2, "damaged", 1); 
-    mysql.createReturnExchangeInfo(1, 1, null, null, "damaged", 1); 
-    mysql.getUsers();
-    mysql.getUserById(1);
-    mysql.getUserById(2);
-    mysql.getUserById(99);
-    mysql.getProducts();
-    const result = await mysql.getProductById(1);
-    console.log(result.productName);
-    mysql.getStockEntries();
-    mysql.getStockEntryById(1);
-    mysql.getStockWithdrawals();
-    mysql.getStockWithdrawalById(1);
-    mysql.getOrders();
-    mysql.getOrderById(1);
-    mysql.getOrderInfo();
-    mysql.getOrderInfoById(1);
-    mysql.getReturnExchanges();
-    mysql.getReturnExchangeById(1);
-    mysql.getReturnExchangeInfo();
-    mysql.getReturnExchangeInfoById(1);
-})();
+import express from "express";
+import cors from "cors";
+import userController from "./controller/userController.js";
+import productController from "./controller/productController.js";
+import stockEntryController from "./controller/stockEntryController.js";
+import stockWithdrawalController from "./controller/stockWithdrawal.js";
+import ordersController from "./controller/ordersController.js";
+import returnExchangeController from "./controller/returnExchangeController.js";
+
+const app = express();
+
+app.use(cors()); //enable CORS during development
+app.use(express.json());
+
+//controllers
+app.use("/api", userController);
+app.use("/api", productController);
+app.use("/api", stockEntryController);
+app.use("/api", stockWithdrawalController);
+app.use("/api", ordersController);
+app.use("/api", returnExchangeController);
+
+app.listen(5000, () => console.log("Server listening on port 5000."));
