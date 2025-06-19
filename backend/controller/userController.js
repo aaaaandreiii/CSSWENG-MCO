@@ -7,7 +7,7 @@ router.post("/createUser", async(req, res) =>{
     try{
         const {fullName, userRole, username, userPassword} = req.body;
         const dateAdded = new Date().toISOString().split("T")[0]
-        const id = await mysql.createUser(fullName, userRole, username, userPassword, dateAdded, 1);
+        const id = await mysql.createUser(fullName, userRole, username, userPassword, dateAdded, 0);
         res.json({message: "User created successfully!", id});
     }catch(err){
         res.status(500).json({ message: "Error creating User" });
