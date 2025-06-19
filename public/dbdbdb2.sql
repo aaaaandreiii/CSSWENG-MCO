@@ -81,7 +81,7 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `mydb`.`StockWithdrawal` (
   `withdrawalId` INT NOT NULL AUTO_INCREMENT,
   `dateWithdrawn` DATE NOT NULL,
-  `quantityWithdrawn` INT NOT NULL,
+  `quantityWithdrawn` VARCHAR(45) NOT NULL,
   `purpose` VARCHAR(45) NOT NULL,
   `entryId` INT NOT NULL,
   `withdrawnBy` INT NOT NULL,
