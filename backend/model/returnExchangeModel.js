@@ -1,10 +1,10 @@
 import db from "./db.js"
 
 //CREATE
-export function createReturnExchange(dateTransaction, transactionStatus, orderId, handledBy, approvedBy){
-    const sql = 'INSERT INTO ReturnExchange(dateTransaction, transactionStatus, orderId, handledBy, approvedBy) VALUES (?, ?, ?, ?, ?)';
+export function createReturnExchange(dateTransaction, transactionStatus, orderId, handledBy, approvedBy, deleteFlag){
+    const sql = 'INSERT INTO ReturnExchange(dateTransaction, transactionStatus, orderId, handledBy, approvedBy, deleteFlag) VALUES (?, ?, ?, ?, ?, ?)';
     return new Promise((resolve, reject) =>{
-        db.query(sql, [dateTransaction, transactionStatus, orderId, handledBy, approvedBy], (err, result) =>{
+        db.query(sql, [dateTransaction, transactionStatus, orderId, handledBy, approvedBy, deleteFlag], (err, result) =>{
             if(err) return reject(err);
             console.log("Return Exchange created: ", result.insertId);
             resolve(result.insertId);

@@ -1,9 +1,9 @@
 import db from "./db.js"
 
 //CREATE
-export function createStockEntry(branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId){
-    const sql = 'INSERT INTO StockEntry(branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId) VALUES (?, ?, ?, ?, ?, ?)';
-    db.query(sql, [branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId], (err, result) =>{
+export function createStockEntry(branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, deleteFlag){
+    const sql = 'INSERT INTO StockEntry(branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    db.query(sql, [branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, deleteFlag], (err, result) =>{
         if(err) throw err;
         console.log("Stock Entry created: ", result.insertId);
         return result.insertId;

@@ -1,9 +1,9 @@
 import db from "./db.js"
 
 //CREATE
-export function createStockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy){
-    const sql = 'INSERT INTO StockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy) VALUES (?, ?, ?, ?, ?, ?)';
-    db.query(sql, [dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy], (err, result) =>{
+export function createStockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, deleteFlag){
+    const sql = 'INSERT INTO StockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    db.query(sql, [dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, deleteFlag], (err, result) =>{
         if(err) throw err;
         console.log("Stock Withdrawal created: ", result.insertId);
         return result.insertId;

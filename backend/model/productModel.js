@@ -1,9 +1,9 @@
 import db from "./db.js"
 
 //CREATE
-export function createProduct(productName, category, descriptions, supplier, productStatus, cost, retailPrice){
-    const sql = 'INSERT INTO Product(productName, category, descriptions, supplier, productStatus, cost, retailPrice) VALUES (?, ?, ?, ?, ?, ?, ?)';
-    db.query(sql, [productName, category, descriptions, supplier, productStatus, cost, retailPrice], (err, result) =>{
+export function createProduct(productName, category, descriptions, supplier, deleteFlag, cost, retailPrice){
+    const sql = 'INSERT INTO Product(productName, category, descriptions, supplier, deleteFlag, cost, retailPrice) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    db.query(sql, [productName, category, descriptions, supplier, deleteFlag, cost, retailPrice], (err, result) =>{
         if(err) throw err;
         console.log("Product created: ", result.insertId);
         return result.insertId;

@@ -1,10 +1,10 @@
 import db from "./db.js"
 
 //CREATE
-export function createOrderInfo(quantity, orderId, productId){
-    const sql = 'INSERT INTO OrderInfo(quantity, orderId, productId) VALUES (?, ?, ?)';
+export function createOrderInfo(quantity, orderId, productId, deleteFlag){
+    const sql = 'INSERT INTO OrderInfo(quantity, orderId, productId, deleteFlag) VALUES (?, ?, ?, ?)';
     return new Promise((resolve, reject) =>{
-        db.query(sql, [quantity, orderId, productId], (err, result) =>{
+        db.query(sql, [quantity, orderId, productId, deleteFlag], (err, result) =>{
             if(err) return reject(err);
             console.log("Order Info created: ", result.insertId);
             resolve(result.insertId);

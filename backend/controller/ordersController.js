@@ -9,9 +9,9 @@ router.post("/createOrders", async(req, res) =>{
     try{
         const {discount, customer, handledBy, items} = req.body;  
         const dateOrdered = new Date().toISOString().split("T")[0];  
-        const orderId = await ordersModel.createOrders(discount, customer, handledBy, dateOrdered);
+        const orderId = await ordersModel.createOrders(discount, customer, handledBy, dateOrdered, 1);
         for(const item of items){
-            await orderInfoModel.createOrderInfo(item.quantity, orderId, item.productId);
+            await orderInfoModel.createOrderInfo(item.quantity, orderId, item.productId, 1);
         }
         res.json({message: "Orders and Order Info created successfully!", orderId});
     }catch(err){

@@ -8,11 +8,11 @@ router.post("/createReturnExchange", async(req, res) =>{
     try{
         const {transactionStatus, orderId, handledBy, approvedBy, transactions} = req.body;  
         const dateTransaction = new Date().toISOString().split("T")[0];  
-        const transactionId = await returnExchange.createReturnExchange(dateTransaction, transactionStatus, orderId, handledBy, approvedBy);
+        const transactionId = await returnExchange.createReturnExchange(dateTransaction, transactionStatus, orderId, handledBy, approvedBy, 1);
         for(const transaction of transactions){
             const exchangeProductId = transaction.exchangeProductId ?? null;
             const exchangeQuantity = transaction.exchangeQuantity ?? null;
-            await returnExchangeInfo.createReturnExchangeInfo(transaction.returnedProductId, transaction.returnedQuantity, exchangeProductId, exchangeQuantity, transaction.reason, transactionId);
+            await returnExchangeInfo.createReturnExchangeInfo(transaction.returnedProductId, transaction.returnedQuantity, exchangeProductId, exchangeQuantity, transaction.reason, transactionId, 1);
         }
         res.json({message: "Return Exchange and Return Exchange Info created successfully!", transactionId});
     }catch(err){
