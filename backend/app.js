@@ -3,7 +3,7 @@ import cors from "cors";
 import userController from "./controller/userController.js";
 import productController from "./controller/productController.js";
 import stockEntryController from "./controller/stockEntryController.js";
-import stockWithdrawalController from "./controller/stockWithdrawal.js";
+import stockWithdrawalController from "./controller/stockWithdrawalController.js";
 import ordersController from "./controller/ordersController.js";
 import returnExchangeController from "./controller/returnExchangeController.js";
 

@@ -26,9 +26,9 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Product` (
   `category` VARCHAR(45) NOT NULL,
   `descriptions` VARCHAR(255) NOT NULL,
   `supplier` VARCHAR(45) NOT NULL,
-  `deleteFlag` INT NOT NULL,
   `cost` DOUBLE NOT NULL,
   `retailPrice` DOUBLE NOT NULL,
+  `deleteFlag` INT NOT NULL,
   PRIMARY KEY (`productId`))
 ENGINE = InnoDB;
 
