@@ -1,5 +1,5 @@
 <script>
-    
+    let selected = "dashboard";
 	let tabs = [
 		{ name: 'Dashboard', link: '/dashboard', icon: '../src/icons/home.svg' },
 		{ name: 'Inventory', link: '/inventory', icon: '../src/icons/inventory.svg' },
@@ -28,7 +28,7 @@
     </ul>
     <ul class="absolute bottom-7 " >
         <li>
-            <a href= "/settings" class ="items-center pb-8 flex gap-2">
+            <a href= "/profile" class ="items-center pb-8 flex gap-2">
                 <div id = "pfp" class = "profile flex ">
                     <img  src="../src/icons/user.svg" alt = "pfp" style = "width:65px;"/>
                 </div>
