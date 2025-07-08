@@ -2,16 +2,25 @@ import db from "./db.js"
 import argon2 from 'argon2';
 
 //CREATE
-export async function createUser(fullName, userRole, username, userPassword, dateAdded, userStatus){
-    const hashedPassword = await argon2.hash(userPassword);
-    const sql = 'INSERT INTO Users(fullName, userRole, username, userPassword, dateAdded, userStatus) VALUES (?, ?, ?, ?, ?, ?)';
+export async function createUser(fullName, userRole, username, userPassword, dateAdded, userStatus) {
+    const sql = `INSERT INTO Users (fullName, userRole, username, userPassword, dateAdded, userStatus) VALUES (?, ?, ?, ?, ?, ?)`;
+    // console.log("Creating user with:");
+    // console.log("  Username:", username);
+    // console.log("  Plain password:", userPassword);
+    // PASSWORD GOT HASHED FROM userController
+    
     const result = await new Promise((resolve, reject) => {
-        db.query(sql, [fullName, userRole, username, hashedPassword, dateAdded, userStatus], (err, result) =>{
-            if(err) return reject(err);
-            resolve(result);
-        });
+        db.query(
+            sql,
+            [fullName, userRole, username, userPassword, dateAdded, userStatus],
+            (err, result) => {
+                if (err) return reject(err);
+                resolve(result);
+            }
+        );
     });
-    console.log("User created:", result.insertId);
+
+    console.log("User created with ID:", result.insertId);
     return result.insertId;
 }
 
@@ -39,6 +48,20 @@ export function getUserById(userId){
             else{
                 console.log('User not found.');
                 resolve(null);
+            }
+        });
+    });
+}
+
+export function getUserByUsername(username) {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT * FROM Users WHERE username = ?';
+        db.query(sql, [username], (err, results) => {
+            if (err) return reject(err);
+            if (results.length > 0) {
+                resolve(results[0]); // return single user object
+            } else {
+                resolve(null); // no match found
             }
         });
     });
