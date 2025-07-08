@@ -4,54 +4,55 @@
 
 	const headerMap: Record<TabType, string[]> = {
 		returns: [
-			"Transaction ID",
-			"Product/s Returned",
-			"Reason for Return",
-			"Date Returned",
-			"Resolution Status",
-			"Approved By",
-			"Qty Returned"
+			'Transaction ID',
+			'Product/s Returned',
+			'Reason for Return',
+			'Date Returned',
+			'Resolution Status',
+			'Approved By',
+			'Qty Returned'
 		],
 		completed: [
-			"Transaction ID",
-			"Products Purchased",
-			"Qty Purchased",
-			"Date Purchased",
-			"Date Delivered",
-			"Address Delivered",
-			"Buyer Name"
+			'Transaction ID',
+			'Products Purchased',
+			'Qty Purchased',
+			'Date Purchased',
+			'Date Delivered',
+			'Address Delivered',
+			'Buyer Name'
 		],
 		stocks: [
-			"Product ID",
-			"Product Name",
-			"Product Type",
-			"Product Description",
-			"Product Manufacturer",
-			"Current Warehouse",
-			"Stock Amt"
+			'Product ID',
+			'Product Name',
+			'Product Type',
+			'Product Description',
+			'Product Manufacturer',
+			'Current Warehouse',
+			'Stock Amt'
 		]
 	};
 
 	$: currentHeaders = headerMap[selected];
 
 	let rows: { [key: string]: string }[] = [
-    { "Product ID": "1",
-      "Product Name": "A",
-      "Product Type": "Gadget",
-      "Product Description": "Description A",
-      "Product Manufacturer": "Manufacturer A",
-      "Current Warehouse": "Warehouse 1",
-      "Stock Amt": "100"
-    },
-    {
-      "Product ID": "2",
-      "Product Name": "B",
-      "Product Type": "Gadget",
-      "Product Description": "Description B",
-      "Product Manufacturer": "Manufacturer B",
-      "Current Warehouse": "Warehouse 2",
-      "Stock Amt": "50"
-    }
+		{
+			'Product ID': '1',
+			'Product Name': 'A',
+			'Product Type': 'Gadget',
+			'Product Description': 'Description A',
+			'Product Manufacturer': 'Manufacturer A',
+			'Current Warehouse': 'Warehouse 1',
+			'Stock Amt': '100'
+		},
+		{
+			'Product ID': '2',
+			'Product Name': 'B',
+			'Product Type': 'Gadget',
+			'Product Description': 'Description B',
+			'Product Manufacturer': 'Manufacturer B',
+			'Current Warehouse': 'Warehouse 2',
+			'Stock Amt': '50'
+		}
 		// add more dummy entries as needed
 	];
 	let selectedRows = [];
@@ -60,86 +61,103 @@
 	let modalContent = '';
 
 	function openModal(content: string) {
-	    modalContent = content;
-	    showModal = true;
+		modalContent = content;
+		showModal = true;
 	}
 	function closeModal() {
-	    showModal = false;
-	    modalContent = '';
+		showModal = false;
+		modalContent = '';
 	}
 </script>
 
 <!-- header w/ search bar and filter-->
-<header class = "p-7 flex justify-between">
+<header class="flex justify-between p-7">
 	<h1>Inventory</h1>
 
-	<div class = "flex gap-3">
-		<div class="bg-white rounded-4xl w-fit flex px-3">
-			<input type="text" placeholder="Search" class="w-55 p-2" style = "outline:none" />
+	<div class="flex gap-3">
+		<div class="flex w-fit rounded-4xl bg-white px-3">
+			<input type="text" placeholder="Search" class="w-55 p-2" style="outline:none" />
 			<img src="../src/icons/search.svg" alt="search" style="width:15px; " />
 		</div>
-		<div class="bg-white rounded-4xl w-fit flex px-3">
-			<input type="text" placeholder="Order by" class="w-35 p-2" style = "outline:none"/>
+		<div class="flex w-fit rounded-4xl bg-white px-3">
+			<input type="text" placeholder="Sort by" class="w-35 p-2" style="outline:none" />
 			<img src="../src/icons/filter.svg" alt="search" style="width:15px; " />
 		</div>
 	</div>
 </header>
 
 <!-- navbar -->
-<div>
-	<div class = "flex">
+<div class="flex ">
+	<div class="flex ">
 		<button
 			class="buttonss flex items-center justify-center {selected === 'stocks' ? 'selected' : ''}"
-			on:click={() => selected = 'stocks'}>
-			<div class = "flex items-center gap-2">
-				<img src = "../src/icons/box.svg" alt="Stocks" class = "w-6"/>
+			on:click={() => (selected = 'stocks')}
+		>
+			<div class="flex items-center gap-2">
+				<img src="../src/icons/box.svg" alt="Stocks" class="w-6" />
 				Stocks
 			</div>
 		</button>
 		<button
 			class="buttonss flex items-center justify-center {selected === 'completed' ? 'selected' : ''}"
-			on:click={() => selected = 'completed'}>
-			<div class = "flex items-center gap-2">
-				<img src = "../src/icons/completed.svg" alt="Completed" class = "w-6"/>
+			on:click={() => (selected = 'completed')}
+		>
+			<div class="flex items-center gap-2">
+				<img src="../src/icons/completed.svg" alt="Completed" class="w-6" />
 				Completed
 			</div>
 		</button>
 		<button
 			class="buttonss flex items-center justify-center {selected === 'returns' ? 'selected' : ''}"
-			on:click={() => selected = 'returns'}>
-			<div class = "flex items-center gap-2">
-				<img src = "../src/icons/returns.svg" alt="Returns" class = "w-6"/>
+			on:click={() => (selected = 'returns')}
+		>
+			<div class="flex items-center gap-2">
+				<img src="../src/icons/returns.svg" alt="Returns" class="w-6" />
 				Returns
 			</div>
+		</button>
+	</div>
+	
+	<!-- add n create button -->
+	<div class="flex gap-5 p-5 justify-self-end">
+		<button class="flex items-center gap-2">
+			Delete
+		</button>
+		<button class="">
+			<div class="bg-green flex items-center gap-2">Add</div>
 		</button>
 	</div>
 </div>
 
 <!-- table -->
 <div class="w-full overflow-x-auto">
-	<table class="w-full border-collapse table-auto">
-		<thead class="bg-white border-b border-black">
+	<table class="w-full table-auto border-collapse">
+		<thead class="border-b border-black bg-white">
 			<tr>
-				<th class="text-center py-5"></th>
+				<th class="py-5 text-center"></th>
 				{#each currentHeaders as head}
-					<th class="text-center py-5">{head}</th>
+					<th class="py-5 text-center">{head}</th>
 				{/each}
-				<th class="text-center py-5"></th>
+				<th class="py-5 text-center"></th>
 			</tr>
 		</thead>
 		<tbody>
 			{#each rows as row, i}
 				<tr class="border-b border-black {i % 2 === 0 ? 'bg-[#eeeeee]' : 'bg-white'}">
-					<td class="text-center py-5">
+					<td class="py-5 text-center">
 						<input type="checkbox" bind:group={selectedRows} value={i} />
 					</td>
 					{#each currentHeaders as head}
-						<td class="text-center py-5 max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap cursor-pointer" title={row[head]} on:click={() => openModal(row[head])}>
+						<td
+							class="max-w-[180px] cursor-pointer overflow-hidden py-5 text-center text-ellipsis whitespace-nowrap"
+							title={row[head]}
+							on:click={() => openModal(row[head])}
+						>
 							{row[head]}
 						</td>
 					{/each}
-					<td class="text-center py-5">
-						<img src="../src/icons/edit.svg" alt="Edit" class="w-5 h-5 mx-auto cursor-pointer" />
+					<td class="py-5 text-center">
+						<img src="../src/icons/edit.svg" alt="Edit" class="mx-auto h-5 w-5 cursor-pointer" />
 					</td>
 				</tr>
 			{/each}
@@ -155,7 +173,9 @@
 		tabindex="0"
 		aria-label="Close modal"
 		on:click={closeModal}
-		on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') closeModal(); }}
+		on:keydown={(e) => {
+			if (e.key === 'Enter' || e.key === ' ') closeModal();
+		}}
 	>
 		<div
 			class="modal-box"
@@ -163,7 +183,9 @@
 			aria-modal="true"
 			tabindex="0"
 			on:click|stopPropagation
-			on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
+			on:keydown={(e) => {
+				if (e.key === 'Enter' || e.key === ' ') e.stopPropagation();
+			}}
 		>
 			<div class="mb-4">{modalContent}</div>
 		</div>

@@ -100,13 +100,21 @@ body.login-page {
 	border: none;
 }
 
-#nostock {
+#red {
 	background-color: #f8c7c7;
 	border-radius: 20px;
 }
-#lowstock {
+#yellow {
 	background-color: #fff1bb;
 	border-radius: 10px;
+}
+#green { 
+	background-color: #c7f8c7;
+	border-radius: 20px;
+}
+#blue {
+	background-color: #c7dff8;
+	border-radius: 20px;
 }
 
 #pfp {
@@ -148,7 +156,7 @@ body.login-page {
 	border-radius: 8px;
 	border-bottom-left-radius: 0px;
 	border-bottom-right-radius: 0px;
-	width: 15%;
+	width: 200px;
 	justify-self: center;
 	padding: 1%;
 
