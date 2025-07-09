@@ -1,4 +1,6 @@
 <script>
+    import { onMount } from 'svelte';
+    import { page } from '$app/stores';
     let selected = "dashboard";
 	let tabs = [
 		{ name: 'Dashboard', link: '/dashboard', icon: '../src/icons/home.svg' },
@@ -10,6 +12,12 @@
 		},
         { name: 'Settings', link: '/settings', icon: '../src/icons/settings.svg'}
 	];
+
+    // make the selected tab ui based on current route on mount
+    onMount(() => {
+        const current = tabs.find(tab => tab.link === $page.url.pathname);
+        if (current) selected = current.name;
+    });
 </script>
 
 
@@ -18,7 +26,7 @@
     <ul><div class="justify-items-start">
             {#each tabs as tab, index}
                     <li class="flex items-center">
-                        <a href={tab.link} class ="flex gap-x-5" id = "">
+                        <a href={tab.link} class ="flex gap-x-5 {selected === tab.name ? 'selected-tab' : ''}" id = "" on:click={() => selected = tab.name}>
                                 <img src={tab.icon} alt="home" style="width: 30px" />
                                 <p class="py-4">{tab.name}</p>
                         </a>

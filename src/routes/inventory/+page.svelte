@@ -55,18 +55,97 @@
 		}
 		// add more dummy entries as needed
 	];
+
+	// init selected rows
 	let selectedRows = [];
 
+	// modal states
 	let showModal = false;
 	let modalContent = '';
 
-	function openModal(content: string) {
+	// sorting states
+	let sortColumn: string = '';
+	let sortDirection: 'asc' | 'desc' = 'asc';
+
+	// store default order for reset
+	const originalRows = [...rows];
+	
+	// sortby function for col heads
+	function sortBy(column: string) {
+		if (sortColumn === column) {
+			if (sortDirection === 'asc') {
+				sortDirection = 'desc';
+			} else if (sortDirection === 'desc') {
+				// if clicked a 3rd time, it goes back to defualt order
+				sortColumn = '';
+				sortDirection = 'asc';
+				rows = [...originalRows];
+				return;
+			}
+		} else {
+			sortColumn = column;
+			sortDirection = 'asc';
+		}
+		rows = [...rows].sort((a, b) => {
+			if (a[column] < b[column]) return sortDirection === 'asc' ? -1 : 1;
+			if (a[column] > b[column]) return sortDirection === 'asc' ? 1 : -1;
+			return 0;
+		});
+	}
+
+	// constant column headers
+	headerMap.returns.push('Last Updated', 'Edited By');
+	headerMap.completed.push('Last Updated', 'Edited By');
+	headerMap.stocks.push('Last Updated', 'Edited By');
+
+	// edit button in popup
+	let showEditButton = false;
+	let modalRowIndex = -1;
+	function openModal(content: string, rowIndex = -1) {
 		modalContent = content;
 		showModal = true;
+		showEditButton = rowIndex !== -1;
+		modalRowIndex = rowIndex;
 	}
+
+	// func to close popup
 	function closeModal() {
 		showModal = false;
 		modalContent = '';
+	}
+
+	// func to handle edit in cell popup
+	function handleEdit(rowIndex: number) {
+		// impl edit func here
+		alert('Edited row: ' + rowIndex);
+	}
+
+	// func to open edit popup for entire row
+	function openEditModal(rowIndex: number) {
+		modalRowIndex = rowIndex;
+		showModal = true;
+		showEditButton = false;
+		modalContent = '';
+		editForm = { ...rows[rowIndex] };
+		isEditForm = true;
+	}
+
+	let editForm: { [key: string]: string } = {};
+	let isEditForm = false;
+	
+	// func to handle saving the edit form
+	function handleEditFormSave() {
+		if (modalRowIndex !== -1) {
+			rows[modalRowIndex] = { ...editForm };
+			isEditForm = false;
+			showModal = false;
+		}
+	}
+
+	// func to handle canceling the edit form
+	function handleEditFormCancel() {
+		isEditForm = false;
+		showModal = false;
 	}
 </script>
 
@@ -80,15 +159,22 @@
 			<img src="../src/icons/search.svg" alt="search" style="width:15px; " />
 		</div>
 		<div class="flex w-fit rounded-4xl bg-white px-3">
-			<input type="text" placeholder="Sort by" class="w-35 p-2" style="outline:none" />
+			<!-- dropdown for order by, auto includes all col headers -->
+			<select class="w-35 p-2 bg-white outline-none" bind:value={sortColumn} on:change={() => sortBy(sortColumn)}>
+				<option value="">All</option>
+				{#each currentHeaders as head}
+					<option value={head}>{head}</option>
+				{/each}
+			</select>
 			<img src="../src/icons/filter.svg" alt="search" style="width:15px; " />
 		</div>
 	</div>
 </header>
 
-<!-- navbar -->
-<div class="flex ">
-	<div class="flex ">
+<!-- navbar + buttons row -->
+<div class="grid grid-cols-2">
+	<!-- navbar -->
+	<div class="flex">
 		<button
 			class="buttonss flex items-center justify-center {selected === 'stocks' ? 'selected' : ''}"
 			on:click={() => (selected = 'stocks')}
@@ -117,47 +203,51 @@
 			</div>
 		</button>
 	</div>
-	
-	<!-- add n create button -->
-	<div class="flex gap-5 p-5 justify-self-end">
-		<button class="flex items-center gap-2">
+	<!-- buttons for actions -->
+	<div class="flex gap-3 ml-auto pr-8 p-1.5">
+		<button class="flex items-center justify-center gap-2 bg-red-600 text-white rounded hover:bg-red-700 w-28">
 			Delete
 		</button>
-		<button class="">
-			<div class="bg-green flex items-center gap-2">Add</div>
+		<button class="flex items-center justify-center gap-2 bg-green-600 text-white rounded hover:bg-green-700 w-28">
+			Add
 		</button>
 	</div>
 </div>
 
 <!-- table -->
 <div class="w-full overflow-x-auto">
-	<table class="w-full table-auto border-collapse">
+	<table class="w-full table-fixed border-collapse">
 		<thead class="border-b border-black bg-white">
 			<tr>
-				<th class="py-5 text-center"></th>
+				<th class="py-5 text-center w-[180px] min-w-[180px] max-w-[180px]"></th>
 				{#each currentHeaders as head}
-					<th class="py-5 text-center">{head}</th>
+					<th class="py-5 text-center w-[180px] min-w-[180px] max-w-[180px] break-words whitespace-normal align-middle">
+						<button class="w-full flex items-center justify-center gap-1 font-bold" on:click={() => sortBy(head)}>
+							<span class="break-words whitespace-normal w-full">{head}</span>
+							<span class="inline-block w-4 min-w-[1rem] text-center align-middle">{sortColumn === head ? (sortDirection === 'asc' ? '▲' : sortDirection === 'desc' ? '▼' : '') : ''}</span>
+						</button>
+					</th>
 				{/each}
-				<th class="py-5 text-center"></th>
+				<th class="py-5 text-center w-[180px] min-w-[180px] max-w-[180px]"></th>
 			</tr>
 		</thead>
 		<tbody>
 			{#each rows as row, i}
 				<tr class="border-b border-black {i % 2 === 0 ? 'bg-[#eeeeee]' : 'bg-white'}">
-					<td class="py-5 text-center">
-						<input type="checkbox" bind:group={selectedRows} value={i} />
-					</td>
+					<td class="py-5 text-center w-[180px] min-w-[180px] max-w-[180px]"><input type="checkbox" bind:group={selectedRows} value={i} /></td>
 					{#each currentHeaders as head}
 						<td
-							class="max-w-[180px] cursor-pointer overflow-hidden py-5 text-center text-ellipsis whitespace-nowrap"
+							class="w-[180px] min-w-[180px] max-w-[180px] max-h-[60px] overflow-hidden py-5 text-center text-ellipsis whitespace-nowrap"
 							title={row[head]}
-							on:click={() => openModal(row[head])}
+							on:click={() => openModal(row[head], i)}
 						>
 							{row[head]}
 						</td>
 					{/each}
-					<td class="py-5 text-center">
-						<img src="../src/icons/edit.svg" alt="Edit" class="mx-auto h-5 w-5 cursor-pointer" />
+					<td class="py-5 text-center w-[180px] min-w-[180px] max-w-[180px]">
+						<button type="button" class="mx-auto h-5 w-5 flex items-center justify-center" aria-label="Edit" on:click={() => openEditModal(i)}>
+							<img src="../src/icons/edit.svg" alt="" class="h-5 w-5 pointer-events-none" />
+						</button>
 					</td>
 				</tr>
 			{/each}
@@ -187,7 +277,29 @@
 				if (e.key === 'Enter' || e.key === ' ') e.stopPropagation();
 			}}
 		>
-			<div class="mb-4">{modalContent}</div>
+			{#if isEditForm}
+				<!-- edit popup form for entire row -->
+				<form on:submit|preventDefault={handleEditFormSave}>
+					{#each currentHeaders as head}
+						<div class="mb-2">
+							<label class="block font-bold mb-1" for={"edit-" + head}>{head}</label>
+							<input id={"edit-" + head} class="w-full border rounded px-2 py-1" type="text" bind:value={editForm[head]} />
+						</div>
+					{/each}
+					<div class="flex gap-2 mt-4">
+						<button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Save</button>
+						<button type="button" class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500" on:click={handleEditFormCancel}>Cancel</button>
+					</div>
+				</form>
+			{:else}
+				<!-- indiv popup for indiv cell content -->
+				<div class="mb-4">{modalContent}</div>
+				{#if showEditButton}
+					<button class="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700" on:click={() => handleEdit(modalRowIndex)}>
+						Edit
+					</button>
+				{/if}
+			{/if}
 		</div>
 	</div>
 {/if}

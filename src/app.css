@@ -102,21 +102,13 @@ body.login-page {
 	border: none;
 }
 
-#red {
+#nostock {
 	background-color: #f8c7c7;
 	border-radius: 20px;
 }
-#yellow {
+#lowstock {
 	background-color: #fff1bb;
 	border-radius: 10px;
-}
-#green { 
-	background-color: #c7f8c7;
-	border-radius: 20px;
-}
-#blue {
-	background-color: #c7dff8;
-	border-radius: 20px;
 }
 
 #pfp {
@@ -158,7 +150,7 @@ body.login-page {
 	border-radius: 8px;
 	border-bottom-left-radius: 0px;
 	border-bottom-right-radius: 0px;
-	width: 200px;
+	width: 15%;
 	justify-self: center;
 	padding: 1%;
 
@@ -252,4 +244,16 @@ body.login-page {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+}
+
+.selected-tab {
+    background-color: #006937;
+    color: white;
+    border-radius: 0 18px 18px 0;
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.10);
+    border: 0px solid #006937;
+    border-left: none;
+    margin-left: -30px; /* matches sidebar padding for flush left */
+    width: calc(100% + 30px);
+    padding-left: 30px !important; /* keep text aligned with other tabs */
 }

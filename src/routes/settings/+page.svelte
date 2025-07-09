@@ -51,8 +51,8 @@
 	let dropdownRef: HTMLDivElement | null = null;
 
 	function handleClickOutside(event: MouseEvent) {
-		if (showDropdown && dropdownRef && !dropdownRef.contains(event.target as Node)) {
-			showDropdown = false;
+		if (openDropdownIndex !== null && dropdownRef && !dropdownRef.contains(event.target as Node)) {
+			openDropdownIndex = null;
 		}
 	}
 
@@ -84,7 +84,7 @@
 						class="px-4 text-lg {selected === 'all'
 							? 'border-b-4 border-green-700 font-bold text-green-700'
 							: 'text-black'}"
-						onclick={() => (selected = 'all')}
+						onclick={() => { selected = 'all'; openDropdownIndex = null; }}
 					>
 						All
 					</a>
@@ -95,7 +95,7 @@
 						class="px-4 text-lg {selected === 'admin'
 							? 'border-b-4 border-green-700 font-bold text-green-700'
 							: 'text-black'}"
-						onclick={() => (selected = 'admin')}
+						onclick={() => { selected = 'admin'; openDropdownIndex = null; }}
 					>
 						Admin
 					</a>
@@ -106,7 +106,7 @@
 						class="px-4 text-lg {selected === 'staff'
 							? 'border-b-4 border-green-700 font-bold text-green-700'
 							: 'text-black'}"
-						onclick={() => (selected = 'staff')}
+						onclick={() => { selected = 'staff'; openDropdownIndex = null; }}
 					>
 						Staff
 					</a>
@@ -117,7 +117,7 @@
 						class="px-4 text-lg {selected === 'auditor'
 							? 'border-b-4 border-green-700 font-bold text-green-700'
 							: 'text-black'}"
-						onclick={() => (selected = 'auditor')}
+						onclick={() => { selected = 'auditor'; openDropdownIndex = null; }}
 					>
 						Auditor
 					</a>
@@ -128,7 +128,7 @@
 						class="px-4 text-lg {selected === 'manager'
 							? 'border-b-4 border-green-700 font-bold text-green-700'
 							: 'text-black'}"
-						onclick={() => (selected = 'manager')}
+						onclick={() => { selected = 'manager'; openDropdownIndex = null; }}
 					>
 						Manager
 					</a>
