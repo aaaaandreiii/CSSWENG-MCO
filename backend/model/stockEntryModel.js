@@ -1,4 +1,4 @@
-import db from "./db.js"
+import db, { processCascade } from "./db.js"
 
 //CREATE
 export function createStockEntry(branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, deleteFlag){
@@ -96,32 +96,18 @@ export function deleteStockEntryById(entryId){
         });
     });
 }
+const stockEntryCascadeMap = {
+    StockWithdrawal: {
+        where: 'entryId = ?',
+        values: (entryId) => [entryId],
+    }
+};
 
 export async function cascadeDeleteStockEntry(entryId){
     const deleted = await deleteStockEntryById(entryId);
     if(!deleted){
         return false;
     }
-    const tables = [
-        {
-            table: 'StockWithdrawal',
-            where: 'entryId = ?',
-            values: [entryId]
-        }
-    ];
-
-    for(const {table, where, values} of tables){
-        await new Promise((resolve, reject) =>{
-            const sql = `
-                UPDATE ${table}
-                SET deleteFlag = 1
-                WHERE ${where}
-            `;
-            db.query(sql, values, (err, result) =>{
-                if(err) return reject(err);
-                resolve();
-            });
-        });
-    }
+    await processCascade(stockEntryCascadeMap, entryId)
     return true;
 }

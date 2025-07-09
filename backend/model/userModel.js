@@ -1,4 +1,4 @@
-import db from "./db.js"
+import db, { processCascade } from "./db.js"
 import argon2 from 'argon2';
 
 //CREATE
@@ -101,46 +101,48 @@ export function deleteUsersById(userId){
     });
 }
 
+const userCascadeMap = {
+    StockEntry: {
+        where: 'receivedBy = ?',
+        values: (userId) => [userId],
+        cascade: {
+            StockWithdrawal: {
+                where: 'entryId IN (SELECT entryId FROM StockEntry WHERE receivedBy = ?)',
+                values: (userId) => [userId]
+            }
+        }
+    },
+    StockWithdrawal: {
+        where: 'withdrawnBy = ? OR authorizedBy = ?',
+        values: (userId) => [userId, userId]
+    },
+    Orders: {
+        where: 'handledBy = ?',
+        values: (userId) => [userId],
+        cascade: {
+            OrderInfo: {
+                where: 'orderId IN (SELECT orderId FROM Orders WHERE handledBy = ?)',
+                values: (userId) => [userId]
+            }
+        }
+    },
+    ReturnExchange: {
+        where: 'handledBy = ? OR approvedBy = ?',
+        values: (userId) => [userId, userId],
+        cascade: {
+            ReturnExchangeInfo: {
+                where: 'transactionId IN (SELECT transactionId FROM ReturnExchange WHERE handledBy = ? OR approvedBy = ?)',
+                values: (userId) => [userId, userId]
+            }
+        }
+    }
+};
+
 export async function cascadeDeleteUsers(userId){
     const deleted = await deleteUsersById(userId);
     if(!deleted){
         return false;
     }
-    const tables = [
-        {
-            table: 'StockEntry',
-            where: 'receivedBy = ?',
-            values: [userId]
-        },
-        {
-            table: 'StockWithdrawal',
-            where: 'withdrawnBy = ? OR authorizedBy = ?',
-            values: [userId, userId]
-        },
-        {
-            table: 'Orders',
-            where: 'handledBy = ?',
-            values: [userId]
-        },
-        {
-            table: 'ReturnExchange',
-            where: 'handledBy = ? OR approvedBy = ?',
-            values: [userId, userId]
-        }
-    ];
-
-    for(const {table, where, values} of tables){
-        await new Promise((resolve, reject) =>{
-            const sql = `
-                UPDATE ${table}
-                SET deleteFlag = 1
-                WHERE ${where}
-            `;
-            db.query(sql, values, (err, result) =>{
-                if(err) return reject(err);
-                resolve();
-            });
-        });
-    }
+    await processCascade(userCascadeMap, userId)
     return true;
 }

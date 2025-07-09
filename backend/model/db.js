@@ -12,4 +12,25 @@ db.connect(err =>{
     console.log("connected!");
 });
 
+export async function processCascade(map, id){
+    for(const [table, config] of Object.entries(map)){
+        const values = typeof config.values === 'function' ? config.values(id) : [id];
+        const sql = `
+            UPDATE ${table}
+            SET deleteFlag = 1
+            WHERE ${config.where}
+        `;
+        await new Promise((resolve, reject) =>{
+            db.query(sql, values, (err, result) =>{
+                if(err) return reject(err);
+                console.log(`Soft-deleted from ${table}: ${result.affectedRows} rows`);
+                resolve();
+            });
+        });
+        if(config.cascade){
+            await processCascade(config.cascade, id);
+        }
+    }
+}
+
 export default db;

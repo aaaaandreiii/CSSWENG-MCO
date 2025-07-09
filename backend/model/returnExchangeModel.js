@@ -1,4 +1,4 @@
-import db from "./db.js"
+import db, { processCascade } from "./db.js"
 
 //CREATE
 export function createReturnExchange(dateTransaction, transactionStatus, orderId, handledBy, approvedBy, deleteFlag){
@@ -97,31 +97,18 @@ export function deleteReturnExchangeById(transactionId){
     });
 }
 
+const ReturnExchangeCascadeMap = {
+    ReturnExchangeInfo: {
+        where: 'transactionId = ?',
+        values: (transactionId) => [transactionId],
+    }
+};
+
 export async function cascadeDeleteReturnExchange(transactionId){
     const deleted = await deleteReturnExchangeById(transactionId);
     if(!deleted){
         return false;
     }
-    const tables = [
-        {
-            table: 'ReturnExchangeInfo',
-            where: 'transactionId = ?',
-            values: [transactionId]
-        }
-    ];
-
-    for(const {table, where, values} of tables){
-        await new Promise((resolve, reject) =>{
-            const sql = `
-                UPDATE ${table}
-                SET deleteFlag = 1
-                WHERE ${where}
-            `;
-            db.query(sql, values, (err, result) =>{
-                if(err) return reject(err);
-                resolve();
-            });
-        });
-    }
+    await processCascade(ReturnExchangeCascadeMap, transactionId)
     return true;
 }

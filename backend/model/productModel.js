@@ -1,4 +1,4 @@
-import db from "./db.js"
+import db, { processCascade } from "./db.js"
 
 //CREATE
 export function createProduct(productName, category, descriptions, supplier, cost, retailPrice, deleteFlag){
@@ -99,41 +99,32 @@ export function deleteProductById(productId){
     });
 }
 
+const productCascadeMap = {
+    StockEntry: {
+        where: 'productId = ?',
+        values: (productId) => [productId],
+        cascade: {
+            StockWithdrawal: {
+                where: 'entryId IN (SELECT entryId FROM StockEntry WHERE productId = ?)',
+                values: (productId) => [productId]
+            }
+        }
+    },
+    OrderInfo: {
+        where: 'productId = ?',
+        values: (productId) => [productId],
+    },
+    ReturnExchangeInfo: {
+        where: 'returnedProductId = ? OR exchangeProductId = ?',
+        values: (productId) => [productId, productId],
+    }
+};
+
 export async function cascadeDeleteProduct(productId){
     const deleted = await deleteProductById(productId);
     if(!deleted){
         return false;
     }
-    const tables = [
-        {
-            table: 'StockEntry',
-            where: 'productId = ?',
-            values: [productId]
-        },
-        {
-            table: 'OrderInfo',
-            where: 'productId  = ?',
-            values: [productId]
-        },
-        {
-            table: 'ReturnExchangeInfo',
-            where: 'returnedProductId = ? OR exchangeProductId = ?',
-            values: [productId, productId]
-        }
-    ];
-
-    for(const {table, where, values} of tables){
-        await new Promise((resolve, reject) =>{
-            const sql = `
-                UPDATE ${table}
-                SET deleteFlag = 1
-                WHERE ${where}
-            `;
-            db.query(sql, values, (err, result) =>{
-                if(err) return reject(err);
-                resolve();
-            });
-        });
-    }
+    await processCascade(productCascadeMap, productId)
     return true;
 }

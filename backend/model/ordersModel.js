@@ -1,4 +1,4 @@
-import db from "./db.js"
+import db, { processCascade } from "./db.js"
 
 //CREATE
 export function createOrders(discount, customer, handledBy, dateOrdered, deleteFlag){
@@ -95,36 +95,28 @@ export function deleteOrdersById(orderId){
     });
 }
 
+const ordersCascadeMap = {
+    OrderInfo: {
+        where: 'orderId = ?',
+        values: (orderId) => [orderId],
+    },
+    ReturnExchange: {
+        where: 'orderId = ?',
+        values: (orderId) => [orderId],
+        cascade: {
+            ReturnExchangeInfo: {
+                where: 'transactionId IN (SELECT transactionId FROM ReturnExchange WHERE orderId = ?)',
+                values: (orderId) => [orderId]
+            }
+        }
+    }
+};
+
 export async function cascadeDeleteOrders(orderId){
     const deleted = await deleteOrdersById(orderId);
     if(!deleted){
         return false;
     }
-    const tables = [
-        {
-            table: 'OrderInfo',
-            where: 'orderId = ?',
-            values: [orderId]
-        },
-        {
-            table: 'ReturnExchange',
-            where: 'orderId = ?',
-            values: [orderId]
-        }
-    ];
-
-    for(const {table, where, values} of tables){
-        await new Promise((resolve, reject) =>{
-            const sql = `
-                UPDATE ${table}
-                SET deleteFlag = 1
-                WHERE ${where}
-            `;
-            db.query(sql, values, (err, result) =>{
-                if(err) return reject(err);
-                resolve();
-            });
-        });
-    }
+    await processCascade(ordersCascadeMap, orderId)
     return true;
 }
