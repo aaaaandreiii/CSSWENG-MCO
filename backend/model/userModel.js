@@ -18,7 +18,7 @@ export async function createUser(fullName, userRole, username, userPassword, dat
 //READ
 export function getUsers(){
     return new Promise((resolve, reject) =>{
-        const sql = 'SELECT * FROM Users';
+        const sql = 'SELECT * FROM Users WHERE deleteFlag = 0';
         db.query(sql, (err, results) =>{
             if(err) return reject(err);
             console.log("Users: ", results);
@@ -29,7 +29,7 @@ export function getUsers(){
 
 export function getUserById(userId){
     return new Promise((resolve, reject) =>{
-        const sql = 'SELECT * FROM Users WHERE userId = ?';
+        const sql = 'SELECT * FROM Users WHERE userId = ? AND deleteFlag = 0';
         db.query(sql, [userId], (err, results) =>{
             if(err) return reject(err);
             if(results.length > 0){
@@ -45,5 +45,102 @@ export function getUserById(userId){
 }
 
 //UPDATE
+export async function updateUsersById(userId, updatedObject){
+    const hashedPassword = await argon2.hash(updatedObject.userPassword);
+    return new Promise((resolve, reject) =>{
+        const sql = `
+            UPDATE Users
+            SET fullName = ?, 
+                userRole = ?, 
+                username = ?, 
+                userPassword = ?, 
+                deleteFlag = ?
+            WHERE userId = ?
+        `;
+        const values = [
+            updatedObject.fullName,
+            updatedObject.userRole, 
+            updatedObject.username, 
+            hashedPassword, 
+            updatedObject.deleteFlag,
+            userId
+        ];
+        db.query(sql, values, (err, result) =>{
+            if(err) return reject(err);
+            if(result.affectedRows > 0){
+                console.log(`Users ${userId} updated succesfully: `, result);
+                resolve(true);
+            }
+            else{
+                console.log(`Nothing updated: `, result);
+                resolve(false);
+            }
+        });
+    });
+}
 
 //DELETE
+export function deleteUsersById(userId){
+    return new Promise((resolve, reject) =>{
+        const sql = `
+            UPDATE Users
+            SET deleteFlag = 1
+            WHERE userId = ?
+        `;
+        db.query(sql, [userId], (err, result) =>{
+            if(err) return reject(err);
+            if(result.affectedRows > 0){
+                console.log(`Users ${userId} soft-deleted succesfully: `, result);
+                resolve(true);
+            }
+            else{
+                console.log(`Nothing happened: `, result);
+                resolve(false);
+            }
+        });
+    });
+}
+
+export async function cascadeDeleteUsers(userId){
+    const deleted = await deleteUsersById(userId);
+    if(!deleted){
+        return false;
+    }
+    const tables = [
+        {
+            table: 'StockEntry',
+            where: 'receivedBy = ?',
+            values: [userId]
+        },
+        {
+            table: 'StockWithdrawal',
+            where: 'withdrawnBy = ? OR authorizedBy = ?',
+            values: [userId, userId]
+        },
+        {
+            table: 'Orders',
+            where: 'handledBy = ?',
+            values: [userId]
+        },
+        {
+            table: 'ReturnExchange',
+            where: 'handledBy = ? OR approvedBy = ?',
+            values: [userId, userId]
+        }
+    ];
+
+    for(const {table, where, values} of tables){
+        await new Promise((resolve, reject) =>{
+            const sql = `
+                UPDATE ${table}
+                SET deleteFlag = 1
+                WHERE ${where}
+            `;
+            db.query(sql, values, (err, result) =>{
+                if(err) return reject(err);
+                resolve();
+            });
+        });
+    }
+    return true;
+}

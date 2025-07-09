@@ -15,7 +15,7 @@ export function createOrderInfo(quantity, orderId, productId, deleteFlag){
 //READ: ORDER INFO
 export function getOrderInfo(){
     return new Promise((resolve, reject) =>{
-        const sql = 'SELECT * FROM OrderInfo';
+        const sql = 'SELECT * FROM OrderInfo WHERE deleteFlag = 0';
         db.query(sql, (err, results) =>{
             if(err) return reject(err);
             console.log("Order Info: ", results);
@@ -26,7 +26,7 @@ export function getOrderInfo(){
 
 export function getOrderInfoById(orderInfoId){
     return new Promise((resolve, reject) =>{
-        const sql = 'SELECT * FROM OrderInfo WHERE orderInfoId = ?';
+        const sql = 'SELECT * FROM OrderInfo WHERE orderInfoId = ? AND deleteFlag = 0';
         db.query(sql, [orderInfoId], (err, results) =>{
             if(err) return reject(err);
             if(results.length > 0){
@@ -42,5 +42,55 @@ export function getOrderInfoById(orderInfoId){
 }
 
 //UPDATE
+export function updateOrderInfoById(orderInfoId, updatedObject){
+    return new Promise((resolve, reject) =>{
+        const sql = `
+            UPDATE OrderInfo
+            SET quantity = ?, 
+                orderId = ?, 
+                productId = ?, 
+                deleteFlag = ?
+            WHERE orderInfoId = ?
+        `;
+        const values = [
+            updatedObject.quantity,
+            updatedObject.orderId,
+            updatedObject.productId,
+            updatedObject.deleteFlag,
+            orderInfoId
+        ];
+        db.query(sql, values, (err, result) =>{
+            if(err) return reject(err);
+            if(result.affectedRows > 0){
+                console.log(`Order Info ${orderInfoId} updated succesfully: `, result);
+                resolve(true);
+            }
+            else{
+                console.log(`Nothing updated: `, result);
+                resolve(false);
+            }
+        });
+    });
+}
 
 //DELETE
+export function deleteOrderInfoById(orderInfoId){
+    return new Promise((resolve, reject) =>{
+        const sql = `
+            UPDATE OrderInfo
+            SET deleteFlag = 1
+            WHERE orderInfoId = ?
+        `;
+        db.query(sql, [orderInfoId], (err, result) =>{
+            if(err) return reject(err);
+            if(result.affectedRows > 0){
+                console.log(`Order Info ${orderInfoId} soft-deleted succesfully: `, result);
+                resolve(true);
+            }
+            else{
+                console.log(`Nothing happened: `, result);
+                resolve(false);
+            }
+        });
+    });
+}

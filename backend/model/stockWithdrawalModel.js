@@ -13,7 +13,7 @@ export function createStockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose,
 //READ
 export function getStockWithdrawals(){
     return new Promise((resolve, reject) =>{
-        const sql = 'SELECT * FROM StockWithdrawal';
+        const sql = 'SELECT * FROM StockWithdrawal WHERE deleteFlag = 0';
         db.query(sql, (err, results) =>{
             if(err) return reject(err);
             console.log("Stock Withdrawals: ", results);
@@ -24,7 +24,7 @@ export function getStockWithdrawals(){
 
 export function getStockWithdrawalById(withdrawalId){
     return new Promise((resolve, reject) =>{
-        const sql = 'SELECT * FROM StockWithdrawal WHERE withdrawalId = ?';
+        const sql = 'SELECT * FROM StockWithdrawal WHERE withdrawalId = ? AND deleteFlag = 0';
         db.query(sql, [withdrawalId], (err, results) =>{
             if(err) return reject(err);
             if(results.length > 0){
@@ -40,5 +40,59 @@ export function getStockWithdrawalById(withdrawalId){
 }
 
 //UPDATE
+export function updateStockWithdrawalById(withdrawalId, updatedObject){
+    return new Promise((resolve, reject) =>{
+        const sql = `
+            UPDATE StockWithdrawal
+            SET quantityWithdrawn = ?, 
+                purpose = ?, 
+                entryId = ?, 
+                withdrawnBy = ?, 
+                authorizedBy = ?, 
+                deleteFlag = ?
+            WHERE withdrawalId = ?
+        `;
+        const values = [
+            updatedObject.quantityWithdrawn,
+            updatedObject.purpose,
+            updatedObject.entryId,
+            updatedObject.withdrawnBy,
+            updatedObject.authorizedBy,
+            updatedObject.deleteFlag,
+            withdrawalId
+        ];
+        db.query(sql, values, (err, result) =>{
+            if(err) return reject(err);
+            if(result.affectedRows > 0){
+                console.log(`Stock Withdrawal ${withdrawalId} updated succesfully: `, result);
+                resolve(true);
+            }
+            else{
+                console.log(`Nothing updated: `, result);
+                resolve(false);
+            }
+        });
+    });
+}
 
 //DELETE
+export function deleteStockWithdrawalById(withdrawalId){
+    return new Promise((resolve, reject) =>{
+        const sql = `
+            UPDATE StockWithdrawal
+            SET deleteFlag = 1
+            WHERE withdrawalId = ?
+        `;
+        db.query(sql, [withdrawalId], (err, result) =>{
+            if(err) return reject(err);
+            if(result.affectedRows > 0){
+                console.log(`Stock Withdrawal ${withdrawalId} soft-deleted succesfully: `, result);
+                resolve(true);
+            }
+            else{
+                console.log(`Nothing happened: `, result);
+                resolve(false);
+            }
+        });
+    });
+}

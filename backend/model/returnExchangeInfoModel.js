@@ -15,7 +15,7 @@ export function createReturnExchangeInfo(returnedProductId, returnedQuantity, ex
 //READ: RETURN EXCHANGE INFO
 export function getReturnExchangeInfo(){
     return new Promise((resolve, reject) =>{
-        const sql = 'SELECT * FROM ReturnExchangeInfo';
+        const sql = 'SELECT * FROM ReturnExchangeInfo WHERE deleteFlag = 0';
         db.query(sql, (err, results) =>{
             if(err) return reject(err);
             console.log("Return Exchange Info: ", results);
@@ -26,7 +26,7 @@ export function getReturnExchangeInfo(){
 
 export function getReturnExchangeInfoById(detailId){
     return new Promise((resolve, reject) =>{
-        const sql = 'SELECT * FROM ReturnExchangeInfo WHERE detailId = ?';
+        const sql = 'SELECT * FROM ReturnExchangeInfo WHERE detailId = ? AND deleteFlag = 0';
         db.query(sql, [detailId], (err, results) =>{
             if(err) return reject(err);
             if(results.length > 0){
@@ -42,5 +42,61 @@ export function getReturnExchangeInfoById(detailId){
 }
 
 //UPDATE
+export function updateReturnExchangeInfoById(detailId, updatedObject){
+    return new Promise((resolve, reject) =>{
+        const sql = `
+            UPDATE ReturnExchangeInfo
+            SET returnedProductId = ?, 
+                returnedQuantity = ?, 
+                exchangeProductId = ?, 
+                exchangeQuantity = ?, 
+                reason = ?, 
+                transactionId = ?,
+                deleteFlag = ?
+            WHERE detailId = ?
+        `;
+        const values = [
+            updatedObject.returnedProductId,
+            updatedObject.returnedQuantity, 
+            updatedObject.exchangeProductId, 
+            updatedObject.exchangeQuantity, 
+            updatedObject.reason, 
+            updatedObject.transactionId, 
+            updatedObject.deleteFlag,
+            detailId
+        ];
+        db.query(sql, values, (err, result) =>{
+            if(err) return reject(err);
+            if(result.affectedRows > 0){
+                console.log(`Return Exchange Info ${detailId} updated succesfully: `, result);
+                resolve(true);
+            }
+            else{
+                console.log(`Nothing updated: `, result);
+                resolve(false);
+            }
+        });
+    });
+}
 
 //DELETE
+export function deleteReturnExchangeInfoById(detailId){
+    return new Promise((resolve, reject) =>{
+        const sql = `
+            UPDATE ReturnExchangeInfo
+            SET deleteFlag = 1
+            WHERE detailId = ?
+        `;
+        db.query(sql, [detailId], (err, result) =>{
+            if(err) return reject(err);
+            if(result.affectedRows > 0){
+                console.log(`Return Exchange Info ${detailId} soft-deleted succesfully: `, result);
+                resolve(true);
+            }
+            else{
+                console.log(`Nothing happened: `, result);
+                resolve(false);
+            }
+        });
+    });
+}

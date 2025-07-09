@@ -15,7 +15,7 @@ export function createOrders(discount, customer, handledBy, dateOrdered, deleteF
 //READ: ORDERS
 export function getOrders(){
     return new Promise((resolve, reject) =>{
-        const sql = 'SELECT * FROM Orders';
+        const sql = 'SELECT * FROM Orders WHERE deleteFlag = 0';
         db.query(sql, (err, results) =>{
             if(err) return reject(err);
             console.log("Orders: ", results);
@@ -26,7 +26,7 @@ export function getOrders(){
 
 export function getOrderById(orderId){
     return new Promise((resolve, reject) =>{
-        const sql = 'SELECT * FROM Orders WHERE orderId = ?';
+        const sql = 'SELECT * FROM Orders WHERE orderId = ? AND deleteFlag = 0';
         db.query(sql, [orderId], (err, results) =>{
             if(err) return reject(err);
             if(results.length > 0){
@@ -42,5 +42,89 @@ export function getOrderById(orderId){
 }
 
 //UPDATE
+export function updateOrdersById(orderId, updatedObject){
+    return new Promise((resolve, reject) =>{
+        const sql = `
+            UPDATE Orders
+            SET discount = ?, 
+                customer = ?, 
+                handledBy = ?, 
+                deleteFlag = ?
+            WHERE orderId = ?
+        `;
+        const values = [
+            updatedObject.discount,
+            updatedObject.customer,
+            updatedObject.handledBy,
+            updatedObject.deleteFlag,
+            orderId
+        ];
+        db.query(sql, values, (err, result) =>{
+            if(err) return reject(err);
+            if(result.affectedRows > 0){
+                console.log(`Orders ${orderId} updated succesfully: `, result);
+                resolve(true);
+            }
+            else{
+                console.log(`Nothing updated: `, result);
+                resolve(false);
+            }
+        });
+    });
+}
 
 //DELETE
+export function deleteOrdersById(orderId){
+    return new Promise((resolve, reject) =>{
+        const sql = `
+            UPDATE Orders
+            SET deleteFlag = 1
+            WHERE orderId = ?
+        `;
+        db.query(sql, [orderId], (err, result) =>{
+            if(err) return reject(err);
+            if(result.affectedRows > 0){
+                console.log(`Orders ${orderId} soft-deleted succesfully: `, result);
+                resolve(true);
+            }
+            else{
+                console.log(`Nothing happened: `, result);
+                resolve(false);
+            }
+        });
+    });
+}
+
+export async function cascadeDeleteOrders(orderId){
+    const deleted = await deleteOrdersById(orderId);
+    if(!deleted){
+        return false;
+    }
+    const tables = [
+        {
+            table: 'OrderInfo',
+            where: 'orderId = ?',
+            values: [orderId]
+        },
+        {
+            table: 'ReturnExchange',
+            where: 'orderId = ?',
+            values: [orderId]
+        }
+    ];
+
+    for(const {table, where, values} of tables){
+        await new Promise((resolve, reject) =>{
+            const sql = `
+                UPDATE ${table}
+                SET deleteFlag = 1
+                WHERE ${where}
+            `;
+            db.query(sql, values, (err, result) =>{
+                if(err) return reject(err);
+                resolve();
+            });
+        });
+    }
+    return true;
+}
