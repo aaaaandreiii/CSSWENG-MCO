@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { items } from '$lib/index.js';
 
 	let infos = [
@@ -8,10 +8,7 @@
 		{ value: '50293', label: 'Sales', color: '#EAAEAE' }
 	];
 
-    /**
-	 * @type {HTMLDivElement | null}
-	 */
-    let scrollRef = null;
+    let scrollRef: HTMLDivElement | null = null;
 
     function scrollNext() {
         if (scrollRef) {
@@ -23,6 +20,60 @@
         scrollRef?.scrollBy({ left: -1200, behavior: 'smooth' });
     } 
 
+    // dropdown logic for orderby itemsales
+    let dropdownOpenSales = false;
+    let selectedRangeSales = '10 days';
+    let dropdownRefSales: HTMLDivElement | null = null;
+    const rangesSales = ['10 days', '1 month', '1 year'];
+
+    function handleDropdownClickSales() {
+        dropdownOpenSales = !dropdownOpenSales;
+    }
+
+    function selectRangeSales(range: string) {
+        selectedRangeSales = range;
+        dropdownOpenSales = false;
+    }
+
+    // dropdown logic for orderby annual statistics
+    let dropdownOpenAnnual = false;
+    let selectedRangeAnnual = '10 days';
+    let dropdownRefAnnual: HTMLDivElement | null = null;
+    const rangesAnnual = ['10 days', '1 month', '1 year'];
+
+    function handleDropdownClickAnnual() {
+        dropdownOpenAnnual = !dropdownOpenAnnual;
+    }
+
+    function selectRangeAnnual(range: string) {
+        selectedRangeAnnual = range;
+        dropdownOpenAnnual = false;
+    }
+
+    // outside click handler for dropdowns
+    import { onMount, onDestroy } from 'svelte';
+    function handleClickOutside(event: MouseEvent) {
+        if (dropdownOpenSales && dropdownRefSales && !dropdownRefSales.contains(event.target as Node)) {
+            dropdownOpenSales = false;
+        }
+        if (dropdownOpenAnnual && dropdownRefAnnual && !dropdownRefAnnual.contains(event.target as Node)) {
+            dropdownOpenAnnual = false;
+        }
+    }
+    onMount(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+    });
+    onDestroy(() => {
+        document.removeEventListener('mousedown', handleClickOutside);
+    });
+
+    // dropdown logic for ordering, asc/desc
+    let orderDropdownOpen = false;
+    let orderBy = 'Order by';
+    function setOrder(order: string) {
+        orderBy = order;
+        orderDropdownOpen = false;
+    }
 </script>
 
 <header class="p-7">
@@ -40,7 +91,7 @@
 	{/each}
 </div>
 
-<!-- Item sales box -->
+<!-- item sales box -->
 <div class = "w-full p-5">
     <div class=" h-auto rounded-lg bg-white p-8">
         <div class="flex-col items-center gap-5">
@@ -51,39 +102,48 @@
                     <input type="text" placeholder="Search" class="w-35" />
                     <img src="../src/icons/search.svg" alt="search" style="width:15px; " />
                 </div>
-                <div class="search flex px-3">
-                    <input type="text" placeholder="Order by" class="w-18" />
-                    <img src="../src/icons/filter.svg" alt="search" style="width:15px; " />
+                <!-- orderby dropdown -->
+                <div class="search flex px-3 relative">
+                    <button type="button" class="w-30 flex items-center justify-between order border-gray-300 rounded px-2 py-1 text-sm" onclick={() => orderDropdownOpen = !orderDropdownOpen}>
+                        {orderBy}
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    {#if orderDropdownOpen}
+                    <div class="absolute z-20 mt-8 w-28 bg-white border border-gray-200 rounded shadow-lg">
+                        <button class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onclick={() => setOrder('Ascending')}>Ascending</button>
+                        <button class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onclick={() => setOrder('Descending')}>Descending</button>
+                    </div>
+                    {/if}
                 </div>
             </div>
 
             <!-- Last __ -->
             <div class = "flex items-center gap-1 p-3">
                 <p>Last&nbsp</p>
-                <div class="relative inline-block text-left">
+                <div class="relative inline-block text-left" bind:this={dropdownRefSales}>
                     <div>
-                        <button type="button" class="inline-flex w-full justify-center gap-x-1.3 rounded-3xl bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-gray-300 ring-inset hover:bg-gray-50" id="menu-button" aria-expanded="true" aria-haspopup="true">
-                        10 days
+                        <button type="button" class="inline-flex w-full justify-center gap-x-1.3 rounded-3xl bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-gray-300 ring-inset hover:bg-gray-50" id="menu-button-sales" aria-expanded={dropdownOpenSales} aria-haspopup="true" onclick={handleDropdownClickSales}>
+                        {selectedRangeSales}
                         <svg class="-mr-1 size-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" data-slot="icon">
                             <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
                         </svg>
                         </button>
                     </div>
+                    {#if dropdownOpenSales}
                     <!-- dropdown -->
-                    <div class="absolute z-10 mt-2 w-30 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-hidden" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+                    <div class="absolute z-10 mt-2 w-30 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-hidden" role="menu" aria-orientation="vertical" aria-labelledby="menu-button-sales" tabindex="-1">
                         <div class="py-1" role="none">
-                            <!-- Active: "bg-gray-100 text-gray-900 outline-hidden", Not Active: "text-gray-700" -->
-                            <a href="/dashboard" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="menu-item-0">10 days</a>
-                            <a href="/dashboard" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="menu-item-1">1 month</a>
-                            <a href="/dashboard" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="menu-item-2">1 year</a>
+                            {#each rangesSales as range}
+                                <button type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1" onclick={() => selectRangeSales(range)}>{range}</button>
+                            {/each}
                         </div>
                     </div>
-
+                    {/if}
                 </div>        
             </div>
 
 <div class="relative">
-  <!-- Scrollable Container -->
+  <!-- scrollable container -->
   <div bind:this={scrollRef} 
   class="flex overflow-x-auto whitespace-nowrap scroll-smooth px-4 pb-3 space-x-4">
                 {#each items as item}
@@ -100,7 +160,7 @@
      </div>
 
 
-  <!-- Scroll Buttons -->
+  <!-- scroll buttons -->
   <button onclick={scrollNext}
     class="absolute right-0 top-1/2 -translate-y-1/2 gray1 p-2 rounded-full shadow">
    <img src="../src/icons/arrow-right.svg" class="w-7" alt="right" />
@@ -118,7 +178,7 @@
     </div>
 </div>
 
-<!-- Annual Statistics -->
+<!-- annual statistics -->
 <div class = "w-full p-5">
     <div class=" h-auto rounded-lg bg-white p-8">
         <div class="flex-col items-center gap-5">
@@ -129,30 +189,27 @@
             <!-- Last __ -->
             <div class = "flex items-center gap-1 p-3">
                 <p>Last&nbsp</p>
-                <div class="relative inline-block text-left">
+                <div class="relative inline-block text-left" bind:this={dropdownRefAnnual}>
                     <div>
-                        <button type="button" class="inline-flex w-full justify-center gap-x-1.3 rounded-3xl bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-gray-300 ring-inset hover:bg-gray-50" id="menu-button" aria-expanded="true" aria-haspopup="true">
-                        10 days
+                        <button type="button" class="inline-flex w-full justify-center gap-x-1.3 rounded-3xl bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-gray-300 ring-inset hover:bg-gray-50" id="menu-button-annual" aria-expanded={dropdownOpenAnnual} aria-haspopup="true" onclick={handleDropdownClickAnnual}>
+                        {selectedRangeAnnual}
                         <svg class="-mr-1 size-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" data-slot="icon">
                             <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
                         </svg>
                         </button>
                     </div>
+                    {#if dropdownOpenAnnual}
                     <!-- dropdown -->
-                    <div class="absolute z-10 mt-2 w-30 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-hidden" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+                    <div class="absolute z-10 mt-2 w-30 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-hidden" role="menu" aria-orientation="vertical" aria-labelledby="menu-button-annual" tabindex="-1">
                         <div class="py-1" role="none">
-                            <!-- Active: "bg-gray-100 text-gray-900 outline-hidden", Not Active: "text-gray-700" -->
-                            <a href="/dashboard" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="menu-item-0">10 days</a>
-                            <a href="/dashboard" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="menu-item-1">1 month</a>
-                            <a href="/dashboard" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="menu-item-2">1 year</a>
+                            {#each rangesAnnual as range}
+                                <button type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1" onclick={() => selectRangeAnnual(range)}>{range}</button>
+                            {/each}
                         </div>
                     </div>
-
-                </div>        
+                    {/if}
+                </div>
             </div>
-
-
-
         </div>
     </div>
 </div>

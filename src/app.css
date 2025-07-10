@@ -245,3 +245,15 @@ body.login-page {
     justify-content: center;
     align-items: center;
 }
+
+.selected-tab {
+    background-color: #006937;
+    color: white;
+    border-radius: 0 18px 18px 0;
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.10);
+    border: 0px solid #006937;
+    border-left: none;
+    margin-left: -30px; /* matches sidebar padding for flush left */
+    width: calc(100% + 30px);
+    padding-left: 30px !important; /* keep text aligned with other tabs */
+}
