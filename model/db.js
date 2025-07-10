@@ -1,5 +1,4 @@
-const mysql = require('mysql2');
-const argon2 = require('argon2');
+import mysql from 'mysql2';
 
 const db = mysql.createConnection({
     host: 'localhost',
@@ -347,3 +346,5 @@ module.exports = {
     getReturnExchangeInfo,
     getReturnExchangeInfoById
 };
+
+export default db;
