@@ -26,9 +26,9 @@ async function createUser(fullName, userRole, username, userPassword, dateAdded,
     console.log("User created:", result.insertId);
 }
 
-function createProduct(productName, category, descriptions, supplier, productStatus, cost, retailPrice){
-    const sql = 'INSERT INTO Product(productName, category, descriptions, supplier, productStatus, cost, retailPrice) VALUES (?, ?, ?, ?, ?, ?, ?)';
-    db.query(sql, [productName, category, descriptions, supplier, productStatus, cost, retailPrice], (err, result) =>{
+function createProduct(productName, category, descriptions, supplier, productStatus, cost, retailPrice, units){
+    const sql = 'INSERT INTO Product(productName, category, descriptions, supplier, productStatus, cost, retailPrice, units) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+    db.query(sql, [productName, category, descriptions, supplier, productStatus, cost, retailPrice, units], (err, result) =>{
         if(err) throw err;
         console.log("Product created: ", result.insertId);
         return result.insertId;
@@ -43,25 +43,25 @@ function createStockEntry(branchName, dateReceived, quantityReceived, deliveryRe
     });
 }
 
-function createStockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, productId, withdrawnBy, authorizedBy){
-    const sql = 'INSERT INTO StockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, productId, withdrawnBy, authorizedBy) VALUES (?, ?, ?, ?, ?, ?)';
-    db.query(sql, [dateWithdrawn, quantityWithdrawn, purpose, productId, withdrawnBy, authorizedBy], (err, result) =>{
+function createStockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, productId, withdrawnBy, authorizedBy, stockEntryId){
+    const sql = 'INSERT INTO StockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, productId, withdrawnBy, authorizedBy, stockEntryId) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    db.query(sql, [dateWithdrawn, quantityWithdrawn, purpose, productId, withdrawnBy, authorizedBy, stockEntryId], (err, result) =>{
         if(err) throw err;
         console.log("Stock Withdrawal created: ", result.insertId);
     });
 }
 
-function createOrders(discount, customer, handledBy){
-    const sql = 'INSERT INTO Orders(discount, customer, handledBy) VALUES (?, ?, ?)';
-    db.query(sql, [discount, customer, handledBy], (err, result) =>{
+function createOrders(discount, customer, handledBy, totalAmount, paymentMethod, paymentStatus){
+    const sql = 'INSERT INTO Orders(discount, customer, handledBy, totalAmount, paymentMethod, paymentStatus) VALUES (?, ?, ?, ?, ?, ?)';
+    db.query(sql, [discount, customer, handledBy, totalAmount, paymentMethod, paymentStatus], (err, result) =>{
         if(err) throw err;
         console.log("Orders created: ", result.insertId);
     });
 }
 
-function createOrderInfo(quantity, orderId, productId){
-    const sql = 'INSERT INTO OrderInfo(quantity, orderId, productId) VALUES (?, ?, ?)';
-    db.query(sql, [quantity, orderId, productId], (err, result) =>{
+function createOrderInfo(quantity, orderId, productId, unitPriceAtPurchase){
+    const sql = 'INSERT INTO OrderInfo(quantity, orderId, productId, unitPriceAtPurchase) VALUES (?, ?, ?, ?)';
+    db.query(sql, [quantity, orderId, productId, unitPriceAtPurchase], (err, result) =>{
         if(err) throw err;
         console.log("Order Info created: ", result.insertId);
     });
@@ -75,13 +75,14 @@ function createReturnExchange(dateTransaction, transactionStatus, orderId, handl
     });
 }
 
-function createReturnExchangeInfo(returnedProductId, returnedQuantity, exchangeProductId, exchangeQuantity , reason, transactionId){
-    const sql = 'INSERT INTO ReturnExchangeInfo(returnedProductId, returnedQuantity, exchangeProductId, exchangeQuantity , reason, transactionId) VALUES (?, ?, ?, ?, ?, ?)';
-    db.query(sql, [returnedProductId, returnedQuantity, exchangeProductId, exchangeQuantity , reason, transactionId], (err, result) =>{
+function createReturnExchangeInfo(returnedProductId, returnedQuantity, exchangeProductId, exchangeQuantity , reason, transactionId, returnType){
+    const sql = 'INSERT INTO ReturnExchangeInfo(returnedProductId, returnedQuantity, exchangeProductId, exchangeQuantity , reason, transactionId, returnType) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    db.query(sql, [returnedProductId, returnedQuantity, exchangeProductId, exchangeQuantity , reason, transactionId, returnType], (err, result) =>{
         if(err) throw err;
         console.log("Return Exchange Info created: ", result.insertId);
     });
 }
+
 
 //READ: USERS
 function getUsers(){
