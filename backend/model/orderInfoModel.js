@@ -34,7 +34,7 @@ export function getOrderInfoById(orderInfoId){
                 resolve(results[0]);
             }
             else{
-                console.log('Order Info not found.');
+                console.log('Order Info not found or already deleted.');
                 resolve(null);
             }
         });
@@ -47,16 +47,16 @@ export function updateOrderInfoById(orderInfoId, updatedObject){
         const sql = `
             UPDATE OrderInfo
             SET quantity = ?, 
-                orderId = ?, 
-                productId = ?, 
-                deleteFlag = ?
+                
+                productId = ?
+                
             WHERE orderInfoId = ?
-        `;
+        `; //removed orderId, deleteFlag
         const values = [
             updatedObject.quantity,
-            updatedObject.orderId,
+            
             updatedObject.productId,
-            updatedObject.deleteFlag,
+            
             orderInfoId
         ];
         db.query(sql, values, (err, result) =>{
@@ -88,7 +88,7 @@ export function deleteOrderInfoById(orderInfoId){
                 resolve(true);
             }
             else{
-                console.log(`Nothing happened: `, result);
+                console.log(`Nothing deleted: `, result);
                 resolve(false);
             }
         });

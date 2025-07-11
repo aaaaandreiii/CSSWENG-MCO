@@ -34,7 +34,7 @@ export function getReturnExchangeById(transactionId){
                 resolve(results[0]);
             }
             else{
-                console.log('Return Exchange not found.');
+                console.log('Return Exchange not found or already deleted.');
                 resolve(null);
             }
         });
@@ -47,18 +47,18 @@ export function updateReturnExchangeById(transactionId, updatedObject){
         const sql = `
             UPDATE ReturnExchange
             SET transactionStatus = ?, 
-                orderId = ?, 
+                 
                 handledBy = ?, 
-                approvedBy = ?,
-                deleteFlag = ?
+                approvedBy = ?
+                
             WHERE transactionId = ?
-        `;
+        `; //removed orderId, deleteFlag
         const values = [
             updatedObject.transactionStatus,
-            updatedObject.orderId,
+            
             updatedObject.handledBy,
             updatedObject.approvedBy,
-            updatedObject.deleteFlag,
+            
             transactionId
         ];
         db.query(sql, values, (err, result) =>{
@@ -90,7 +90,7 @@ export function deleteReturnExchangeById(transactionId){
                 resolve(true);
             }
             else{
-                console.log(`Nothing happened: `, result);
+                console.log(`Nothing deleted: `, result);
                 resolve(false);
             }
         });

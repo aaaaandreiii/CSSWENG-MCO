@@ -3,10 +3,12 @@ import db, { processCascade } from "./db.js"
 //CREATE
 export function createStockEntry(branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, deleteFlag){
     const sql = 'INSERT INTO StockEntry(branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?)';
-    db.query(sql, [branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, deleteFlag], (err, result) =>{
-        if(err) throw err;
-        console.log("Stock Entry created: ", result.insertId);
-        return result.insertId;
+    return new Promise((resolve, reject) =>{
+        db.query(sql, [branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, deleteFlag], (err, result) =>{
+            if(err) return reject(err);
+            console.log("Stock Entry created: ", result.insertId);
+            resolve(result.insertId);
+        });
     });
 }
 
@@ -32,7 +34,7 @@ export function getStockEntryById(entryId){
                 resolve(results[0]);
             }
             else{
-                console.log('Stock Entry not found.');
+                console.log('Stock Entry not found or already deleted.');
                 resolve(null);
             }
         });
@@ -47,18 +49,18 @@ export function updateStockEntryById(entryId, updatedObject){
             SET branchName = ?, 
                 quantityReceived = ?, 
                 deliveryReceiptNumber = ?, 
-                receivedBy = ?, 
-                productId = ?, 
-                deleteFlag = ?
+                receivedBy = ? 
+                
+                
             WHERE entryId = ?
-        `;
+        `; // removed productId, deleteFlag
         const values = [
             updatedObject.branchName, 
             updatedObject.quantityReceived, 
             updatedObject.deliveryReceiptNumber, 
             updatedObject.receivedBy, 
-            updatedObject.productId, 
-            updatedObject.deleteFlag,
+            
+            
             entryId
         ];
         db.query(sql, values, (err, result) =>{
@@ -90,7 +92,7 @@ export function deleteStockEntryById(entryId){
                 resolve(true);
             }
             else{
-                console.log(`Nothing happened: `, result);
+                console.log(`Nothing deleted: `, result);
                 resolve(false);
             }
         });

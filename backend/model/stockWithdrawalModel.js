@@ -3,10 +3,12 @@ import db from "./db.js"
 //CREATE
 export function createStockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, deleteFlag){
     const sql = 'INSERT INTO StockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?)';
-    db.query(sql, [dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, deleteFlag], (err, result) =>{
-        if(err) throw err;
-        console.log("Stock Withdrawal created: ", result.insertId);
-        return result.insertId;
+    return new Promise((resolve, reject) =>{
+        db.query(sql, [dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, deleteFlag], (err, result) =>{
+            if(err) return reject(err);
+            console.log("Stock Withdrawal created: ", result.insertId);
+            resolve(result.insertId);
+        });
     });
 }
 
@@ -32,7 +34,7 @@ export function getStockWithdrawalById(withdrawalId){
                 resolve(results[0]);
             }
             else{
-                console.log('Stock Withdrawal not found.');
+                console.log('Stock Withdrawal not found or already deleted.');
                 resolve(null);
             }
         });
@@ -46,19 +48,19 @@ export function updateStockWithdrawalById(withdrawalId, updatedObject){
             UPDATE StockWithdrawal
             SET quantityWithdrawn = ?, 
                 purpose = ?, 
-                entryId = ?, 
+                 
                 withdrawnBy = ?, 
-                authorizedBy = ?, 
-                deleteFlag = ?
+                authorizedBy = ? 
+                
             WHERE withdrawalId = ?
-        `;
+        `; //removed entryId, deleteFlag
         const values = [
             updatedObject.quantityWithdrawn,
             updatedObject.purpose,
-            updatedObject.entryId,
+            
             updatedObject.withdrawnBy,
             updatedObject.authorizedBy,
-            updatedObject.deleteFlag,
+            
             withdrawalId
         ];
         db.query(sql, values, (err, result) =>{
@@ -90,7 +92,7 @@ export function deleteStockWithdrawalById(withdrawalId){
                 resolve(true);
             }
             else{
-                console.log(`Nothing happened: `, result);
+                console.log(`Nothing deleted: `, result);
                 resolve(false);
             }
         });

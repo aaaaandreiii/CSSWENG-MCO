@@ -1,7 +1,7 @@
 import db, { processCascade } from "./db.js"
 
 //CREATE
-export function createOrders(discount, customer, handledBy, dateOrdered, deleteFlag){
+export function createOrder(discount, customer, handledBy, dateOrdered, deleteFlag){
     const sql = 'INSERT INTO Orders(discount, customer, handledBy, dateOrdered, deleteFlag) VALUES (?, ?, ?, ?, ?)';
     return new Promise((resolve, reject) =>{
         db.query(sql, [discount, customer, handledBy, dateOrdered, deleteFlag], (err, result) =>{
@@ -34,7 +34,7 @@ export function getOrderById(orderId){
                 resolve(results[0]);
             }
             else{
-                console.log('Order not found.');
+                console.log('Order not found or already deleted.');
                 resolve(null);
             }
         });
@@ -42,27 +42,27 @@ export function getOrderById(orderId){
 }
 
 //UPDATE
-export function updateOrdersById(orderId, updatedObject){
+export function updateOrderById(orderId, updatedObject){
     return new Promise((resolve, reject) =>{
         const sql = `
             UPDATE Orders
             SET discount = ?, 
                 customer = ?, 
-                handledBy = ?, 
-                deleteFlag = ?
+                handledBy = ? 
+                
             WHERE orderId = ?
         `;
         const values = [
             updatedObject.discount,
             updatedObject.customer,
             updatedObject.handledBy,
-            updatedObject.deleteFlag,
+            
             orderId
         ];
         db.query(sql, values, (err, result) =>{
             if(err) return reject(err);
             if(result.affectedRows > 0){
-                console.log(`Orders ${orderId} updated succesfully: `, result);
+                console.log(`Order ${orderId} updated succesfully: `, result);
                 resolve(true);
             }
             else{
@@ -74,7 +74,7 @@ export function updateOrdersById(orderId, updatedObject){
 }
 
 //DELETE
-export function deleteOrdersById(orderId){
+export function deleteOrderById(orderId){
     return new Promise((resolve, reject) =>{
         const sql = `
             UPDATE Orders
@@ -88,7 +88,7 @@ export function deleteOrdersById(orderId){
                 resolve(true);
             }
             else{
-                console.log(`Nothing happened: `, result);
+                console.log(`Nothing deleted: `, result);
                 resolve(false);
             }
         });
@@ -112,8 +112,8 @@ const ordersCascadeMap = {
     }
 };
 
-export async function cascadeDeleteOrders(orderId){
-    const deleted = await deleteOrdersById(orderId);
+export async function cascadeDeleteOrder(orderId){
+    const deleted = await deleteOrderById(orderId);
     if(!deleted){
         return false;
     }

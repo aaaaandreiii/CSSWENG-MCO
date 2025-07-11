@@ -37,7 +37,7 @@ export function getUserById(userId){
                 resolve(results[0]);
             }
             else{
-                console.log('User not found.');
+                console.log('User not found or already deleted.');
                 resolve(null);
             }
         });
@@ -45,7 +45,7 @@ export function getUserById(userId){
 }
 
 //UPDATE
-export async function updateUsersById(userId, updatedObject){
+export async function updateUserById(userId, updatedObject){
     const hashedPassword = await argon2.hash(updatedObject.userPassword);
     return new Promise((resolve, reject) =>{
         const sql = `
@@ -53,8 +53,8 @@ export async function updateUsersById(userId, updatedObject){
             SET fullName = ?, 
                 userRole = ?, 
                 username = ?, 
-                userPassword = ?, 
-                deleteFlag = ?
+                userPassword = ? 
+                
             WHERE userId = ?
         `;
         const values = [
@@ -62,7 +62,7 @@ export async function updateUsersById(userId, updatedObject){
             updatedObject.userRole, 
             updatedObject.username, 
             hashedPassword, 
-            updatedObject.deleteFlag,
+            
             userId
         ];
         db.query(sql, values, (err, result) =>{
@@ -80,7 +80,7 @@ export async function updateUsersById(userId, updatedObject){
 }
 
 //DELETE
-export function deleteUsersById(userId){
+export function deleteUserById(userId){
     return new Promise((resolve, reject) =>{
         const sql = `
             UPDATE Users
@@ -94,7 +94,7 @@ export function deleteUsersById(userId){
                 resolve(true);
             }
             else{
-                console.log(`Nothing happened: `, result);
+                console.log(`Nothing deleted: `, result);
                 resolve(false);
             }
         });
@@ -138,8 +138,8 @@ const userCascadeMap = {
     }
 };
 
-export async function cascadeDeleteUsers(userId){
-    const deleted = await deleteUsersById(userId);
+export async function cascadeDeleteUser(userId){
+    const deleted = await deleteUserById(userId);
     if(!deleted){
         return false;
     }

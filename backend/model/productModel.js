@@ -3,10 +3,12 @@ import db, { processCascade } from "./db.js"
 //CREATE
 export function createProduct(productName, category, descriptions, supplier, cost, retailPrice, deleteFlag){
     const sql = 'INSERT INTO Product(productName, category, descriptions, supplier, cost, retailPrice, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?)';
-    db.query(sql, [productName, category, descriptions, supplier, cost, retailPrice, deleteFlag], (err, result) =>{
-        if(err) throw err;
-        console.log("Product created: ", result.insertId);
-        return result.insertId;
+    return new Promise((resolve, reject) =>{
+        db.query(sql, [productName, category, descriptions, supplier, cost, retailPrice, deleteFlag], (err, result) =>{
+            if(err) return reject(err);
+            console.log("Product created: ", result.insertId);
+            resolve(result.insertId);
+        });
     });
 }
 
@@ -32,7 +34,7 @@ export function getProductById(productId){
                 resolve(results[0]);
             }
             else{
-                console.log('Product not found.');
+                console.log('Product not found or already deleted.');
                 resolve(null);
             }
         });
@@ -49,8 +51,8 @@ export function updateProductById(productId, updatedObject){
                 descriptions = ?,
                 supplier = ?,
                 cost = ?,
-                retailPrice = ?,
-                deleteFlag = ?
+                retailPrice = ?
+                
             WHERE productId = ?
         `;
         const values = [
@@ -60,7 +62,7 @@ export function updateProductById(productId, updatedObject){
             updatedObject.supplier, 
             updatedObject.cost, 
             updatedObject.retailPrice, 
-            updatedObject.deleteFlag,
+            
             productId
         ];
         db.query(sql, values, (err, result) =>{
@@ -92,7 +94,7 @@ export function deleteProductById(productId){
                 resolve(true);
             }
             else{
-                console.log(`Nothing happened: `, result);
+                console.log(`Nothing deleted: `, result);
                 resolve(false);
             }
         });

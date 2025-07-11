@@ -34,7 +34,7 @@ export function getReturnExchangeInfoById(detailId){
                 resolve(results[0]);
             }
             else{
-                console.log('Return Exchange Info not found.');
+                console.log('Return Exchange Info not found or already deleted.');
                 resolve(null);
             }
         });
@@ -50,19 +50,19 @@ export function updateReturnExchangeInfoById(detailId, updatedObject){
                 returnedQuantity = ?, 
                 exchangeProductId = ?, 
                 exchangeQuantity = ?, 
-                reason = ?, 
-                transactionId = ?,
-                deleteFlag = ?
+                reason = ? 
+                
+                
             WHERE detailId = ?
-        `;
+        `; //removed transactionId, deleteFlag
         const values = [
             updatedObject.returnedProductId,
             updatedObject.returnedQuantity, 
             updatedObject.exchangeProductId, 
             updatedObject.exchangeQuantity, 
             updatedObject.reason, 
-            updatedObject.transactionId, 
-            updatedObject.deleteFlag,
+             
+            
             detailId
         ];
         db.query(sql, values, (err, result) =>{
@@ -94,7 +94,7 @@ export function deleteReturnExchangeInfoById(detailId){
                 resolve(true);
             }
             else{
-                console.log(`Nothing happened: `, result);
+                console.log(`Nothing deleted: `, result);
                 resolve(false);
             }
         });
