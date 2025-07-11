@@ -15,27 +15,6 @@ CREATE SCHEMA IF NOT EXISTS `mydb` DEFAULT CHARACTER SET utf8mb3 ;
 USE `mydb` ;
 
 -- -----------------------------------------------------
--- Table `mydb`.`Product`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `mydb`.`Product` ;
-
-CREATE TABLE IF NOT EXISTS `mydb`.`Product` (
-  `productId` INT NOT NULL AUTO_INCREMENT,
-  `productName` VARCHAR(45) NOT NULL,
-  `category` VARCHAR(45) NOT NULL,
-  `descriptions` VARCHAR(45) NOT NULL,
-  `supplier` VARCHAR(45) NOT NULL,
-  `productStatus` ENUM('active', 'discontinued') NOT NULL,
-  `cost` DOUBLE NOT NULL,
-  `retailPrice` DOUBLE NOT NULL,
-  `stockOnHand` INT NULL DEFAULT '0',
-  `units` VARCHAR(20) NULL DEFAULT NULL,
-  PRIMARY KEY (`productId`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb3;
-
-
--- -----------------------------------------------------
 -- Table `mydb`.`Users`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `mydb`.`Users` ;
@@ -54,6 +33,33 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
+-- Table `mydb`.`Product`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `mydb`.`Product` ;
+
+CREATE TABLE IF NOT EXISTS `mydb`.`Product` (
+  `productId` INT NOT NULL AUTO_INCREMENT,
+  `productName` VARCHAR(45) NOT NULL,
+  `category` VARCHAR(45) NOT NULL,
+  `descriptions` VARCHAR(45) NOT NULL,
+  `supplier` VARCHAR(45) NOT NULL,
+  `productStatus` ENUM('active', 'discontinued') NOT NULL,
+  `cost` DOUBLE NOT NULL,
+  `retailPrice` DOUBLE NOT NULL,
+  `stockOnHand` INT NULL DEFAULT '0',
+  `units` VARCHAR(20) NULL DEFAULT NULL,
+  `lastEditedDate` DATETIME NULL DEFAULT NULL,
+  `lastEditedUser` INT NULL DEFAULT NULL,
+  PRIMARY KEY (`productId`),
+  INDEX `fk_Product_lastEditedUser` (`lastEditedUser` ASC) VISIBLE,
+  CONSTRAINT `fk_Product_lastEditedUser`
+    FOREIGN KEY (`lastEditedUser`)
+    REFERENCES `mydb`.`Users` (`userId`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
 -- Table `mydb`.`Orders`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `mydb`.`Orders` ;
@@ -66,8 +72,14 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Orders` (
   `totalAmount` DOUBLE NULL DEFAULT NULL,
   `paymentMethod` VARCHAR(50) NULL DEFAULT NULL,
   `paymentStatus` ENUM('pending', 'paid', 'failed') NULL DEFAULT 'pending',
+  `lastEditedDate` DATETIME NULL DEFAULT NULL,
+  `lastEditedUser` INT NULL DEFAULT NULL,
   PRIMARY KEY (`orderId`, `handledBy`),
   INDEX `fk_Sales_Users1_idx` (`handledBy` ASC) VISIBLE,
+  INDEX `fk_Orders_lastEditedUser` (`lastEditedUser` ASC) VISIBLE,
+  CONSTRAINT `fk_Orders_lastEditedUser`
+    FOREIGN KEY (`lastEditedUser`)
+    REFERENCES `mydb`.`Users` (`userId`),
   CONSTRAINT `fk_Sales_Users1`
     FOREIGN KEY (`handledBy`)
     REFERENCES `mydb`.`Users` (`userId`))
@@ -86,9 +98,15 @@ CREATE TABLE IF NOT EXISTS `mydb`.`OrderInfo` (
   `orderId` INT NOT NULL,
   `productId` INT NOT NULL,
   `unitPriceAtPurchase` DOUBLE NULL DEFAULT NULL,
+  `lastEditedDate` DATETIME NULL DEFAULT NULL,
+  `lastEditedUser` INT NULL DEFAULT NULL,
   PRIMARY KEY (`orderInfoId`, `orderId`, `productId`),
   INDEX `fk_OrderInfo_Sales_idx` (`orderId` ASC) VISIBLE,
   INDEX `fk_OrderInfo_Product1_idx` (`productId` ASC) VISIBLE,
+  INDEX `fk_OrderInfo_lastEditedUser` (`lastEditedUser` ASC) VISIBLE,
+  CONSTRAINT `fk_OrderInfo_lastEditedUser`
+    FOREIGN KEY (`lastEditedUser`)
+    REFERENCES `mydb`.`Users` (`userId`),
   CONSTRAINT `fk_OrderInfo_Product1`
     FOREIGN KEY (`productId`)
     REFERENCES `mydb`.`Product` (`productId`),
@@ -111,10 +129,16 @@ CREATE TABLE IF NOT EXISTS `mydb`.`ReturnExchange` (
   `orderId` INT NOT NULL,
   `handledBy` INT NOT NULL,
   `approvedBy` INT NOT NULL,
+  `lastEditedDate` DATETIME NULL DEFAULT NULL,
+  `lastEditedUser` INT NULL DEFAULT NULL,
   PRIMARY KEY (`transactionId`, `orderId`, `handledBy`, `approvedBy`),
   INDEX `fk_ReturnExchangeRecord_Users1_idx` (`handledBy` ASC) VISIBLE,
   INDEX `fk_ReturnExchangeRecord_Users2_idx` (`approvedBy` ASC) VISIBLE,
   INDEX `fk_ReturnExchangeRecord_Sales1_idx` (`orderId` ASC) VISIBLE,
+  INDEX `fk_ReturnExchange_lastEditedUser` (`lastEditedUser` ASC) VISIBLE,
+  CONSTRAINT `fk_ReturnExchange_lastEditedUser`
+    FOREIGN KEY (`lastEditedUser`)
+    REFERENCES `mydb`.`Users` (`userId`),
   CONSTRAINT `fk_ReturnExchangeRecord_Sales1`
     FOREIGN KEY (`orderId`)
     REFERENCES `mydb`.`Orders` (`orderId`),
@@ -142,16 +166,22 @@ CREATE TABLE IF NOT EXISTS `mydb`.`ReturnExchangeInfo` (
   `reason` VARCHAR(45) NOT NULL,
   `transactionId` INT NOT NULL,
   `returnType` ENUM('Return', 'Exchange', 'Warranty') NULL DEFAULT 'Return',
+  `lastEditedDate` DATETIME NULL DEFAULT NULL,
+  `lastEditedUser` INT NULL DEFAULT NULL,
   PRIMARY KEY (`detailId`, `returnedProductId`, `transactionId`),
   INDEX `fk_ReturnExchangeDetail_Product1_idx` (`returnedProductId` ASC) VISIBLE,
   INDEX `fk_ReturnExchangeDetail_ReturnExchangeRecord1_idx` (`transactionId` ASC) VISIBLE,
   INDEX `fk_ReturnExchangeInfo_Product1_idx` (`exchangeProductId` ASC) VISIBLE,
+  INDEX `fk_ReturnExchangeInfo_lastEditedUser` (`lastEditedUser` ASC) VISIBLE,
   CONSTRAINT `fk_ReturnExchangeDetail_Product1`
     FOREIGN KEY (`returnedProductId`)
     REFERENCES `mydb`.`Product` (`productId`),
   CONSTRAINT `fk_ReturnExchangeDetail_ReturnExchangeRecord1`
     FOREIGN KEY (`transactionId`)
     REFERENCES `mydb`.`ReturnExchange` (`transactionId`),
+  CONSTRAINT `fk_ReturnExchangeInfo_lastEditedUser`
+    FOREIGN KEY (`lastEditedUser`)
+    REFERENCES `mydb`.`Users` (`userId`),
   CONSTRAINT `fk_ReturnExchangeInfo_Product1`
     FOREIGN KEY (`exchangeProductId`)
     REFERENCES `mydb`.`Product` (`productId`))
@@ -172,9 +202,15 @@ CREATE TABLE IF NOT EXISTS `mydb`.`StockEntry` (
   `deliveryReceiptNumber` INT NOT NULL,
   `receivedBy` INT NOT NULL,
   `productId` INT NOT NULL,
+  `lastEditedDate` DATETIME NULL DEFAULT NULL,
+  `lastEditedUser` INT NULL DEFAULT NULL,
   PRIMARY KEY (`entryId`, `receivedBy`, `productId`),
   INDEX `fk_StockEntry_Users1_idx` (`receivedBy` ASC) VISIBLE,
   INDEX `fk_StockEntry_Product1_idx` (`productId` ASC) VISIBLE,
+  INDEX `fk_StockEntry_lastEditedUser` (`lastEditedUser` ASC) VISIBLE,
+  CONSTRAINT `fk_StockEntry_lastEditedUser`
+    FOREIGN KEY (`lastEditedUser`)
+    REFERENCES `mydb`.`Users` (`userId`),
   CONSTRAINT `fk_StockEntry_Product1`
     FOREIGN KEY (`productId`)
     REFERENCES `mydb`.`Product` (`productId`),
@@ -199,11 +235,17 @@ CREATE TABLE IF NOT EXISTS `mydb`.`StockWithdrawal` (
   `withdrawnBy` INT NOT NULL,
   `authorizedBy` INT NOT NULL,
   `stockEntryId` INT NULL DEFAULT NULL,
+  `lastEditedDate` DATETIME NULL DEFAULT NULL,
+  `lastEditedUser` INT NULL DEFAULT NULL,
   PRIMARY KEY (`withdrawalId`, `productId`, `withdrawnBy`, `authorizedBy`),
   INDEX `fk_StockWithdrawal_Product1_idx` (`productId` ASC) VISIBLE,
   INDEX `fk_StockWithdrawal_Users2_idx` (`withdrawnBy` ASC) VISIBLE,
   INDEX `fk_StockWithdrawal_Users1_idx` (`authorizedBy` ASC) VISIBLE,
   INDEX `fk_StockWithdrawal_StockEntry` (`stockEntryId` ASC) VISIBLE,
+  INDEX `fk_StockWithdrawal_lastEditedUser` (`lastEditedUser` ASC) VISIBLE,
+  CONSTRAINT `fk_StockWithdrawal_lastEditedUser`
+    FOREIGN KEY (`lastEditedUser`)
+    REFERENCES `mydb`.`Users` (`userId`),
   CONSTRAINT `fk_StockWithdrawal_Product1`
     FOREIGN KEY (`productId`)
     REFERENCES `mydb`.`Product` (`productId`),
