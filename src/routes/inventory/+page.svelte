@@ -170,7 +170,6 @@
 					<option value={head}>{head}</option>
 				{/each}
 			</select>
-			<img src="../src/icons/filter.svg" alt="search" style="width:15px; " />
 		</div>
 	</div>
 </header>
@@ -208,14 +207,15 @@
 		</button>
 	</div>
 	<!-- buttons for actions -->
-	<div class="ml-auto flex gap-3 p-1.5 pr-8">
-		<button
-			class="flex w-28 items-center justify-center gap-2 rounded bg-red-600 text-white hover:bg-red-700"
+	<div class="ml-auto flex gap-5 p-2.5 pr-10">
+		<!-- absolute top-0 right-0 bg-gray-200 px-4 py-2  -->
+		<button 
+			class="flex w-28 items-center justify-center gap-2 rounded-lg red1 text-white hover:bg-red-700 font-bold"
 		>
 			Delete
 		</button>
 		<button
-			class="flex w-28 items-center justify-center gap-2 rounded bg-green-600 text-white hover:bg-green-700"
+			class="flex w-28 items-center justify-center gap-2 rounded-lg green1 text-white hover:bg-green-900 font-bold"
 		>
 			Add
 		</button>

@@ -9,7 +9,12 @@
 .gray1 {
 	background-color: #eeeeee;
 }
-
+.green1 {
+	background-color: #3d843f;
+}
+.red1 {
+	background-color: #DE0101;
+}
 body.login-page {
 	background-color: #3d843f;
 }
@@ -161,7 +166,7 @@ body.login-page {
 	border-bottom-right-radius: 0px;
 	width: 200px;
 	justify-self: center;
-	padding: 1%;
+	padding: 2%;
 }
 
 .buttonss.selected {
