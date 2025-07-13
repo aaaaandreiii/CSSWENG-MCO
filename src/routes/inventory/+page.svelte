@@ -69,7 +69,7 @@
 
 	// store default order for reset
 	const originalRows = [...rows];
-	
+
 	// sortby function for col heads
 	function sortBy(column: string) {
 		if (sortColumn === column) {
@@ -132,7 +132,7 @@
 
 	let editForm: { [key: string]: string } = {};
 	let isEditForm = false;
-	
+
 	// func to handle saving the edit form
 	function handleEditFormSave() {
 		if (modalRowIndex !== -1) {
@@ -160,7 +160,11 @@
 		</div>
 		<div class="flex w-fit rounded-4xl bg-white px-3">
 			<!-- dropdown for order by, auto includes all col headers -->
-			<select class="w-35 p-2 bg-white outline-none" bind:value={sortColumn} on:change={() => sortBy(sortColumn)}>
+			<select
+				class="w-35 bg-white p-2 outline-none"
+				bind:value={sortColumn}
+				on:change={() => sortBy(sortColumn)}
+			>
 				<option value="">All</option>
 				{#each currentHeaders as head}
 					<option value={head}>{head}</option>
@@ -204,11 +208,15 @@
 		</button>
 	</div>
 	<!-- buttons for actions -->
-	<div class="flex gap-3 ml-auto pr-8 p-1.5">
-		<button class="flex items-center justify-center gap-2 bg-red-600 text-white rounded hover:bg-red-700 w-28">
+	<div class="ml-auto flex gap-3 p-1.5 pr-8">
+		<button
+			class="flex w-28 items-center justify-center gap-2 rounded bg-red-600 text-white hover:bg-red-700"
+		>
 			Delete
 		</button>
-		<button class="flex items-center justify-center gap-2 bg-green-600 text-white rounded hover:bg-green-700 w-28">
+		<button
+			class="flex w-28 items-center justify-center gap-2 rounded bg-green-600 text-white hover:bg-green-700"
+		>
 			Add
 		</button>
 	</div>
@@ -219,34 +227,55 @@
 	<table class="w-full table-fixed border-collapse">
 		<thead class="border-b border-black bg-white">
 			<tr>
-				<th class="py-5 text-center w-[180px] min-w-[180px] max-w-[180px]"></th>
+				<th class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center"></th>
 				{#each currentHeaders as head}
-					<th class="py-5 text-center w-[180px] min-w-[180px] max-w-[180px] break-words whitespace-normal align-middle">
-						<button class="w-full flex items-center justify-center gap-1 font-bold" on:click={() => sortBy(head)}>
-							<span class="break-words whitespace-normal w-full">{head}</span>
-							<span class="inline-block w-4 min-w-[1rem] text-center align-middle">{sortColumn === head ? (sortDirection === 'asc' ? '▲' : sortDirection === 'desc' ? '▼' : '') : ''}</span>
+					<th
+						class="px-4 py-5 text-center align-middle break-words whitespace-normal"
+						style="width: auto; min-width: 100px; max-width: 400px;"
+					>
+						<button
+							class="flex w-full items-center justify-center gap-1 font-bold"
+							on:click={() => sortBy(head)}
+						>
+							<span class="w-full break-words whitespace-normal">{head}</span>
+							<span class="inline-block w-4 min-w-[1rem] text-center align-middle"
+								>{sortColumn === head
+									? sortDirection === 'asc'
+										? '▲'
+										: sortDirection === 'desc'
+											? '▼'
+											: ''
+									: ''}</span
+							>
 						</button>
 					</th>
 				{/each}
-				<th class="py-5 text-center w-[180px] min-w-[180px] max-w-[180px]"></th>
+				<th class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center"></th>
 			</tr>
 		</thead>
 		<tbody>
 			{#each rows as row, i}
 				<tr class="border-b border-black {i % 2 === 0 ? 'bg-[#eeeeee]' : 'bg-white'}">
-					<td class="py-5 text-center w-[180px] min-w-[180px] max-w-[180px]"><input type="checkbox" bind:group={selectedRows} value={i} /></td>
+					<td class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center"
+						><input type="checkbox" bind:group={selectedRows} value={i} /></td
+					>
 					{#each currentHeaders as head}
 						<td
-							class="w-[180px] min-w-[180px] max-w-[180px] max-h-[60px] overflow-hidden py-5 text-center text-ellipsis whitespace-nowrap"
+							class="max-h-[60px] max-w-[400px] min-w-[100px] overflow-hidden px-4 py-5 text-center text-ellipsis whitespace-nowrap"
 							title={row[head]}
 							on:click={() => openModal(row[head], i)}
 						>
 							{row[head]}
 						</td>
 					{/each}
-					<td class="py-5 text-center w-[180px] min-w-[180px] max-w-[180px]">
-						<button type="button" class="mx-auto h-5 w-5 flex items-center justify-center" aria-label="Edit" on:click={() => openEditModal(i)}>
-							<img src="../src/icons/edit.svg" alt="" class="h-5 w-5 pointer-events-none" />
+					<td class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center">
+						<button
+							type="button"
+							class="mx-auto flex h-5 w-5 items-center justify-center"
+							aria-label="Edit"
+							on:click={() => openEditModal(i)}
+						>
+							<img src="../src/icons/edit.svg" alt="" class="pointer-events-none h-5 w-5" />
 						</button>
 					</td>
 				</tr>
@@ -282,20 +311,35 @@
 				<form on:submit|preventDefault={handleEditFormSave}>
 					{#each currentHeaders as head}
 						<div class="mb-2">
-							<label class="block font-bold mb-1" for={"edit-" + head}>{head}</label>
-							<input id={"edit-" + head} class="w-full border rounded px-2 py-1" type="text" bind:value={editForm[head]} />
+							<label class="mb-1 block font-bold" for={'edit-' + head}>{head}</label>
+							<input
+								id={'edit-' + head}
+								class="w-full rounded border px-2 py-1"
+								type="text"
+								bind:value={editForm[head]}
+							/>
 						</div>
 					{/each}
-					<div class="flex gap-2 mt-4">
-						<button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Save</button>
-						<button type="button" class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500" on:click={handleEditFormCancel}>Cancel</button>
+					<div class="mt-4 flex gap-2">
+						<button
+							type="submit"
+							class="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700">Save</button
+						>
+						<button
+							type="button"
+							class="rounded bg-gray-400 px-4 py-2 text-white hover:bg-gray-500"
+							on:click={handleEditFormCancel}>Cancel</button
+						>
 					</div>
 				</form>
 			{:else}
 				<!-- indiv popup for indiv cell content -->
 				<div class="mb-4">{modalContent}</div>
 				{#if showEditButton}
-					<button class="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700" on:click={() => handleEdit(modalRowIndex)}>
+					<button
+						class="mt-2 rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700"
+						on:click={() => handleEdit(modalRowIndex)}
+					>
 						Edit
 					</button>
 				{/if}
