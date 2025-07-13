@@ -28,7 +28,7 @@
                     <li class="flex items-center">
                         <a href={tab.link} class ="flex gap-x-5 {selected === tab.name ? 'selected-tab' : ''}" id = "" on:click={() => selected = tab.name}>
                                 <img src={tab.icon} alt="home" style="width: 30px" />
-                                <p class="py-4">{tab.name}</p>
+                                <p class="p-5">{tab.name}</p>
                         </a>
                     </li>
             {/each}

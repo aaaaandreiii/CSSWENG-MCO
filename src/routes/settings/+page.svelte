@@ -137,7 +137,7 @@
 		</nav>
 		<hr class="mb-8 border-gray-300" />
 
-		<!-- permissions section, change roles as needed -->
+	<!-- permissions section, change roles as needed -->
 		<div class=" grid grid-flow-col grid-cols-4 gap-5">
 			{#if selected === 'all' || selected === 'admin' || selected === 'staff' || selected === 'auditor' || selected === 'manager'}
 				{#each filteredDetails as detail, idx}

@@ -54,7 +54,7 @@
 			{#each products as product, index}
 				<div class="whitebox flex-col content-center">
 					<div id={product.label} class="flex items-center gap-1 px-2">
-						<div class="circ le" style="background-color: {product.color}"></div>
+						<div class="circle" style="background-color: {product.color}"></div>
 						<p>{product.mssg}</p>
 					</div>
 
