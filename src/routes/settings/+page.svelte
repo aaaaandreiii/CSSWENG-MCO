@@ -1,15 +1,14 @@
 <script lang="ts">
 	let selected = 'all'; // default selected tab = profile
-	let permissions = [
-		{ name: 'Can view', enabled: false },
-		{ name: 'Can edit', enabled: false },
-		{ name: 'Can approve', enabled: false },
-		{ name: 'Can create users', enabled: false }
-	];
+	// let permissions = [
+	// 	{ name: 'Can view', enabled: false },
+	// 	{ name: 'Can edit', enabled: false },
+	// 	{ name: 'Can approve', enabled: false },
+	// 	{ name: 'Can create users', enabled: false }
+	// ];
 	let details = [
 		{ name: 'Full Name', user: 'Useername123', date: 'January 19, 2955', position: 'Admin' },
 		{ name: 'Staff User', user: 'Staff123', date: 'February 10, 2955', position: 'Staff' },
-
 		{ name: 'Auditor User', user: 'AuditGuy', date: 'March 5, 2955', position: 'Auditor' },
 		{ name: 'Manager User', user: 'ManagerX', date: 'April 1, 2955', position: 'Manager' }
 	];
@@ -50,11 +49,19 @@
 
 	let dropdownRef: HTMLDivElement | null = null;
 
-	function handleClickOutside(event: MouseEvent) {
-		if (openDropdownIndex !== null && dropdownRef && !dropdownRef.contains(event.target as Node)) {
-			openDropdownIndex = null;
-		}
+	// function handleClickOutside(event: MouseEvent) { 
+	// // doesnt update dropdownindex to new selection, 
+	// //instead it closes dropdown by becoming null (retains old index in the process)
+	// 	if (openDropdownIndex !== null && dropdownRef && !dropdownRef.contains(event.target as Node)) {
+	// 		openDropdownIndex = null;
+	// 	}
+	// }
+
+	function handleClickOutside(event: MouseEvent) { //this fn does nothing
+		if (showDropdown && dropdownRef && !dropdownRef.contains(event.target as Node)) {
+			showDropdown = false;} 
 	}
+
 
 	onMount(() => {
 		document.addEventListener('mousedown', handleClickOutside);
@@ -158,6 +165,7 @@
 											openDropdownIndex === idx
 												? (openDropdownIndex = null)
 												: (openDropdownIndex = idx)}
+											
 										aria-label="Show dropdown"
 										style="background: none; border: none; cursor: pointer;"
 									>
@@ -198,27 +206,5 @@
 				{/each}
 			{/if}
 		</div>
-		<!-- <section class="mt-8 w-fit rounded-lg bg-white p-8">
-				<h2 class="mb-4 flex items-center justify-between gap-25 text-lg font-bold">
-					<span>Permissions</span>
-					<button class="rounded-lg bg-gray-200 px-6 py-2 font-bold text-black">Edit</button>
-				</h2>
-				<ul class="mb-8">
-					{#each permissions as permission, index}
-						<li class="mb-4 flex items-center justify-between">
-							<span class="text-lg">{permission.name}</span>
-							<input
-								type="checkbox"
-								bind:checked={permissions[index].enabled}
-								class="switch-toggle"
-							/>
-						</li>
-					{/each}
-				</ul>
-				<div class="flex justify-end space-x-4">
-					<button class="rounded-lg bg-gray-200 px-6 py-2 text-gray-700">Cancel</button>
-					<button class="rounded-lg bg-red-600 px-6 py-2 font-bold text-white">Save</button>
-				</div>
-			</section> -->
 	</div>
 </div>
