@@ -10,6 +10,7 @@ router.post("/createUser", async(req, res) =>{
         const userId = await mysql.createUser(fullName, userRole, username, userPassword, dateAdded, 0);
         res.json({message: "User created successfully!", id: userId});
     }catch(err){
+        console.error(err);
         res.status(500).json({ message: "Error creating User" });
     }
 }); //test: curl -X POST http://localhost:5000/api/createUser -H "Content-Type: application/json" -d "{\"fullName\":\"Jane Doe\",\"userRole\":\"admin\",\"username\":\"janedoe\",\"userPassword\":\"secret123\"}"
