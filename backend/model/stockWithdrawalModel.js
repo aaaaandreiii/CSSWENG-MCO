@@ -1,10 +1,10 @@
 import db from "./db.js"
 
 //CREATE
-export function createStockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, deleteFlag){
-    const sql = 'INSERT INTO StockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?)';
+export function createStockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, lastEditedDate, lastEditedUser, deleteFlag){
+    const sql = 'INSERT INTO StockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, lastEditedDate, lastEditedUser, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
     return new Promise((resolve, reject) =>{
-        db.query(sql, [dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, deleteFlag], (err, result) =>{
+        db.query(sql, [dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, lastEditedDate, lastEditedUser, deleteFlag], (err, result) =>{
             if(err) return reject(err);
             console.log("Stock Withdrawal created: ", result.insertId);
             resolve(result.insertId);
@@ -50,7 +50,9 @@ export function updateStockWithdrawalById(withdrawalId, updatedObject){
                 purpose = ?, 
                  
                 withdrawnBy = ?, 
-                authorizedBy = ? 
+                authorizedBy = ?,
+                lastEditedDate = ?, 
+                lastEditedUser = ? 
                 
             WHERE withdrawalId = ?
         `; //removed entryId, deleteFlag
@@ -60,6 +62,8 @@ export function updateStockWithdrawalById(withdrawalId, updatedObject){
             
             updatedObject.withdrawnBy,
             updatedObject.authorizedBy,
+            updatedObject.lastEditedDate,
+            updatedObject.lastEditedUser,
             
             withdrawalId
         ];

@@ -1,10 +1,10 @@
 import db from "./db.js"
 
 //CREATE
-export function createOrderInfo(quantity, orderId, productId, deleteFlag){
-    const sql = 'INSERT INTO OrderInfo(quantity, orderId, productId, deleteFlag) VALUES (?, ?, ?, ?)';
+export function createOrderInfo(quantity, orderId, productId, unitPriceAtPurchase, lastEditedDate, lastEditedUser, deleteFlag){
+    const sql = 'INSERT INTO OrderInfo(quantity, orderId, productId, unitPriceAtPurchase, lastEditedDate, lastEditedUser, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?)';
     return new Promise((resolve, reject) =>{
-        db.query(sql, [quantity, orderId, productId, deleteFlag], (err, result) =>{
+        db.query(sql, [quantity, orderId, productId, unitPriceAtPurchase, lastEditedDate, lastEditedUser, deleteFlag], (err, result) =>{
             if(err) return reject(err);
             console.log("Order Info created: ", result.insertId);
             resolve(result.insertId);
@@ -48,14 +48,20 @@ export function updateOrderInfoById(orderInfoId, updatedObject){
             UPDATE OrderInfo
             SET quantity = ?, 
                 
-                productId = ?
-                
+                productId = ?,
+                unitPriceAtPurchase = ?, 
+                lastEditedDate = ?, 
+                lastEditedUser = ?
+
             WHERE orderInfoId = ?
         `; //removed orderId, deleteFlag
         const values = [
             updatedObject.quantity,
             
             updatedObject.productId,
+            updatedObject.unitPriceAtPurchase,
+            updatedObject.lastEditedDate,
+            updatedObject.lastEditedUser,
             
             orderInfoId
         ];

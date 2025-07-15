@@ -1,10 +1,10 @@
 import db, { processCascade } from "./db.js"
 
 //CREATE
-export function createProduct(productName, category, descriptions, supplier, cost, retailPrice, deleteFlag){
-    const sql = 'INSERT INTO Product(productName, category, descriptions, supplier, cost, retailPrice, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?)';
+export function createProduct(productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, lastEditedDate, lastEditedUser, deleteFlag){
+    const sql = 'INSERT INTO Product(productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, lastEditedDate, lastEditedUser, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
     return new Promise((resolve, reject) =>{
-        db.query(sql, [productName, category, descriptions, supplier, cost, retailPrice, deleteFlag], (err, result) =>{
+        db.query(sql, [productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, lastEditedDate, lastEditedUser, deleteFlag], (err, result) =>{
             if(err) return reject(err);
             console.log("Product created: ", result.insertId);
             resolve(result.insertId);
@@ -51,8 +51,12 @@ export function updateProductById(productId, updatedObject){
                 descriptions = ?,
                 supplier = ?,
                 cost = ?,
-                retailPrice = ?
-                
+                retailPrice = ?,
+                stockOnHand = ?,
+                units = ?,
+                lastEditedDate = ?, 
+                lastEditedUser =?
+
             WHERE productId = ?
         `;
         const values = [
@@ -62,6 +66,10 @@ export function updateProductById(productId, updatedObject){
             updatedObject.supplier, 
             updatedObject.cost, 
             updatedObject.retailPrice, 
+            updatedObject.stockOnHand,
+            updatedObject.units,
+            updatedObject.lastEditedDate,
+            updatedObject.lastEditedUser,
             
             productId
         ];

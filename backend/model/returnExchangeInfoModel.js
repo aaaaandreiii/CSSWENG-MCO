@@ -1,10 +1,10 @@
 import db from "./db.js"
 
 //CREATE
-export function createReturnExchangeInfo(returnedProductId, returnedQuantity, exchangeProductId, exchangeQuantity , reason, transactionId, deleteFlag){
-    const sql = 'INSERT INTO ReturnExchangeInfo(returnedProductId, returnedQuantity, exchangeProductId, exchangeQuantity , reason, transactionId, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?)';
+export function createReturnExchangeInfo(returnedProductId, returnedQuantity, exchangeProductId, exchangeQuantity , reason, transactionId, returnType, lastEditedDate, lastEditedUser, deleteFlag){
+    const sql = 'INSERT INTO ReturnExchangeInfo(returnedProductId, returnedQuantity, exchangeProductId, exchangeQuantity , reason, transactionId, returnType, lastEditedDate, lastEditedUser, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
     return new Promise((resolve, reject) =>{
-        db.query(sql, [returnedProductId, returnedQuantity, exchangeProductId, exchangeQuantity , reason, transactionId, deleteFlag], (err, result) =>{
+        db.query(sql, [returnedProductId, returnedQuantity, exchangeProductId, exchangeQuantity , reason, transactionId, returnType, lastEditedDate, lastEditedUser, deleteFlag], (err, result) =>{
             if(err) return reject(err);
             console.log("Return Exchange Info created: ", result.insertId);
             resolve(result.insertId);
@@ -50,8 +50,11 @@ export function updateReturnExchangeInfoById(detailId, updatedObject){
                 returnedQuantity = ?, 
                 exchangeProductId = ?, 
                 exchangeQuantity = ?, 
-                reason = ? 
+                reason = ?, 
                 
+                returnType = ?, 
+                lastEditedDate = ?, 
+                lastEditedUser = ?
                 
             WHERE detailId = ?
         `; //removed transactionId, deleteFlag
@@ -62,6 +65,9 @@ export function updateReturnExchangeInfoById(detailId, updatedObject){
             updatedObject.exchangeQuantity, 
             updatedObject.reason, 
              
+            updatedObject.returnType,
+            updatedObject.lastEditedDate,
+            updatedObject.lastEditedUser,
             
             detailId
         ];

@@ -7,11 +7,11 @@ const router = express.Router();
 //Merged orders and orderInfo:
 router.post("/createOrder", async(req, res) =>{
     try{
-        const {discount, customer, handledBy, items} = req.body;  
+        const {discount, customer, handledBy, paymentMethod, paymentStatus, items} = req.body;  
         const dateOrdered = new Date().toISOString().split("T")[0];  
-        const orderId = await ordersModel.createOrder(discount, customer, handledBy, dateOrdered, 0);
+        const orderId = await ordersModel.createOrder(discount, customer, handledBy, paymentMethod, paymentStatus, null, null, dateOrdered, 0);
         for(const item of items){
-            await orderInfoModel.createOrderInfo(item.quantity, orderId, item.productId, 0);
+            await orderInfoModel.createOrderInfo(item.quantity, orderId, item.productId,  item.unitPriceAtPurchase, null, null, 0);
         }
         res.json({message: "Orders and Order Info created successfully!", id: orderId});
     }catch(err){
@@ -95,7 +95,7 @@ router.put("/updateOrder/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error updating Order" });
     }
-}); //test: 
+}); //test: curl -X PUT http://localhost:5000/api/updateOrder/1 -H "Content-Type: application/json" -d "{\"discount\":0.15,\"customer\":\"Updated\",\"handledBy\":1}"
 
 router.put("/updateOrderInfo/:id", async(req, res) =>{
     try{
@@ -111,7 +111,8 @@ router.put("/updateOrderInfo/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error updating Order Info" });
     }
-}); //test: 
+}); //test: curl -X PUT http://localhost:5000/api/updateOrderInfo/1 -H "Content-Type: application/json" -d "{\"quantity\":3,\"productId\":2}"
+
 
 router.delete("/deleteOrder/:id", async(req, res) =>{
     try{

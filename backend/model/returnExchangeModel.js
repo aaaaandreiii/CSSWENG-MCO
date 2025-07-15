@@ -1,10 +1,10 @@
 import db, { processCascade } from "./db.js"
 
 //CREATE
-export function createReturnExchange(dateTransaction, transactionStatus, orderId, handledBy, approvedBy, deleteFlag){
-    const sql = 'INSERT INTO ReturnExchange(dateTransaction, transactionStatus, orderId, handledBy, approvedBy, deleteFlag) VALUES (?, ?, ?, ?, ?, ?)';
+export function createReturnExchange(dateTransaction, transactionStatus, orderId, handledBy, approvedBy, lastEditedDate, lastEditedUser, deleteFlag){
+    const sql = 'INSERT INTO ReturnExchange(dateTransaction, transactionStatus, orderId, handledBy, approvedBy, lastEditedDate, lastEditedUser, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
     return new Promise((resolve, reject) =>{
-        db.query(sql, [dateTransaction, transactionStatus, orderId, handledBy, approvedBy, deleteFlag], (err, result) =>{
+        db.query(sql, [dateTransaction, transactionStatus, orderId, handledBy, approvedBy, lastEditedDate, lastEditedUser, deleteFlag], (err, result) =>{
             if(err) return reject(err);
             console.log("Return Exchange created: ", result.insertId);
             resolve(result.insertId);
@@ -49,7 +49,9 @@ export function updateReturnExchangeById(transactionId, updatedObject){
             SET transactionStatus = ?, 
                  
                 handledBy = ?, 
-                approvedBy = ?
+                approvedBy = ?,
+                lastEditedDate = ?, 
+                lastEditedUser = ?
                 
             WHERE transactionId = ?
         `; //removed orderId, deleteFlag
@@ -58,7 +60,9 @@ export function updateReturnExchangeById(transactionId, updatedObject){
             
             updatedObject.handledBy,
             updatedObject.approvedBy,
-            
+            updatedObject.lastEditedDate,
+            updatedObject.lastEditedUser,
+
             transactionId
         ];
         db.query(sql, values, (err, result) =>{

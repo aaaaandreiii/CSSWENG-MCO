@@ -1,10 +1,10 @@
 import db, { processCascade } from "./db.js"
 
 //CREATE
-export function createOrder(discount, customer, handledBy, dateOrdered, deleteFlag){
-    const sql = 'INSERT INTO Orders(discount, customer, handledBy, dateOrdered, deleteFlag) VALUES (?, ?, ?, ?, ?)';
+export function createOrder(discount, customer, handledBy, paymentMethod, paymentStatus, lastEditedDate, lastEditedUser, dateOrdered, deleteFlag){
+    const sql = 'INSERT INTO Orders(discount, customer, handledBy, paymentMethod, paymentStatus, lastEditedDate, lastEditedUser, dateOrdered, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
     return new Promise((resolve, reject) =>{
-        db.query(sql, [discount, customer, handledBy, dateOrdered, deleteFlag], (err, result) =>{
+        db.query(sql, [discount, customer, handledBy, paymentMethod, paymentStatus, lastEditedDate, lastEditedUser, dateOrdered, deleteFlag], (err, result) =>{
             if(err) return reject(err);
             console.log("Orders created: ", result.insertId);
             resolve(result.insertId);
@@ -48,15 +48,23 @@ export function updateOrderById(orderId, updatedObject){
             UPDATE Orders
             SET discount = ?, 
                 customer = ?, 
-                handledBy = ? 
-                
+                handledBy = ?, 
+                paymentMethod = ?, 
+                paymentStatus = ?, 
+                lastEditedDate = ?, 
+                lastEditedUser = ?
+
             WHERE orderId = ?
         `;
         const values = [
             updatedObject.discount,
             updatedObject.customer,
             updatedObject.handledBy,
-            
+            updatedObject.paymentMethod,
+            updatedObject.paymentStatus,
+            updatedObject.lastEditedDate,
+            updatedObject.lastEditedUser,
+
             orderId
         ];
         db.query(sql, values, (err, result) =>{

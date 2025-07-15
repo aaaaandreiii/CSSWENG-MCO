@@ -1,10 +1,10 @@
 import db, { processCascade } from "./db.js"
 
 //CREATE
-export function createStockEntry(branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, deleteFlag){
-    const sql = 'INSERT INTO StockEntry(branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?)';
+export function createStockEntry(branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, lastEditedDate, lastEditedUser, deleteFlag){
+    const sql = 'INSERT INTO StockEntry(branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
     return new Promise((resolve, reject) =>{
-        db.query(sql, [branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, deleteFlag], (err, result) =>{
+        db.query(sql, [branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, lastEditedDate, lastEditedUser, deleteFlag], (err, result) =>{
             if(err) return reject(err);
             console.log("Stock Entry created: ", result.insertId);
             resolve(result.insertId);
@@ -49,8 +49,9 @@ export function updateStockEntryById(entryId, updatedObject){
             SET branchName = ?, 
                 quantityReceived = ?, 
                 deliveryReceiptNumber = ?, 
-                receivedBy = ? 
-                
+                receivedBy = ?,
+                lastEditedDate = ?, 
+                lastEditedUser = ?
                 
             WHERE entryId = ?
         `; // removed productId, deleteFlag
@@ -59,7 +60,8 @@ export function updateStockEntryById(entryId, updatedObject){
             updatedObject.quantityReceived, 
             updatedObject.deliveryReceiptNumber, 
             updatedObject.receivedBy, 
-            
+            updatedObject.lastEditedDate,
+            updatedObject.lastEditedUser,
             
             entryId
         ];

@@ -5,14 +5,14 @@ const router = express.Router();
 
 router.post("/createProduct", async(req, res) =>{
     try{
-        const {productName, category, descriptions, supplier, cost, retailPrice} = req.body;
-        const productId = await mysql.createProduct(productName, category, descriptions, supplier, cost, retailPrice, 0);
+        const {productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units} = req.body;
+        const productId = await mysql.createProduct(productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, null, null, 0);
         res.json({message: "Product created successfully!", id: productId});
     }catch(err){
         res.status(500).json({ message: "Error creating Product" });
     }
-}); //test: curl -X POST http://localhost:5000/api/createProduct -H "Content-Type: application/json" -d "{\"productName\":\"Ping Pong Ball\",\"category\":\"ball\",\"descriptions\":\"descriptionss\",\"supplier\":\"someone\",\"cost\":100,\"retailPrice\":150}"
-// test: curl -X POST http://localhost:5000/api/createProduct -H "Content-Type: application/json" -d "{\"productName\":\"Ping Pong Pan\",\"category\":\"paddle\",\"descriptions\":\"descriptionss\",\"supplier\":\"someone\",\"cost\":100,\"retailPrice\":150}"
+}); //test: curl -X POST http://localhost:5000/api/createProduct -H "Content-Type: application/json" -d "{\"productName\":\"Ping Pong Ball\",\"category\":\"ball\",\"descriptions\":\"descriptionss\",\"supplier\":\"someone\",\"cost\":100,\"retailPrice\":150,\"stockOnHand\":50,\"units\":\"pcs\"}"
+// test: curl -X POST http://localhost:5000/api/createProduct -H "Content-Type: application/json" -d "{\"productName\":\"Ping Pong Pan\",\"category\":\"paddle\",\"descriptions\":\"descriptionss\",\"supplier\":\"someone\",\"cost\":100,\"retailPrice\":150,\"stockOnHand\":50,\"units\":\"pcs\"}"
 
 router.get("/getProducts", async(req, res) =>{
     try{

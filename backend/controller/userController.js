@@ -46,6 +46,22 @@ router.get("/getUserById/:id", async(req, res) =>{
     }
 }); //test: curl -X GET http://localhost:5000/api/getUserById/1
 
+router.get("/getUserByUsername/:username", async(req, res) =>{
+    try{
+        const username = req.params.username;
+        const user = await mysql.getUserByUsername(username);
+        if(user){
+            // console.log("User fetched: ", user);
+            res.json({message: "User found!", user});
+        }
+        else{
+            res.status(404).json({ message: "User not found or already deleted" });
+        }
+    }catch(err){
+        res.status(500).json({ message: "Error fetching User" });
+    }
+}); //test: curl -X GET http://localhost:5000/api/getUserByUsername/janedoe
+
 router.put("/updateUser/:id", async(req, res) =>{
     try{
         const userId = parseInt(req.params.id);
@@ -60,7 +76,7 @@ router.put("/updateUser/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error updating User" });
     }
-}); 
+}); //test: curl -X PUT http://localhost:5000/api/updateUser/1 -H "Content-Type: application/json" -d "{\"fullName\":\"Janet D.\",\"userRole\":\"manager\",\"username\":\"janetdoe\",\"userPassword\":\"secure456\"}"
 
 router.delete("/deleteUser/:id", async(req, res) =>{
     try{

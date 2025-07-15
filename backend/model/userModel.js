@@ -44,6 +44,23 @@ export function getUserById(userId){
     });
 }
 
+export function getUserByUsername(username){
+    return new Promise((resolve, reject) =>{
+        const sql = 'SELECT * FROM Users WHERE username = ? AND deleteFlag = 0';
+        db.query(sql, [username], (err, results) =>{
+            if(err) return reject(err);
+            if(results.length > 0){
+                console.log("User found: ", results[0]);
+                resolve(results[0]);
+            }
+            else{
+                console.log('User not found or already deleted.');
+                resolve(null);
+            }
+        });
+    });
+}
+
 //UPDATE
 export async function updateUserById(userId, updatedObject){
     const hashedPassword = await argon2.hash(updatedObject.userPassword);
@@ -102,39 +119,51 @@ export function deleteUserById(userId){
 }
 
 const userCascadeMap = {
+    Product: {
+        where: 'lastEditedUser = ?',
+        values: (userId) => [userId]
+    },
     StockEntry: {
-        where: 'receivedBy = ?',
-        values: (userId) => [userId],
+        where: 'receivedBy = ? OR lastEditedUser = ?',
+        values: (userId) => [userId, userId],
         cascade: {
             StockWithdrawal: {
-                where: 'entryId IN (SELECT entryId FROM StockEntry WHERE receivedBy = ?)',
-                values: (userId) => [userId]
+                where: 'entryId IN (SELECT entryId FROM StockEntry WHERE receivedBy = ? OR lastEditedUser = ?)',
+                values: (userId) => [userId, userId]
             }
         }
     },
     StockWithdrawal: {
-        where: 'withdrawnBy = ? OR authorizedBy = ?',
-        values: (userId) => [userId, userId]
+        where: 'withdrawnBy = ? OR authorizedBy = ? OR lastEditedUser = ?',
+        values: (userId) => [userId, userId, userId]
     },
     Orders: {
-        where: 'handledBy = ?',
-        values: (userId) => [userId],
-        cascade: {
-            OrderInfo: {
-                where: 'orderId IN (SELECT orderId FROM Orders WHERE handledBy = ?)',
-                values: (userId) => [userId]
-            }
-        }
-    },
-    ReturnExchange: {
-        where: 'handledBy = ? OR approvedBy = ?',
+        where: 'handledBy = ? OR lastEditedUser = ?',
         values: (userId) => [userId, userId],
         cascade: {
-            ReturnExchangeInfo: {
-                where: 'transactionId IN (SELECT transactionId FROM ReturnExchange WHERE handledBy = ? OR approvedBy = ?)',
+            OrderInfo: {
+                where: 'orderId IN (SELECT orderId FROM Orders WHERE handledBy = ? OR lastEditedUser = ?)',
                 values: (userId) => [userId, userId]
             }
         }
+    },
+    OrderInfo: {
+        where: 'lastEditedUser = ?',
+        values: (userId) => [userId]
+    },
+    ReturnExchange: {
+        where: 'handledBy = ? OR approvedBy = ? OR lastEditedUser = ?',
+        values: (userId) => [userId, userId, userId],
+        cascade: {
+            ReturnExchangeInfo: {
+                where: 'transactionId IN (SELECT transactionId FROM ReturnExchange WHERE handledBy = ? OR approvedBy = ? OR lastEditedUser = ?)',
+                values: (userId) => [userId, userId, userId]
+            }
+        }
+    },
+    ReturnExchangeInfo: {
+        where: 'lastEditedUser = ?',
+        values: (userId) => [userId]
     }
 };
 

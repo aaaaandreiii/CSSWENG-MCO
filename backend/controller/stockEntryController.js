@@ -7,7 +7,7 @@ router.post("/createStockEntry", async(req, res) =>{
     try{
         const {branchName, quantityReceived, deliveryReceiptNumber, receivedBy, productId} = req.body;
         const dateReceived = new Date().toISOString().split("T")[0];
-        const entryId = await mysql.createStockEntry(branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, 0);
+        const entryId = await mysql.createStockEntry(branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, null, null, 0);
         res.json({message: "Stock Entry created successfully!", id: entryId});
     }catch(err){
         res.status(500).json({ message: "Error creating Stock Entry" });

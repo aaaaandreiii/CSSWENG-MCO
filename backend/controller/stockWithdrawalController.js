@@ -7,7 +7,7 @@ router.post("/createStockWithdrawal", async(req, res) =>{
     try{
         const {quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy} = req.body;
         const dateWithdrawn = new Date().toISOString().split("T")[0];
-        const withdrawalId = await mysql.createStockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, 0);
+        const withdrawalId = await mysql.createStockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, null, null, 0);
         res.json({message: "Stock Withdrawal created successfully!", id: withdrawalId});
     }catch(err){
         res.status(500).json({ message: "Error creating Stock Withdrawal" });
