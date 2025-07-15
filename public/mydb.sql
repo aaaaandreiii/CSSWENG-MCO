@@ -11,7 +11,7 @@ SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,N
 -- -----------------------------------------------------
 -- Schema mydb
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `mydb` DEFAULT CHARACTER SET utf8mb3 ;
+CREATE SCHEMA IF NOT EXISTS `mydb` DEFAULT CHARACTER SET utf8mb4 ;
 USE `mydb` ;
 
 -- -----------------------------------------------------
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Users` (
   `userStatus` ENUM('active', 'inactive') NOT NULL,
   PRIMARY KEY (`userId`))
 ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb3;
+DEFAULT CHARACTER SET = utf8mb4;
 
 
 -- -----------------------------------------------------
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Product` (
     FOREIGN KEY (`lastEditedUser`)
     REFERENCES `mydb`.`Users` (`userId`))
 ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb3;
+DEFAULT CHARACTER SET = utf8mb4;
 
 
 -- -----------------------------------------------------
@@ -65,7 +65,7 @@ DEFAULT CHARACTER SET = utf8mb3;
 DROP TABLE IF EXISTS `mydb`.`Orders` ;
 
 CREATE TABLE IF NOT EXISTS `mydb`.`Orders` (
-  `orderId` INT NOT NULL AUTO_INCREMENT,
+  `orderId` INT UNIQUE NOT NULL AUTO_INCREMENT,
   `discount` FLOAT NULL DEFAULT NULL,
   `customer` VARCHAR(45) NOT NULL,
   `handledBy` INT NOT NULL,
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Orders` (
   `paymentStatus` ENUM('pending', 'paid', 'failed') NULL DEFAULT 'pending',
   `lastEditedDate` DATETIME NULL DEFAULT NULL,
   `lastEditedUser` INT NULL DEFAULT NULL,
-  PRIMARY KEY (`orderId`, `handledBy`),
+  PRIMARY KEY (`orderId`),
   INDEX `fk_Sales_Users1_idx` (`handledBy` ASC) VISIBLE,
   INDEX `fk_Orders_lastEditedUser` (`lastEditedUser` ASC) VISIBLE,
   CONSTRAINT `fk_Orders_lastEditedUser`
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Orders` (
     FOREIGN KEY (`handledBy`)
     REFERENCES `mydb`.`Users` (`userId`))
 ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb3;
+DEFAULT CHARACTER SET = utf8mb4;
 
 
 -- -----------------------------------------------------
@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`OrderInfo` (
     FOREIGN KEY (`orderId`)
     REFERENCES `mydb`.`Orders` (`orderId`))
 ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb3;
+DEFAULT CHARACTER SET = utf8mb4;
 
 
 -- -----------------------------------------------------
@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`ReturnExchange` (
   `approvedBy` INT NOT NULL,
   `lastEditedDate` DATETIME NULL DEFAULT NULL,
   `lastEditedUser` INT NULL DEFAULT NULL,
-  PRIMARY KEY (`transactionId`, `orderId`, `handledBy`, `approvedBy`),
+  PRIMARY KEY (`transactionId`),
   INDEX `fk_ReturnExchangeRecord_Users1_idx` (`handledBy` ASC) VISIBLE,
   INDEX `fk_ReturnExchangeRecord_Users2_idx` (`approvedBy` ASC) VISIBLE,
   INDEX `fk_ReturnExchangeRecord_Sales1_idx` (`orderId` ASC) VISIBLE,
@@ -149,7 +149,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`ReturnExchange` (
     FOREIGN KEY (`approvedBy`)
     REFERENCES `mydb`.`Users` (`userId`))
 ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb3;
+DEFAULT CHARACTER SET = utf8mb4;
 
 
 -- -----------------------------------------------------
@@ -186,7 +186,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`ReturnExchangeInfo` (
     FOREIGN KEY (`exchangeProductId`)
     REFERENCES `mydb`.`Product` (`productId`))
 ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb3;
+DEFAULT CHARACTER SET = utf8mb4;
 
 
 -- -----------------------------------------------------
@@ -204,10 +204,10 @@ CREATE TABLE IF NOT EXISTS `mydb`.`StockEntry` (
   `productId` INT NOT NULL,
   `lastEditedDate` DATETIME NULL DEFAULT NULL,
   `lastEditedUser` INT NULL DEFAULT NULL,
-  PRIMARY KEY (`entryId`, `receivedBy`, `productId`),
-  INDEX `fk_StockEntry_Users1_idx` (`receivedBy` ASC) VISIBLE,
-  INDEX `fk_StockEntry_Product1_idx` (`productId` ASC) VISIBLE,
-  INDEX `fk_StockEntry_lastEditedUser` (`lastEditedUser` ASC) VISIBLE,
+  PRIMARY KEY (`entryId`),
+  INDEX `fk_StockEntry_Users1_idx` (`receivedBy`),
+  INDEX `fk_StockEntry_Product1_idx` (`productId`),
+  INDEX `fk_StockEntry_lastEditedUser` (`lastEditedUser`),
   CONSTRAINT `fk_StockEntry_lastEditedUser`
     FOREIGN KEY (`lastEditedUser`)
     REFERENCES `mydb`.`Users` (`userId`),
@@ -216,9 +216,8 @@ CREATE TABLE IF NOT EXISTS `mydb`.`StockEntry` (
     REFERENCES `mydb`.`Product` (`productId`),
   CONSTRAINT `fk_StockEntry_Users1`
     FOREIGN KEY (`receivedBy`)
-    REFERENCES `mydb`.`Users` (`userId`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb3;
+    REFERENCES `mydb`.`Users` (`userId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
 -- -----------------------------------------------------
@@ -237,7 +236,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`StockWithdrawal` (
   `stockEntryId` INT NULL DEFAULT NULL,
   `lastEditedDate` DATETIME NULL DEFAULT NULL,
   `lastEditedUser` INT NULL DEFAULT NULL,
-  PRIMARY KEY (`withdrawalId`, `productId`, `withdrawnBy`, `authorizedBy`),
+  PRIMARY KEY (`withdrawalId`),
   INDEX `fk_StockWithdrawal_Product1_idx` (`productId` ASC) VISIBLE,
   INDEX `fk_StockWithdrawal_Users2_idx` (`withdrawnBy` ASC) VISIBLE,
   INDEX `fk_StockWithdrawal_Users1_idx` (`authorizedBy` ASC) VISIBLE,
@@ -259,7 +258,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`StockWithdrawal` (
     FOREIGN KEY (`withdrawnBy`)
     REFERENCES `mydb`.`Users` (`userId`))
 ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb3;
+DEFAULT CHARACTER SET = utf8mb4;
 
 
 SET SQL_MODE=@OLD_SQL_MODE;
