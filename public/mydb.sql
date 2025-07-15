@@ -25,7 +25,6 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Product` (
   `category` VARCHAR(45) NOT NULL,
   `descriptions` VARCHAR(45) NOT NULL,
   `supplier` VARCHAR(45) NOT NULL,
-  `productStatus` ENUM('active', 'discontinued') NOT NULL,
   `cost` DOUBLE NOT NULL,
   `retailPrice` DOUBLE NOT NULL,
   `stockOnHand` INT NULL DEFAULT '0',
