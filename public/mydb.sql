@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Product` (
   `cost` DOUBLE NOT NULL,
   `retailPrice` DOUBLE NOT NULL,
   `stockOnHand` INT NULL DEFAULT '0',
-  `units` VARCHAR(20) NULL DEFAULT NULL,
+  `units` ENUM('pcs', 'boxes', 'cases', 'packs', 'bundles', 'crates', 'meters', 'centimeters', 'square meters', 'rolls', 'spools', 'sets', 'other') NULL DEFAULT NULL,
   `lastEditedDate` DATETIME NULL DEFAULT NULL,
   `lastEditedUser` INT NULL DEFAULT NULL,
   `deleteFlag` TINYINT NOT NULL,
