@@ -284,14 +284,14 @@
 					{selected === tab
 						? 'selected font-bold bg-white'
 						: 'bg-gray-100 truncate mr-2'}"
-				style="{selected === tab ? '' : 'max-width: 7ch; min-width: 0;'}"
+				style="{selected === tab ? '' : 'max-width: 12ch; min-width: 0;'}"
 				on:click={() => (selected = tab as TabType)}
 				title={tab}
 			>
 				<span class="w-full text-center">
 					{selected === tab
 						? tab
-						: tab.length > 5 ? tab.slice(0, 5) + '...' : tab}
+						: tab.length > 6 ? tab.slice(0, 6) + '...' : tab}
 				</span>
 			</button>
 		{/each}
