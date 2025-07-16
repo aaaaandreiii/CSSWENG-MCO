@@ -2,6 +2,7 @@ import express from "express";
 import * as mysql from "../model/stockWithdrawalModel.js";
 import { authenJWT } from "../middleware/authenJWT.js";
 import { authorizePermission } from "../middleware/authoPerms.js";
+import { logAudit } from "../model/auditModel.js";
 
 const router = express.Router();
 
@@ -10,6 +11,7 @@ router.post("/createStockWithdrawal", authenJWT, authorizePermission("edit_stock
         const {quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy} = req.body;
         const dateWithdrawn = new Date().toISOString().split("T")[0];
         const withdrawalId = await mysql.createStockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, null, null, 0);
+        await logAudit("add_stock", `Created withdrawal ID ${withdrawalId} for entry ${entryId} (Qty: ${quantityWithdrawn})`, req.user.userId);
         res.json({message: "Stock Withdrawal created successfully!", id: withdrawalId});
     }catch(err){
         res.status(500).json({ message: "Error creating Stock Withdrawal" });
@@ -53,6 +55,7 @@ router.put("/updateStockWithdrawal/:id", authenJWT, authorizePermission("edit_st
         const updatedData = req.body;
         const result = await mysql.updateStockWithdrawalById(withdrawalId, updatedData);
         if(result){
+            await logAudit("edit_stock", `Updated withdrawal ID ${withdrawalId}`, req.user.userId);
             res.json({ message: "Stock Withdrawal updated successfully!", id: withdrawalId });
         }
         else{
@@ -68,6 +71,7 @@ router.delete("/deleteStockWithdrawal/:id", authenJWT, authorizePermission("edit
         const withdrawalId = parseInt(req.params.id);
         const deleted = await mysql.deleteStockWithdrawalById(withdrawalId);
         if(deleted){
+            await logAudit("delete_stock", `Deleted withdrawal ID ${withdrawalId}`, req.user.userId);
             res.json({ message: "Stock Withdrawal deleted successfully!", id: withdrawalId });
         }
         else{

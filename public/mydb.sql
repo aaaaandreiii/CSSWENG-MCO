@@ -313,6 +313,27 @@ CREATE TABLE IF NOT EXISTS `mydb`.`ReturnExchangeInfo` (
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4;
 
+-- -----------------------------------------------------
+-- Table `mydb`.`AuditLog`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `mydb`.`AuditLog` ;
+
+CREATE TABLE IF NOT EXISTS `mydb`.`AuditLog` (
+  `auditId` INT NOT NULL AUTO_INCREMENT,
+  `actionType` ENUM('login', 'logout', 'add_stock', 'edit_stock', 'delete_stock') NOT NULL,
+  `description` TEXT NOT NULL,
+  `userId` INT NOT NULL,
+  `timestamp` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`auditId`),
+  INDEX `fk_AuditLog_Users_idx` (`userId` ASC) VISIBLE,
+  CONSTRAINT `fk_AuditLog_Users`
+    FOREIGN KEY (`userId`)
+    REFERENCES `mydb`.`Users` (`userId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION
+)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4;
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;

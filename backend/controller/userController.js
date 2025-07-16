@@ -4,6 +4,7 @@ import argon2 from 'argon2';
 import jwt from "jsonwebtoken";
 import { authenJWT } from "../middleware/authenJWT.js";
 import { authorizePermission } from "../middleware/authoPerms.js";
+import { logAudit } from "../model/auditModel.js";
 
 
 const router = express.Router();
@@ -30,6 +31,8 @@ router.post("/login", async (req, res) => {
         "secretkey", //move to .env l8r
         { expiresIn: "1h" }
         );
+
+        await logAudit("login", `User ${user.fullName} logged in.`, user.userId);
 
         console.log("Login success! Sending token...");
         return res.json({ message: "Login successful", token });

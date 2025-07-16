@@ -2,6 +2,7 @@ import express from "express";
 import * as mysql from "../model/stockEntryModel.js";
 import { authenJWT } from "../middleware/authenJWT.js";
 import { authorizePermission } from "../middleware/authoPerms.js";
+import { logAudit } from "../model/auditModel.js";
 
 const router = express.Router();
 
@@ -10,6 +11,7 @@ router.post("/createStockEntry", authenJWT, authorizePermission("edit_stock"), a
         const {branchName, quantityReceived, deliveryReceiptNumber, receivedBy, productId} = req.body;
         const dateReceived = new Date().toISOString().split("T")[0];
         const entryId = await mysql.createStockEntry(branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, null, null, 0);
+        await logAudit("add_stock", `Added stock entry ID ${entryId} for product ${productId}`, req.user.userId);
         res.json({message: "Stock Entry created successfully!", id: entryId});
     }catch(err){
         res.status(500).json({ message: "Error creating Stock Entry" });
@@ -54,6 +56,7 @@ router.put("/updateStockEntry/:id", authenJWT, authorizePermission("edit_stock")
         const updatedData = req.body;
         const result = await mysql.updateStockEntryById(entryId, updatedData);
         if(result){
+            await logAudit("edit_stock", `Edited stock entry ID ${entryId}`, req.user.userId);
             res.json({ message: "Stock Entry updated successfully!", id: entryId });
         }
         else{
@@ -64,12 +67,12 @@ router.put("/updateStockEntry/:id", authenJWT, authorizePermission("edit_stock")
     }
 }); //test: Appened -H "Authorization: Bearer TOKEN_HERE" at the end of the header
 
-
 router.delete("/deleteStockEntry/:id", authenJWT, authorizePermission("edit_stock"), async(req, res) =>{
     try{
         const entryId = parseInt(req.params.id);
         const deleted = await mysql.cascadeDeleteStockEntry(entryId);
         if(deleted){
+            await logAudit("delete_stock", `Deleted stock entry ID ${entryId}`, req.user.userId);
             res.json({ message: "Stock Entry deleted successfully!", id: entryId });
         }
         else{
