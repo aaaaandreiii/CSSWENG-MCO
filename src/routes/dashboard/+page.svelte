@@ -12,7 +12,7 @@
 
 	import { items } from '$lib/index.js';
 
-	let selectedButton = '12 months'; // Track which button is selected
+	let selectedButton = '12months'; // Track which button is selected
 
 	function handleClick(buttonId: string) {
 		selectedButton = buttonId;
@@ -143,21 +143,21 @@
 			<h1 class="text-start text-base font-bold">Sales Report</h1>
 			<div class="flex">
 				<button
-					class="buttons {selectedButton === '12months' ? 'pressed' : ''}"
+					class="buttons {selectedButton === '12months' ? 'selected' : ''}"
 					onclick={() => handleClick('12months')}
 				>
 					12 months
 				</button>
 
 				<button
-					class="buttons {selectedButton === '6months' ? 'pressed' : ''}"
+					class="buttons {selectedButton === '6months' ? 'selected' : ''}"
 					onclick={() => handleClick('6months')}
 				>
 					6 months
 				</button>
 
 				<button
-					class="buttons {selectedButton === '30days' ? 'pressed' : ''}"
+					class="buttons {selectedButton === '30days' ? 'selected' : ''}"
 					onclick={() => handleClick('30days')}
 				>
 					30 days
