@@ -243,9 +243,13 @@
 	}
 
 	function handleDeleteSelectedRows() {
-		// Remove rows whose index is in selectedRows
-		rows = rows.filter((_, idx) => !selectedRows.includes(idx));
-		selectedRows = [];
+		if (
+			selectedRows.length > 0 &&
+			confirm(`Are you sure you want to delete ${selectedRows.length} selected row(s)?`)
+		) {
+			rows = rows.filter((_, idx) => !selectedRows.includes(idx));
+			selectedRows = [];
+		}
 	}
 </script>
 
