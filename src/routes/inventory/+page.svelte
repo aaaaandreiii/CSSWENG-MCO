@@ -12,83 +12,83 @@
 
 	const headerMap: Record<TabType, string[]> = {
 		Product: [
-			'productid',
-			'productName',
-			'category',
-			'descriptions',
-			'supplier',
-			'productStatus',
-			'cost',
-			'retailPrice',
-			'stockOnHand',
-			'units',
-			'lastEditedDate',
-			'lastEditedUser'
+			'Product ID',
+			'Product Name',
+			'Category',
+			'Descriptions',
+			'Supplier',
+			'Product Status',
+			'Cost',
+			'Retail Price',
+			'Stock On Hand',
+			'Units',
+			'Last Edited Date',
+			'Last Edited User'
 		],
 		Orders: [
-			'orderld',
-			'discount',
-			'customer',
-			'handledBy',
-			'paymentMethod',
-			'paymentStatus',
-			'lastEditedDate',
-			'lastEditedUser',
-			'dateOrdered'
+			'Order ID',
+			'Discount',
+			'Customer',
+			'Handled By',
+			'Payment Method',
+			'Payment Status',
+			'Last Edited Date',
+			'Last Edited User',
+			'Date Ordered'
 		],
 		OrderInfo: [
-			'orderinfoID',
-			'quantity INT',
-			'orderld',
-			'productid',
-			'unitPriceAtPurchase',
-			'lastEditedDate',
-			'lastEditedUser',
-			'delete Flag'
+			'Order Info ID',
+			'Quantity',
+			'Order ID',
+			'Product ID',
+			'Unit Price At Purchase',
+			'Last Edited Date',
+			'Last Edited User',
+			'Delete Flag'
 		],
 		StockEntry: [
-			'entryld',
-			'branchName',
-			'dateReceived',
-			'quantityReceived',
-			'deliveryReceiptNumber',
-			'receivedBy',
-			'productld',
-			'lastEditedDate',
-			'lastEditedUser'
+			'Entry ID',
+			'Branch Name',
+			'Date Received',
+			'Quantity Received',
+			'Delivery Receipt Number',
+			'Received By',
+			'Product ID',
+			'Last Edited Date',
+			'Last Edited User'
 		],
 		StockWithdrawal: [
-			'withdrawalld',
-			'dateWithdrawn',
-			'quantityWithdrawn',
-			'purpose',
-			'entryld',
-			'withdrawnBy',
-			'authorizedBy',
-			'lastEditedDate',
-			'lastEditedUser'
+			'Withdrawal ID',
+			'Date Withdrawn',
+			'Quantity Withdrawn',
+			'Purpose',
+			'Entry ID',
+			'Withdrawn By',
+			'Authorized By',
+			'Last Edited Date',
+			'Last Edited User'
 		],
 		ReturnExchange: [
-			'transactionid',
-			'dateTransaction',
-			'transactionStatus',
-			'orderld',
-			'handledBy',
-			'approvedBy',
-			'lastEditedDate',
-			'lastEditedUser'
+			'Transaction ID',
+			'Date Transaction',
+			'Transaction Status',
+			'Order ID',
+			'Handled By',
+			'Approved By',
+			'Last Edited Date',
+			'Last Edited User'
 		],
 		ReturnExchangelnfo: [
-			'detailld INT',
-			'returnedProductId',
-			'retunedQuantity',
-			'exchangeProductld',
-			'exchangeQuantity',
-			'reason',
-			'transactionid',
-			'retumType',
-			'lastEditedDate',
-			'lastEditedUser'
+			'Detail ID',
+			'Returned Product ID',
+			'Returned Quantity',
+			'Exchange Product ID',
+			'Exchange Quantity',
+			'Reason',
+			'Transaction ID',
+			'Return Type',
+			'Last Edited Date',
+			'Last Edited User'
 		]
 	};
 
@@ -107,7 +107,7 @@
 
 	// table data rows, can fill with dummy data
 	let rows: { [key: string]: string }[] = [];
-	
+
 	// store default order for reset
 	const originalRows = [...rows];
 
@@ -220,7 +220,7 @@
 
 	function openAddModal() {
 		addForm = {};
-		currentHeaders.forEach(h => addForm[h] = '');
+		currentHeaders.forEach((h) => (addForm[h] = ''));
 		isAddForm = true;
 		showModal = true;
 		modalContent = '';
@@ -235,7 +235,7 @@
 
 	function handleAddFormSave() {
 		// Only add if at least one field is filled
-		if (Object.values(addForm).some(v => v.trim() !== '')) {
+		if (Object.values(addForm).some((v) => v.trim() !== '')) {
 			rows = [...rows, { ...addForm }];
 			isAddForm = false;
 			showModal = false;
@@ -284,34 +284,32 @@
 	<div class="flex w-full">
 		{#each Object.keys(headerMap) as tab, idx (tab)}
 			<button
-				class="buttonss flex items-center justify-center transition-all duration-150 w-full text-center
-					{selected === tab
-						? 'selected font-bold bg-white'
-						: 'bg-gray-100 truncate mr-2'}"
-				style="{selected === tab ? '' : 'max-width: 12ch; min-width: 0;'}"
+				class="buttonss flex w-full items-center justify-center text-center transition-all duration-150
+					{selected === tab ? 'selected bg-white font-bold' : 'mr-2 truncate bg-gray-100'}"
+				style={selected === tab ? '' : 'max-width: 12ch; min-width: 0;'}
 				on:click={() => (selected = tab as TabType)}
 				title={tab}
 			>
 				<span class="w-full text-center">
-					{selected === tab
-						? tab
-						: tab.length > 6 ? tab.slice(0, 6) + '...' : tab}
+					{selected === tab ? tab : tab.length > 6 ? tab.slice(0, 6) + '...' : tab}
 				</span>
 			</button>
 		{/each}
 	</div>
 	<!-- buttons for actions -->
 	<div class="ml-auto flex gap-5 p-2.5 pr-10">
-		<button 
+		<button
 			class="flex w-28 items-center justify-center gap-2 rounded-lg font-bold
-				{selectedRows.length === 0 ? 'bg-gray-400 text-gray-200 cursor-not-allowed' : 'red1 text-white hover:bg-red-700'}"
+				{selectedRows.length === 0
+				? 'cursor-not-allowed bg-gray-400 text-gray-200'
+				: 'red1 text-white hover:bg-red-700'}"
 			disabled={selectedRows.length === 0}
 			on:click={handleDeleteSelectedRows}
 		>
 			Delete
 		</button>
 		<button
-			class="flex w-28 items-center justify-center gap-2 rounded-lg green1 text-white hover:bg-green-900 font-bold"
+			class="green1 flex w-28 items-center justify-center gap-2 rounded-lg font-bold text-white hover:bg-green-900"
 			on:click={openAddModal}
 		>
 			Add
@@ -428,8 +426,10 @@
 						<button
 							type="submit"
 							class="rounded px-4 py-2 text-white
-								{Object.values(addForm).some(v => v.trim() !== '') ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed'}"
-							disabled={!Object.values(addForm).some(v => v.trim() !== '')}
+								{Object.values(addForm).some((v) => v.trim() !== '')
+								? 'bg-green-600 hover:bg-green-700'
+								: 'cursor-not-allowed bg-gray-400'}"
+							disabled={!Object.values(addForm).some((v) => v.trim() !== '')}
 						>
 							Add
 						</button>
@@ -470,7 +470,9 @@
 				<!-- edit popup form for individual cell -->
 				<form on:submit|preventDefault={handleCellEditFormSave}>
 					<div class="mb-2">
-						<label class="mb-1 block font-bold" for={'cell-edit-' + modalColumn}>{modalColumn}</label>
+						<label class="mb-1 block font-bold" for={'cell-edit-' + modalColumn}
+							>{modalColumn}</label
+						>
 						<input
 							id={'cell-edit-' + modalColumn}
 							class="w-full rounded border px-2 py-1"
