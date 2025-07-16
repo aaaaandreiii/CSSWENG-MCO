@@ -21,7 +21,7 @@ DROP TABLE IF EXISTS `mydb`.`Product` ;
 
 CREATE TABLE IF NOT EXISTS `mydb`.`Product` (
   `productId` INT NOT NULL AUTO_INCREMENT,
-  `productName` VARCHAR(45) NOT NULL,
+  `productName` VARCHAR(255) NOT NULL,
   `category` VARCHAR(45) NOT NULL,
   `descriptions` VARCHAR(45) NOT NULL,
   `supplier` VARCHAR(45) NOT NULL,
