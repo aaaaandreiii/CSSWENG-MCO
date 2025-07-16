@@ -148,7 +148,7 @@
 		<div class="flex flex-wrap gap-5 justify-start">
 			{#if selected === 'all' || selected === 'admin' || selected === 'staff' || selected === 'auditor' || selected === 'manager'}
 				{#each filteredDetails as detail, idx}
-					<div class="mt-8 rounded-lg bg-white p-8 basis-1/7 max-w-[12.5%] flex-shrink-0">
+					<div class="mt-8 rounded-lg bg-white p-8 basis-1/7 min-w-[250px] flex-shrink-0">
 						<div class="flex flex-col items-center">
 							<!-- User ID above full name -->
 							<span class="text-xs text-gray-500 mb-2">{detail.userId}</span>
@@ -158,7 +158,7 @@
 								src={detail.profilePic}
 								alt="pfp" 
 								class="rounded-full object-cover mb-4"
-								style="width:200px; height:200px;"
+								style="width:150px; height:150px;"
 							/>
 							<!-- Username below profile picture -->
 							<span class="text-base text-gray-700 mb-2">{detail.user}</span>
