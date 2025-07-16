@@ -4,8 +4,7 @@ import argon2 from 'argon2';
 import jwt from "jsonwebtoken";
 import { authenJWT } from "../middleware/authenJWT.js";
 import { authorizePermission } from "../middleware/authoPerms.js";
-import { logAudit } from "../model/auditModel.js";
-
+import * as auditModel from "../model/auditModel.js";
 
 const router = express.Router();
 
@@ -132,5 +131,26 @@ router.delete("/deleteUser/:id", authenJWT, authorizePermission("manage_users"),
         res.status(500).json({ message: "Error deleting User" });
     }
 }); //test: curl -X DELETE http://localhost:5000/api/deleteUser/1 -H "Authorization: Bearer TOKEN_HERE"
+
+export async function getAllAuditLogs(req, res) {
+    try {
+        const logs = await auditModel.getAllAuditLogs();
+        res.json({ message: "Audit logs fetched successfully!", logs });
+    } catch (err) {
+        console.error("Error fetching audit logs:", err);
+        res.status(500).json({ message: "Failed to fetch audit logs." });
+    }
+}//test: curl -X GET http://localhost:5000/api/auditLogs -H "Authorization: Bearer TOKEN_HERE"
+
+export async function getAuditLogsByUser(req, res) {
+    try {
+        const userId = parseInt(req.params.userId);
+        const logs = await auditModel.getAuditLogsByUser(userId);
+        res.json({ message: `Audit logs for user ${userId} fetched successfully!`, logs });
+    } catch (err) {
+        console.error("Error fetching audit logs for user:", err);
+        res.status(500).json({ message: "Failed to fetch audit logs for user." });
+    }
+}//test: curl -X GET http://localhost:5000/api/auditLogs/1 -H "Authorization: Bearer TOKEN_HERE"
 
 export default router;
