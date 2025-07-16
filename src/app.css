@@ -272,3 +272,9 @@ body.login-page {
 	padding-left: 30px !important; /* keep text aligned with other tabs */
 	min-width: 205px; /* ensures uniform width for all selected tabs */
 }
+
+.buttons.selected {
+	background-color: white;
+	color: black;
+	box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.1);
+}
