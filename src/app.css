@@ -247,8 +247,9 @@ body.login-page {
 	padding: 2.5rem;
 	border-radius: 1rem;
 	width: fit-content;
+	min-width: 520px;
+	max-width: 1100px;
 	height: fit-content;
-	max-width: 90vw;
 	max-height: 70vh;
 	overflow: auto;
 	box-shadow: 0 2px 24px rgba(0, 0, 0, 0.2);
