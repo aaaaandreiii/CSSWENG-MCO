@@ -1,10 +1,12 @@
 import express from "express";
 import * as returnExchangeModel from "../model/returnExchangeModel.js";
 import * as returnExchangeInfoModel from "../model/returnExchangeInfoModel.js";
+import { authenJWT } from "../middleware/authenJWT.js";
+import { authorizePermission } from "../middleware/authoPerms.js";
 
 const router = express.Router();
 
-router.post("/createReturnExchange", async(req, res) =>{
+router.post("/createReturnExchange", authenJWT, authorizePermission("process_returns"), async(req, res) =>{
     try{
         const {transactionStatus, orderId, handledBy, approvedBy, transactions} = req.body;  
         const dateTransaction = new Date().toISOString().split("T")[0];  
@@ -19,9 +21,9 @@ router.post("/createReturnExchange", async(req, res) =>{
         console.error("Return Exchange Error:", err);
         res.status(500).json({ message: "Error creating Return Exchange and Return Exchange Info" });
     }
-}); //test: curl -X POST http://localhost:5000/api/createReturnExchange -H "Content-Type: application/json" -d "{\"transactionStatus\":\"refunded\",\"orderId\":1,\"handledBy\":1,\"approvedBy\":1,\"transactions\":[{\"returnedProductId\":1,\"returnedQuantity\":1,\"exchangeProductId\":1,\"exchangeQuantity\":1,\"reason\":\"damaged\"},{\"returnedProductId\":2,\"returnedQuantity\":1,\"exchangeProductId\":null,\"exchangeQuantity\":null,\"reason\":\"damaged\"}]}"
+}); //test: curl -X POST http://localhost:5000/api/createReturnExchange -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"transactionStatus\":\"refunded\",\"orderId\":1,\"handledBy\":1,\"approvedBy\":1,\"transactions\":[{\"returnedProductId\":1,\"returnedQuantity\":1,\"exchangeProductId\":1,\"exchangeQuantity\":1,\"reason\":\"damaged\"},{\"returnedProductId\":2,\"returnedQuantity\":1,\"exchangeProductId\":null,\"exchangeQuantity\":null,\"reason\":\"damaged\"}]}"
 
-router.get("/getReturnExchanges", async(req, res) =>{
+router.get("/getReturnExchanges", authenJWT, authorizePermission("process_returns"), async(req, res) =>{
     try{
         const returnExchanges = await returnExchangeModel.getReturnExchanges();
         if(returnExchanges){
@@ -34,9 +36,9 @@ router.get("/getReturnExchanges", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error fetching Return Exchanges" });
     }
-}); //test: curl -X GET http://localhost:5000/api/getReturnExchanges
+}); //test: curl -X GET http://localhost:5000/api/getReturnExchanges -H "Authorization: Bearer TOKEN_HERE"
 
-router.get("/getReturnExchangeInfo", async(req, res) =>{
+router.get("/getReturnExchangeInfo", authenJWT, authorizePermission("process_returns"), async(req, res) =>{
     try{
         const returnExchangeInfo = await returnExchangeInfoModel.getReturnExchangeInfo();
         if(returnExchangeInfo){
@@ -49,9 +51,9 @@ router.get("/getReturnExchangeInfo", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error fetching Return Exchange Info" });
     }
-}); //test: curl -X GET http://localhost:5000/api/getReturnExchangeInfo
+}); //test: curl -X GET http://localhost:5000/api/getReturnExchangeInfo -H "Authorization: Bearer TOKEN_HERE"
 
-router.get("/getReturnExchangeById/:id", async(req, res) =>{
+router.get("/getReturnExchangeById/:id", authenJWT, authorizePermission("process_returns"), async(req, res) =>{
     try{
         const transactionId = parseInt(req.params.id);
         const returnExchange = await returnExchangeModel.getReturnExchangeById(transactionId);
@@ -65,9 +67,9 @@ router.get("/getReturnExchangeById/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error fetching Return Exchange" });
     }
-}); //test: curl -X GET http://localhost:5000/api/getReturnExchangeById/1
+}); //test: curl -X GET http://localhost:5000/api/getReturnExchangeById/1 -H "Authorization: Bearer TOKEN_HERE"
 
-router.get("/getReturnExchangeInfoById/:id", async(req, res) =>{
+router.get("/getReturnExchangeInfoById/:id", authenJWT, authorizePermission("process_returns"), async(req, res) =>{
     try{
         const detailId = parseInt(req.params.id);
         const returnExchangeInfo = await returnExchangeInfoModel.getReturnExchangeInfoById(detailId);
@@ -81,9 +83,9 @@ router.get("/getReturnExchangeInfoById/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error fetching Return Exchange Info" });
     }
-}); //test: curl -X GET http://localhost:5000/api/getReturnExchangeInfoById/1
+}); //test: curl -X GET http://localhost:5000/api/getReturnExchangeInfoById/1 -H "Authorization: Bearer TOKEN_HERE"
 
-router.put("/updateReturnExchange/:id", async(req, res) =>{
+router.put("/updateReturnExchange/:id", authenJWT, authorizePermission("process_returns"), async(req, res) =>{
     try{
         const transactionId = parseInt(req.params.id);
         const updatedData = req.body;
@@ -97,9 +99,9 @@ router.put("/updateReturnExchange/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error updating Return Exchange" });
     }
-}); //test: 
+}); //test: Appened -H "Authorization: Bearer TOKEN_HERE" at the end of the header
 
-router.put("/updateReturnExchangeInfo/:id", async(req, res) =>{
+router.put("/updateReturnExchangeInfo/:id", authenJWT, authorizePermission("process_returns"), async(req, res) =>{
     try{
         const detailId = parseInt(req.params.id);
         const updatedData = req.body;
@@ -113,9 +115,9 @@ router.put("/updateReturnExchangeInfo/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error updating Return Exchange Info" });
     }
-}); //test: 
+}); //test: Appened -H "Authorization: Bearer TOKEN_HERE" at the end of the header
 
-router.delete("/deleteReturnExchange/:id", async(req, res) =>{
+router.delete("/deleteReturnExchange/:id", authenJWT, authorizePermission("process_returns"), async(req, res) =>{
     try{
         const transactionId = parseInt(req.params.id);
         const deleted = await returnExchangeModel.cascadeDeleteReturnExchange(transactionId);
@@ -128,9 +130,9 @@ router.delete("/deleteReturnExchange/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error deleting Return Exchange" });
     }
-}); //test: curl -X DELETE http://localhost:5000/api/deleteReturnExchange/1
+}); //test: curl -X DELETE http://localhost:5000/api/deleteReturnExchange/1 -H "Authorization: Bearer TOKEN_HERE"
 
-router.delete("/deleteReturnExchangeInfo/:id", async(req, res) =>{
+router.delete("/deleteReturnExchangeInfo/:id", authenJWT, authorizePermission("process_returns"), async(req, res) =>{
     try{
         const detailId = parseInt(req.params.id);
         const deleted = await returnExchangeInfoModel.deleteReturnExchangeInfo(detailId);
@@ -143,6 +145,6 @@ router.delete("/deleteReturnExchangeInfo/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error deleting Return Exchange Info" });
     }
-}); //test: curl -X DELETE http://localhost:5000/api/deleteReturnExchangeInfo/1
+}); //test: curl -X DELETE http://localhost:5000/api/deleteReturnExchangeInfo/1 -H "Authorization: Bearer TOKEN_HERE"
 
 export default router;

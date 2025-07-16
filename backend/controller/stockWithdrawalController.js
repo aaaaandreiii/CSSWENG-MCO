@@ -1,9 +1,11 @@
 import express from "express";
 import * as mysql from "../model/stockWithdrawalModel.js";
+import { authenJWT } from "../middleware/authenJWT.js";
+import { authorizePermission } from "../middleware/authoPerms.js";
 
 const router = express.Router();
 
-router.post("/createStockWithdrawal", async(req, res) =>{
+router.post("/createStockWithdrawal", authenJWT, authorizePermission("edit_stock"), async(req, res) =>{
     try{
         const {quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy} = req.body;
         const dateWithdrawn = new Date().toISOString().split("T")[0];
@@ -12,9 +14,9 @@ router.post("/createStockWithdrawal", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error creating Stock Withdrawal" });
     }
-}); //test: curl -X POST http://localhost:5000/api/createStockWithdrawal -H "Content-Type: application/json" -d "{\"quantityWithdrawn\":3,\"purpose\":\"damaged\",\"entryId\":1,\"withdrawnBy\":1,\"authorizedBy\":1}"
+}); //test: curl -X POST http://localhost:5000/api/createStockWithdrawal -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"quantityWithdrawn\":3,\"purpose\":\"damaged\",\"entryId\":1,\"withdrawnBy\":1,\"authorizedBy\":1}"
 
-router.get("/getStockWithdrawals", async(req, res) =>{
+router.get("/getStockWithdrawals", authenJWT, authorizePermission("edit_stock"), async(req, res) =>{
     try{
         const stockWithdrawals = await mysql.getStockWithdrawals();
         if(stockWithdrawals){
@@ -27,9 +29,9 @@ router.get("/getStockWithdrawals", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error fetching Stock Withdrawals" });
     }
-}); //test: curl -X GET http://localhost:5000/api/getStockWithdrawals
+}); //test: curl -X GET http://localhost:5000/api/getStockWithdrawals -H "Authorization: Bearer TOKEN_HERE"
 
-router.get("/getStockWithdrawalById/:id", async(req, res) =>{
+router.get("/getStockWithdrawalById/:id", authenJWT, authorizePermission("edit_stock"), async(req, res) =>{
     try{
         const withdrawalId = parseInt(req.params.id);
         const stockWithdrawal = await mysql.getStockWithdrawalById(withdrawalId);
@@ -43,9 +45,9 @@ router.get("/getStockWithdrawalById/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error fetching Stock Withdrawal" });
     }
-}); //test: curl -X GET http://localhost:5000/api/getStockWithdrawalById/1
+}); //test: curl -X GET http://localhost:5000/api/getStockWithdrawalById/1 -H "Authorization: Bearer TOKEN_HERE"
 
-router.put("/updateStockWithdrawal/:id", async(req, res) =>{
+router.put("/updateStockWithdrawal/:id", authenJWT, authorizePermission("edit_stock"), async(req, res) =>{
     try{
         const withdrawalId = parseInt(req.params.id);
         const updatedData = req.body;
@@ -59,9 +61,9 @@ router.put("/updateStockWithdrawal/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error updating Stock Withdrawal" });
     }
-}); 
+});  //test: Appened -H "Authorization: Bearer TOKEN_HERE" at the end of the header
 
-router.delete("/deleteStockWithdrawal/:id", async(req, res) =>{
+router.delete("/deleteStockWithdrawal/:id", authenJWT, authorizePermission("edit_stock"), async(req, res) =>{
     try{
         const withdrawalId = parseInt(req.params.id);
         const deleted = await mysql.deleteStockWithdrawalById(withdrawalId);
@@ -74,6 +76,6 @@ router.delete("/deleteStockWithdrawal/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error deleting Stock Withdrawal" });
     }
-}); //test: curl -X DELETE http://localhost:5000/api/deleteStockWithdrawal/1
+}); //test: curl -X DELETE http://localhost:5000/api/deleteStockWithdrawal/1 -H "Authorization: Bearer TOKEN_HERE"
 
 export default router;

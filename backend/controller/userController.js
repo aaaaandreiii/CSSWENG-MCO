@@ -2,6 +2,9 @@ import express from "express";
 import * as mysql from "../model/userModel.js";
 import argon2 from 'argon2';
 import jwt from "jsonwebtoken";
+import { authenJWT } from "../middleware/authenJWT.js";
+import { authorizePermission } from "../middleware/authoPerms.js";
+
 
 const router = express.Router();
 
@@ -37,7 +40,7 @@ router.post("/login", async (req, res) => {
         }
 }); //test: curl -X POST http://localhost:5000/api/login   -H "Content-Type: application/json"   -d '{"username":"janedoe","password":"secret123"}'
 
-router.post("/createUser", async(req, res) =>{
+router.post("/createUser", authenJWT, authorizePermission("manage_users"), async(req, res) =>{
     try{
         const {fullName, userRole, username, userPassword} = req.body;
         const dateAdded = new Date().toISOString().split("T")[0]
@@ -47,9 +50,9 @@ router.post("/createUser", async(req, res) =>{
         console.error(err);
         res.status(500).json({ message: "Error creating User" });
     }
-}); //test: curl -X POST http://localhost:5000/api/createUser -H "Content-Type: application/json" -d "{\"fullName\":\"Jane Doe\",\"userRole\":\"admin\",\"username\":\"janedoe\",\"userPassword\":\"secret123\"}"
+}); //test: curl -X POST http://localhost:5000/api/createUser -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"fullName\":\"Jane Doe\",\"userRole\":\"admin\",\"username\":\"janedoe\",\"userPassword\":\"secret123\"}"
 
-router.get("/getUsers", async(req, res) =>{
+router.get("/getUsers", authenJWT, authorizePermission("manage_users"), async(req, res) =>{
     try{
         const users = await mysql.getUsers();
         if(users){
@@ -62,9 +65,9 @@ router.get("/getUsers", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error fetching Users" });
     }
-}); //test: curl -X GET http://localhost:5000/api/getUsers
+}); //test: curl -X GET http://localhost:5000/api/getUsers -H "Authorization: Bearer TOKEN_HERE"
 
-router.get("/getUserById/:id", async(req, res) =>{
+router.get("/getUserById/:id", authenJWT, authorizePermission("manage_users"), async(req, res) =>{
     try{
         const userId = parseInt(req.params.id);
         const user = await mysql.getUserById(userId);
@@ -78,9 +81,9 @@ router.get("/getUserById/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error fetching User" });
     }
-}); //test: curl -X GET http://localhost:5000/api/getUserById/1
+}); //test: curl -X GET http://localhost:5000/api/getUserById/1 -H "Authorization: Bearer TOKEN_HERE"
 
-router.get("/getUserByUsername/:username", async(req, res) =>{
+router.get("/getUserByUsername/:username", authenJWT, authorizePermission("manage_users"), async(req, res) =>{
     try{
         const username = req.params.username;
         const user = await mysql.getUserByUsername(username);
@@ -94,9 +97,9 @@ router.get("/getUserByUsername/:username", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error fetching User" });
     }
-}); //test: curl -X GET http://localhost:5000/api/getUserByUsername/janedoe
+}); //test: curl -X GET http://localhost:5000/api/getUserByUsername/janedoe -H "Authorization: Bearer TOKEN_HERE"
 
-router.put("/updateUser/:id", async(req, res) =>{
+router.put("/updateUser/:id", authenJWT, authorizePermission("manage_users"), async(req, res) =>{
     try{
         const userId = parseInt(req.params.id);
         const updatedData = req.body;
@@ -110,9 +113,9 @@ router.put("/updateUser/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error updating User" });
     }
-}); //test: curl -X PUT http://localhost:5000/api/updateUser/1 -H "Content-Type: application/json" -d "{\"fullName\":\"Janet D.\",\"userRole\":\"manager\",\"username\":\"janetdoe\",\"userPassword\":\"secure456\"}"
+}); //test: curl -X PUT http://localhost:5000/api/updateUser/1 -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"fullName\":\"Janet D.\",\"userRole\":\"manager\",\"username\":\"janetdoe\",\"userPassword\":\"secure456\"}"
 
-router.delete("/deleteUser/:id", async(req, res) =>{
+router.delete("/deleteUser/:id", authenJWT, authorizePermission("manage_users"), async(req, res) =>{
     try{
         const userId = parseInt(req.params.id);
         const deleted = await mysql.cascadeDeleteUser(userId);
@@ -125,6 +128,6 @@ router.delete("/deleteUser/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error deleting User" });
     }
-}); //test: curl -X DELETE http://localhost:5000/api/deleteUser/1
+}); //test: curl -X DELETE http://localhost:5000/api/deleteUser/1 -H "Authorization: Bearer TOKEN_HERE"
 
 export default router;

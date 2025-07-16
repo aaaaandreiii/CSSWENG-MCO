@@ -1,9 +1,11 @@
 import express from "express";
 import * as mysql from "../model/stockEntryModel.js";
+import { authenJWT } from "../middleware/authenJWT.js";
+import { authorizePermission } from "../middleware/authoPerms.js";
 
 const router = express.Router();
 
-router.post("/createStockEntry", async(req, res) =>{
+router.post("/createStockEntry", authenJWT, authorizePermission("edit_stock"), async(req, res) =>{
     try{
         const {branchName, quantityReceived, deliveryReceiptNumber, receivedBy, productId} = req.body;
         const dateReceived = new Date().toISOString().split("T")[0];
@@ -15,7 +17,7 @@ router.post("/createStockEntry", async(req, res) =>{
 }); //test: curl -X POST http://localhost:5000/api/createStockEntry -H "Content-Type: application/json" -d "{\"branchName\":\"Main Branch\",\"quantityReceived\":50,\"deliveryReceiptNumber\":\"2\",\"receivedBy\":1,\"productId\":1}"
 //test: curl -X POST http://localhost:5000/api/createStockEntry -H "Content-Type: application/json" -d "{\"branchName\":\"Main Branch\",\"quantityReceived\":50,\"deliveryReceiptNumber\":\"1\",\"receivedBy\":1,\"productId\":2}"
 
-router.get("/getStockEntries", async(req, res) =>{
+router.get("/getStockEntries", authenJWT, authorizePermission("edit_stock"), async(req, res) =>{
     try{
         const stockEntries = await mysql.getStockEntries();
         if(stockEntries){
@@ -30,7 +32,7 @@ router.get("/getStockEntries", async(req, res) =>{
     }
 }); //test: curl -X GET http://localhost:5000/api/getStockEntries
 
-router.get("/getStockEntryById/:id", async(req, res) =>{
+router.get("/getStockEntryById/:id", authenJWT, authorizePermission("edit_stock"), async(req, res) =>{
     try{
         const entryId = parseInt(req.params.id);
         const stockEntry = await mysql.getStockEntryById(entryId);
@@ -46,7 +48,7 @@ router.get("/getStockEntryById/:id", async(req, res) =>{
     }
 }); //test: curl -X GET http://localhost:5000/api/getStockEntryById/1
 
-router.put("/updateStockEntry/:id", async(req, res) =>{
+router.put("/updateStockEntry/:id", authenJWT, authorizePermission("edit_stock"), async(req, res) =>{
     try{
         const entryId = parseInt(req.params.id);
         const updatedData = req.body;
@@ -60,9 +62,10 @@ router.put("/updateStockEntry/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error updating Stock Entry" });
     }
-}); 
+}); //test: Appened -H "Authorization: Bearer TOKEN_HERE" at the end of the header
 
-router.delete("/deleteStockEntry/:id", async(req, res) =>{
+
+router.delete("/deleteStockEntry/:id", authenJWT, authorizePermission("edit_stock"), async(req, res) =>{
     try{
         const entryId = parseInt(req.params.id);
         const deleted = await mysql.cascadeDeleteStockEntry(entryId);

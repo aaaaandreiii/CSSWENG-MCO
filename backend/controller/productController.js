@@ -1,9 +1,11 @@
 import express from "express";
 import * as mysql from "../model/productModel.js";
+import { authenJWT } from "../middleware/authenJWT.js";
+import { authorizePermission } from "../middleware/authoPerms.js";
 
 const router = express.Router();
 
-router.post("/createProduct", async(req, res) =>{
+router.post("/createProduct", authenJWT, authorizePermission("edit_product"), async(req, res) =>{
     try{
         const {productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units} = req.body;
         const productId = await mysql.createProduct(productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, null, null, 0);
@@ -11,10 +13,10 @@ router.post("/createProduct", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error creating Product" });
     }
-}); //test: curl -X POST http://localhost:5000/api/createProduct -H "Content-Type: application/json" -d "{\"productName\":\"Ping Pong Ball\",\"category\":\"ball\",\"descriptions\":\"descriptionss\",\"supplier\":\"someone\",\"cost\":100,\"retailPrice\":150,\"stockOnHand\":50,\"units\":\"pcs\"}"
-// test: curl -X POST http://localhost:5000/api/createProduct -H "Content-Type: application/json" -d "{\"productName\":\"Ping Pong Pan\",\"category\":\"paddle\",\"descriptions\":\"descriptionss\",\"supplier\":\"someone\",\"cost\":100,\"retailPrice\":150,\"stockOnHand\":50,\"units\":\"pcs\"}"
+}); //test: curl -X POST http://localhost:5000/api/createProduct -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"productName\":\"Ping Pong Ball\",\"category\":\"ball\",\"descriptions\":\"descriptionss\",\"supplier\":\"someone\",\"cost\":100,\"retailPrice\":150,\"stockOnHand\":50,\"units\":\"pcs\"}"
+// test: curl -X POST http://localhost:5000/api/createProduct -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"productName\":\"Ping Pong Pan\",\"category\":\"paddle\",\"descriptions\":\"descriptionss\",\"supplier\":\"someone\",\"cost\":100,\"retailPrice\":150,\"stockOnHand\":50,\"units\":\"pcs\"}"
 
-router.get("/getProducts", async(req, res) =>{
+router.get("/getProducts", authenJWT, authorizePermission("edit_product"), async(req, res) =>{
     try{
         const products = await mysql.getProducts();
         if(products){
@@ -27,9 +29,9 @@ router.get("/getProducts", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error fetching Products" });
     }
-}); //test: curl -X GET http://localhost:5000/api/getProducts
+}); //test: curl -X GET http://localhost:5000/api/getProducts -H "Authorization: Bearer TOKEN_HERE"
 
-router.get("/getProductById/:id", async(req, res) =>{
+router.get("/getProductById/:id", authenJWT, authorizePermission("edit_product"), async(req, res) =>{
     try{
         const productId = parseInt(req.params.id);
         const product = await mysql.getProductById(productId);
@@ -43,9 +45,9 @@ router.get("/getProductById/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error fetching Product" });
     }
-}); //test: curl -X GET http://localhost:5000/api/getProductById/1
+}); //test: curl -X GET http://localhost:5000/api/getProductById/1 -H "Authorization: Bearer TOKEN_HERE"
 
-router.put("/updateProduct/:id", async(req, res) =>{
+router.put("/updateProduct/:id", authenJWT, authorizePermission("edit_product"), async(req, res) =>{
     try{
         const productId = parseInt(req.params.id);
         const updatedData = req.body;
@@ -59,9 +61,9 @@ router.put("/updateProduct/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error updating Product" });
     }
-}); //test: curl -X PUT http://localhost:5000/api/updateProduct/1 -H "Content-Type: application/json" -d "{\"productName\":\"Updated Ping Pong Pan\",\"category\":\"paddle\",\"descriptions\":\"Updated description\",\"supplier\":\"new supplier\",\"cost\":110,\"retailPrice\":160}"
+}); //test: curl -X PUT http://localhost:5000/api/updateProduct/1 -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"productName\":\"Updated Ping Pong Pan\",\"category\":\"paddle\",\"descriptions\":\"Updated description\",\"supplier\":\"new supplier\",\"cost\":110,\"retailPrice\":160}"
 
-router.delete("/deleteProduct/:id", async(req, res) =>{
+router.delete("/deleteProduct/:id", authenJWT, authorizePermission("edit_product"), async(req, res) =>{
     try{
         const productId = parseInt(req.params.id);
         const deleted = await mysql.cascadeDeleteProduct(productId);
@@ -74,6 +76,6 @@ router.delete("/deleteProduct/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error deleting Product" });
     }
-}); //test: curl -X DELETE http://localhost:5000/api/deleteProduct/1
+}); //test: curl -X DELETE http://localhost:5000/api/deleteProduct/1 -H "Authorization: Bearer TOKEN_HERE"
 
 export default router;

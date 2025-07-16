@@ -1,11 +1,14 @@
 import express from "express";
 import * as ordersModel from "../model/ordersModel.js";
 import * as orderInfoModel from "../model/orderInfoModel.js";
+import { authenJWT } from "../middleware/authenJWT.js";
+import { authorizePermission } from "../middleware/authoPerms.js";
+
 
 const router = express.Router();
 
 //Merged orders and orderInfo:
-router.post("/createOrder", async(req, res) =>{
+router.post("/createOrder", authenJWT, authorizePermission("edit_order"), async(req, res) =>{
     try{
         const {discount, customer, handledBy, paymentMethod, paymentStatus, items} = req.body;  
         const dateOrdered = new Date().toISOString().split("T")[0];  
@@ -17,9 +20,9 @@ router.post("/createOrder", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error creating Orders and Order Info" });
     }
-}); //test: curl -X POST http://localhost:5000/api/createOrder -H "Content-Type: application/json" -d "{\"discount\":0.10,\"customer\":\"John Doe\",\"handledBy\":1,\"items\":[{\"quantity\":2,\"productId\":1},{\"quantity\":1, \"productId\":2}]}"
+}); //test: curl -X POST http://localhost:5000/api/createOrder -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"discount\":0.10,\"customer\":\"John Doe\",\"handledBy\":1,\"items\":[{\"quantity\":2,\"productId\":1},{\"quantity\":1, \"productId\":2}]}"
 
-router.get("/getOrders", async(req, res) =>{
+router.get("/getOrders", authenJWT, authorizePermission("edit_order"), async(req, res) =>{
     try{
         const orders = await ordersModel.getOrders();
         if(orders){
@@ -32,9 +35,9 @@ router.get("/getOrders", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error fetching Orders" });
     }
-}); //test: curl -X GET http://localhost:5000/api/getOrders
+}); //test: curl -X GET http://localhost:5000/api/getOrders -H "Authorization: Bearer TOKEN_HERE"
 
-router.get("/getOrderInfo", async(req, res) =>{
+router.get("/getOrderInfo", authenJWT, authorizePermission("edit_order"), async(req, res) =>{
     try{
         const orderInfo = await orderInfoModel.getOrderInfo();
         if(orderInfo){
@@ -47,9 +50,9 @@ router.get("/getOrderInfo", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error fetching Order Info" });
     }
-}); //test: curl -X GET http://localhost:5000/api/getOrderInfo
+}); //test: curl -X GET http://localhost:5000/api/getOrderInfo -H "Authorization: Bearer TOKEN_HERE"
 
-router.get("/getOrderById/:id", async(req, res) =>{
+router.get("/getOrderById/:id", authenJWT, authorizePermission("edit_order"), async(req, res) =>{
     try{
         const orderId = parseInt(req.params.id);
         const order = await ordersModel.getOrderById(orderId);
@@ -63,9 +66,9 @@ router.get("/getOrderById/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error fetching Order" });
     }
-}); //test: curl -X GET http://localhost:5000/api/getOrderById/1
+}); //test: curl -X GET http://localhost:5000/api/getOrderById/1 -H "Authorization: Bearer TOKEN_HERE"
 
-router.get("/getOrderInfoById/:id", async(req, res) =>{
+router.get("/getOrderInfoById/:id", authenJWT, authorizePermission("edit_order"), async(req, res) =>{
     try{
         const orderInfoId = parseInt(req.params.id);
         const orderInfo = await orderInfoModel.getOrderInfoById(orderInfoId);
@@ -79,9 +82,9 @@ router.get("/getOrderInfoById/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error fetching Order Info" });
     }
-}); //test: curl -X GET http://localhost:5000/api/getOrderInfoById/1
+}); //test: curl -X GET http://localhost:5000/api/getOrderInfoById/1 -H "Authorization: Bearer TOKEN_HERE"
 
-router.put("/updateOrder/:id", async(req, res) =>{
+router.put("/updateOrder/:id", authenJWT, authorizePermission("edit_order"), async(req, res) =>{
     try{
         const orderId = parseInt(req.params.id);
         const updatedData = req.body;
@@ -95,9 +98,9 @@ router.put("/updateOrder/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error updating Order" });
     }
-}); //test: curl -X PUT http://localhost:5000/api/updateOrder/1 -H "Content-Type: application/json" -d "{\"discount\":0.15,\"customer\":\"Updated\",\"handledBy\":1}"
+}); //test: curl -X PUT http://localhost:5000/api/updateOrder/1 -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"discount\":0.15,\"customer\":\"Updated\",\"handledBy\":1}"
 
-router.put("/updateOrderInfo/:id", async(req, res) =>{
+router.put("/updateOrderInfo/:id", authenJWT, authorizePermission("edit_order"), async(req, res) =>{
     try{
         const orderInfoId = parseInt(req.params.id);
         const updatedData = req.body;
@@ -111,10 +114,10 @@ router.put("/updateOrderInfo/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error updating Order Info" });
     }
-}); //test: curl -X PUT http://localhost:5000/api/updateOrderInfo/1 -H "Content-Type: application/json" -d "{\"quantity\":3,\"productId\":2}"
+}); //test: curl -X PUT http://localhost:5000/api/updateOrderInfo/1 -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"quantity\":3,\"productId\":2}"
 
 
-router.delete("/deleteOrder/:id", async(req, res) =>{
+router.delete("/deleteOrder/:id", authenJWT, authorizePermission("edit_order"), async(req, res) =>{
     try{
         const orderId = parseInt(req.params.id);
         const deleted = await ordersModel.cascadeDeleteOrder(orderId);
@@ -127,9 +130,9 @@ router.delete("/deleteOrder/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error deleting Order" });
     }
-}); //test: curl -X DELETE http://localhost:5000/api/deleteOrder/1
+}); //test: curl -X DELETE http://localhost:5000/api/deleteOrder/1 -H "Authorization: Bearer TOKEN_HERE"
 
-router.delete("/deleteOrderInfo/:id", async(req, res) =>{
+router.delete("/deleteOrderInfo/:id", authenJWT, authorizePermission("edit_order"), async(req, res) =>{
     try{
         const orderInfoId = parseInt(req.params.id);
         const deleted = await orderInfoModel.deleteOrderInfoById(orderInfoId);
@@ -142,6 +145,6 @@ router.delete("/deleteOrderInfo/:id", async(req, res) =>{
     }catch(err){
         res.status(500).json({ message: "Error deleting Order Info" });
     }
-}); //test: curl -X DELETE http://localhost:5000/api/deleteOrderInfo/1
+}); //test: curl -X DELETE http://localhost:5000/api/deleteOrderInfo/1 -H "Authorization: Bearer TOKEN_HERE"
 
 export default router;
