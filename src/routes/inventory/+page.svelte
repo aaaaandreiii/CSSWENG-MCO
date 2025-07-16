@@ -1,63 +1,101 @@
 <script lang="ts">
-	type TabType = 'returns' | 'completed' | 'stocks';
-	let selected: TabType = 'stocks';
+	type TabType =
+		| 'Product'
+		| 'Orders'
+		| 'OrderInfo'
+		| 'StockEntry'
+		| 'StockWithdrawal'
+		| 'ReturnExchange'
+		| 'ReturnExchangelnfo';
+
+	let selected: TabType = 'Product';
 
 	const headerMap: Record<TabType, string[]> = {
-		returns: [
-			'Transaction ID',
-			'Product/s Returned',
-			'Reason for Return',
-			'Date Returned',
-			'Resolution Status',
-			'Approved By',
-			'Qty Returned'
+		Product: [
+			'productid',
+			'productName',
+			'category',
+			'descriptions',
+			'supplier',
+			'productStatus',
+			'cost',
+			'retailPrice',
+			'stockOnHand',
+			'units',
+			'lastEditedDate',
+			'lastEditedUser'
 		],
-		completed: [
-			'Transaction ID',
-			'Products Purchased',
-			'Qty Purchased',
-			'Date Purchased',
-			'Date Delivered',
-			'Address Delivered',
-			'Buyer Name'
+		Orders: [
+			'orderld',
+			'discount',
+			'customer',
+			'handledBy',
+			'paymentMethod',
+			'paymentStatus',
+			'lastEditedDate',
+			'lastEditedUser',
+			'dateOrdered'
 		],
-		stocks: [
-			'Product ID',
-			'Product Name',
-			'Product Type',
-			'Product Description',
-			'Product Manufacturer',
-			'Current Warehouse',
-			'Stock Amt'
+		OrderInfo: [
+			'orderinfoID',
+			'quantity INT',
+			'orderld',
+			'productid',
+			'unitPriceAtPurchase',
+			'lastEditedDate',
+			'lastEditedUser',
+			'delete Flag'
+		],
+		StockEntry: [
+			'entryld',
+			'branchName',
+			'dateReceived',
+			'quantityReceived',
+			'deliveryReceiptNumber',
+			'receivedBy',
+			'productld',
+			'lastEditedDate',
+			'lastEditedUser'
+		],
+		StockWithdrawal: [
+			'withdrawalld',
+			'dateWithdrawn',
+			'quantityWithdrawn',
+			'purpose',
+			'entryld',
+			'withdrawnBy',
+			'authorizedBy',
+			'lastEditedDate',
+			'lastEditedUser'
+		],
+		ReturnExchange: [
+			'transactionid',
+			'dateTransaction',
+			'transactionStatus',
+			'orderld',
+			'handledBy',
+			'approvedBy',
+			'lastEditedDate',
+			'lastEditedUser'
+		],
+		ReturnExchangelnfo: [
+			'detailld INT',
+			'returnedProductId',
+			'retunedQuantity',
+			'exchangeProductld',
+			'exchangeQuantity',
+			'reason',
+			'transactionid',
+			'retumType',
+			'lastEditedDate',
+			'lastEditedUser'
 		]
 	};
 
 	$: currentHeaders = headerMap[selected];
 
-	let rows: { [key: string]: string }[] = [
-		{
-			'Product ID': '1',
-			'Product Name': 'A',
-			'Product Type': 'Gadget',
-			'Product Description': 'Description A',
-			'Product Manufacturer': 'Manufacturer A',
-			'Current Warehouse': 'Warehouse 1',
-			'Stock Amt': '100'
-		},
-		{
-			'Product ID': '2',
-			'Product Name': 'B',
-			'Product Type': 'Gadget',
-			'Product Description': 'Description B',
-			'Product Manufacturer': 'Manufacturer B',
-			'Current Warehouse': 'Warehouse 2',
-			'Stock Amt': '50'
-		}
-		// add more dummy entries as needed
-	];
-
 	// init selected rows
-	let selectedRows = [];
+	let selectedRows: number[] = [];
 
 	// modal states
 	let showModal = false;
@@ -67,6 +105,9 @@
 	let sortColumn: string = '';
 	let sortDirection: 'asc' | 'desc' = 'asc';
 
+	// table data rows, can fill with dummy data
+	let rows: { [key: string]: string }[] = [];
+	
 	// store default order for reset
 	const originalRows = [...rows];
 
@@ -94,18 +135,31 @@
 	}
 
 	// constant column headers
-	headerMap.returns.push('Last Updated', 'Edited By');
-	headerMap.completed.push('Last Updated', 'Edited By');
-	headerMap.stocks.push('Last Updated', 'Edited By');
+	headerMap.Product.push('Last Updated', 'Edited By');
+	headerMap.Orders.push('Last Updated', 'Edited By');
+	headerMap.OrderInfo.push('Last Updated', 'Edited By');
+	headerMap.StockEntry.push('Last Updated', 'Edited By');
+	headerMap.StockWithdrawal.push('Last Updated', 'Edited By');
+	headerMap.ReturnExchange.push('Last Updated', 'Edited By');
+	headerMap.ReturnExchangelnfo.push('Last Updated', 'Edited By');
 
 	// edit button in popup
 	let showEditButton = false;
 	let modalRowIndex = -1;
-	function openModal(content: string, rowIndex = -1) {
+	let modalColumn = '';
+	function openModal(content: string, rowIndex = -1, column = '') {
 		modalContent = content;
 		showModal = true;
-		showEditButton = rowIndex !== -1;
+		showEditButton = false;
 		modalRowIndex = rowIndex;
+		modalColumn = column;
+		if (rowIndex !== -1 && column) {
+			cellEditForm = { value: rows[rowIndex][column] };
+			isCellEditForm = true;
+			isEditForm = false;
+		} else {
+			isCellEditForm = false;
+		}
 	}
 
 	// func to close popup
@@ -133,6 +187,9 @@
 	let editForm: { [key: string]: string } = {};
 	let isEditForm = false;
 
+	let cellEditForm: { value: string } = { value: '' };
+	let isCellEditForm = false;
+
 	// func to handle saving the edit form
 	function handleEditFormSave() {
 		if (modalRowIndex !== -1) {
@@ -145,7 +202,50 @@
 	// func to handle canceling the edit form
 	function handleEditFormCancel() {
 		isEditForm = false;
+		isCellEditForm = false;
 		showModal = false;
+	}
+
+	// func to handle saving the cell edit form
+	function handleCellEditFormSave() {
+		if (modalRowIndex !== -1 && modalColumn) {
+			rows[modalRowIndex][modalColumn] = cellEditForm.value;
+			isCellEditForm = false;
+			showModal = false;
+		}
+	}
+
+	let addForm: { [key: string]: string } = {};
+	let isAddForm = false;
+
+	function openAddModal() {
+		addForm = {};
+		currentHeaders.forEach(h => addForm[h] = '');
+		isAddForm = true;
+		showModal = true;
+		modalContent = '';
+		isEditForm = false;
+		isCellEditForm = false;
+	}
+
+	function handleAddFormCancel() {
+		isAddForm = false;
+		showModal = false;
+	}
+
+	function handleAddFormSave() {
+		// Only add if at least one field is filled
+		if (Object.values(addForm).some(v => v.trim() !== '')) {
+			rows = [...rows, { ...addForm }];
+			isAddForm = false;
+			showModal = false;
+		}
+	}
+
+	function handleDeleteSelectedRows() {
+		// Remove rows whose index is in selectedRows
+		rows = rows.filter((_, idx) => !selectedRows.includes(idx));
+		selectedRows = [];
 	}
 </script>
 
@@ -177,45 +277,38 @@
 <!-- navbar + buttons row -->
 <div class="grid grid-cols-2">
 	<!-- navbar -->
-	<div class="flex">
-		<button
-			class="buttonss flex items-center justify-center {selected === 'stocks' ? 'selected' : ''}"
-			on:click={() => (selected = 'stocks')}
-		>
-			<div class="flex items-center gap-2">
-				<img src="../src/icons/box.svg" alt="Stocks" class="w-6" />
-				Stocks
-			</div>
-		</button>
-		<button
-			class="buttonss flex items-center justify-center {selected === 'completed' ? 'selected' : ''}"
-			on:click={() => (selected = 'completed')}
-		>
-			<div class="flex items-center gap-2">
-				<img src="../src/icons/completed.svg" alt="Completed" class="w-6" />
-				Completed
-			</div>
-		</button>
-		<button
-			class="buttonss flex items-center justify-center {selected === 'returns' ? 'selected' : ''}"
-			on:click={() => (selected = 'returns')}
-		>
-			<div class="flex items-center gap-2">
-				<img src="../src/icons/returns.svg" alt="Returns" class="w-6" />
-				Returns
-			</div>
-		</button>
+	<div class="flex w-full">
+		{#each Object.keys(headerMap) as tab, idx (tab)}
+			<button
+				class="buttonss flex items-center justify-center transition-all duration-150 w-full text-center
+					{selected === tab
+						? 'selected font-bold bg-white'
+						: 'bg-gray-100 truncate mr-2'}"
+				style="{selected === tab ? '' : 'max-width: 7ch; min-width: 0;'}"
+				on:click={() => (selected = tab as TabType)}
+				title={tab}
+			>
+				<span class="w-full text-center">
+					{selected === tab
+						? tab
+						: tab.length > 5 ? tab.slice(0, 5) + '...' : tab}
+				</span>
+			</button>
+		{/each}
 	</div>
 	<!-- buttons for actions -->
 	<div class="ml-auto flex gap-5 p-2.5 pr-10">
-		<!-- absolute top-0 right-0 bg-gray-200 px-4 py-2  -->
 		<button 
-			class="flex w-28 items-center justify-center gap-2 rounded-lg red1 text-white hover:bg-red-700 font-bold"
+			class="flex w-28 items-center justify-center gap-2 rounded-lg font-bold
+				{selectedRows.length === 0 ? 'bg-gray-400 text-gray-200 cursor-not-allowed' : 'red1 text-white hover:bg-red-700'}"
+			disabled={selectedRows.length === 0}
+			on:click={handleDeleteSelectedRows}
 		>
 			Delete
 		</button>
 		<button
 			class="flex w-28 items-center justify-center gap-2 rounded-lg green1 text-white hover:bg-green-900 font-bold"
+			on:click={openAddModal}
 		>
 			Add
 		</button>
@@ -231,7 +324,7 @@
 				{#each currentHeaders as head}
 					<th
 						class="px-4 py-5 text-center align-middle break-words whitespace-normal"
-						style="width: auto; min-width: 100px; max-width: 400px;"
+						style="width: calc({head.length}ch + 40px);"
 					>
 						<button
 							class="flex w-full items-center justify-center gap-1 font-bold"
@@ -261,9 +354,10 @@
 					>
 					{#each currentHeaders as head}
 						<td
-							class="max-h-[60px] max-w-[400px] min-w-[100px] overflow-hidden px-4 py-5 text-center text-ellipsis whitespace-nowrap"
+							class="overflow-hidden px-4 py-5 text-center text-ellipsis whitespace-nowrap"
+							style="width: calc({head.length}ch + 40px);"
 							title={row[head]}
-							on:click={() => openModal(row[head], i)}
+							on:click={() => openModal(row[head], i, head)}
 						>
 							{row[head]}
 						</td>
@@ -291,9 +385,15 @@
 		role="button"
 		tabindex="0"
 		aria-label="Close modal"
-		on:click={closeModal}
+		on:click={() => {
+			if (isAddForm) handleAddFormCancel();
+			else handleEditFormCancel();
+		}}
 		on:keydown={(e) => {
-			if (e.key === 'Enter' || e.key === ' ') closeModal();
+			if (e.key === 'Enter' || e.key === ' ') {
+				if (isAddForm) handleAddFormCancel();
+				else handleEditFormCancel();
+			}
 		}}
 	>
 		<div
@@ -306,7 +406,37 @@
 				if (e.key === 'Enter' || e.key === ' ') e.stopPropagation();
 			}}
 		>
-			{#if isEditForm}
+			{#if isAddForm}
+				<!-- add popup form for new row -->
+				<form on:submit|preventDefault={handleAddFormSave}>
+					{#each currentHeaders as head}
+						<div class="mb-2">
+							<label class="mb-1 block" for={'add-' + head}>{head}</label>
+							<input
+								id={'add-' + head}
+								class="w-full rounded border px-2 py-1"
+								type="text"
+								bind:value={addForm[head]}
+							/>
+						</div>
+					{/each}
+					<div class="mt-4 flex gap-2">
+						<button
+							type="submit"
+							class="rounded px-4 py-2 text-white
+								{Object.values(addForm).some(v => v.trim() !== '') ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed'}"
+							disabled={!Object.values(addForm).some(v => v.trim() !== '')}
+						>
+							Add
+						</button>
+						<button
+							type="button"
+							class="rounded bg-gray-400 px-4 py-2 text-white hover:bg-gray-500"
+							on:click={handleAddFormCancel}>Cancel</button
+						>
+					</div>
+				</form>
+			{:else if isEditForm}
 				<!-- edit popup form for entire row -->
 				<form on:submit|preventDefault={handleEditFormSave}>
 					{#each currentHeaders as head}
@@ -332,17 +462,33 @@
 						>
 					</div>
 				</form>
+			{:else if isCellEditForm}
+				<!-- edit popup form for individual cell -->
+				<form on:submit|preventDefault={handleCellEditFormSave}>
+					<div class="mb-2">
+						<label class="mb-1 block font-bold" for={'cell-edit-' + modalColumn}>{modalColumn}</label>
+						<input
+							id={'cell-edit-' + modalColumn}
+							class="w-full rounded border px-2 py-1"
+							type="text"
+							bind:value={cellEditForm.value}
+						/>
+					</div>
+					<div class="mt-4 flex gap-2">
+						<button
+							type="submit"
+							class="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700">Save</button
+						>
+						<button
+							type="button"
+							class="rounded bg-gray-400 px-4 py-2 text-white hover:bg-gray-500"
+							on:click={handleEditFormCancel}>Cancel</button
+						>
+					</div>
+				</form>
 			{:else}
-				<!-- indiv popup for indiv cell content -->
+				<!-- fallback, should not be shown -->
 				<div class="mb-4">{modalContent}</div>
-				{#if showEditButton}
-					<button
-						class="mt-2 rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700"
-						on:click={() => handleEdit(modalRowIndex)}
-					>
-						Edit
-					</button>
-				{/if}
 			{/if}
 		</div>
 	</div>
