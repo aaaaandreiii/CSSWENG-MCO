@@ -40,6 +40,9 @@
 	let openDropdownIndex: number | null = null;
 	const dropdownOptions = ['admin', 'staff', 'auditor', 'manager'];
 
+	// Array of refs for each dropdown
+	let dropdownRefs: (HTMLDivElement | null)[] = new Array(details.length).fill(null);
+
 	function selectPosition(option: string, idx: number) {
 		details[idx].position = option.charAt(0).toUpperCase() + option.slice(1);
 		openDropdownIndex = null;
@@ -47,21 +50,16 @@
 
 	import { onMount } from 'svelte';
 
-	let dropdownRef: HTMLDivElement | null = null;
-
-	// function handleClickOutside(event: MouseEvent) { 
-	// // doesnt update dropdownindex to new selection, 
-	// //instead it closes dropdown by becoming null (retains old index in the process)
-	// 	if (openDropdownIndex !== null && dropdownRef && !dropdownRef.contains(event.target as Node)) {
-	// 		openDropdownIndex = null;
-	// 	}
-	// }
-
-	function handleClickOutside(event: MouseEvent) { //this fn does nothing
-		if (showDropdown && dropdownRef && !dropdownRef.contains(event.target as Node)) {
-			showDropdown = false;} 
+	// Check if click is outside the open dropdown
+	function handleClickOutside(event: MouseEvent) {
+		if (
+			openDropdownIndex !== null &&
+			dropdownRefs[openDropdownIndex] &&
+			!dropdownRefs[openDropdownIndex]?.contains(event.target as Node)
+		) {
+			openDropdownIndex = null;
+		}
 	}
-
 
 	onMount(() => {
 		document.addEventListener('mousedown', handleClickOutside);
@@ -148,7 +146,7 @@
 		<div class="flex flex-wrap gap-5 justify-start">
 			{#if selected === 'all' || selected === 'admin' || selected === 'staff' || selected === 'auditor' || selected === 'manager'}
 				{#each filteredDetails as detail, idx}
-					<div class="mt-8 rounded-lg bg-white p-8 basis-1/7 min-w-[250px] flex-shrink-0">
+					<div class="mt-8 rounded-lg bg-white p-8 basis-1/7 max-w-[12.5%] flex-shrink-0">
 						<div class="flex flex-col items-center">
 							<!-- User ID above full name -->
 							<span class="text-xs text-gray-500 mb-2">{detail.userId}</span>
@@ -158,7 +156,7 @@
 								src={detail.profilePic}
 								alt="pfp" 
 								class="rounded-full object-cover mb-4"
-								style="width:150px; height:150px;"
+								style="width:200px; height:200px;"
 							/>
 							<!-- Username below profile picture -->
 							<span class="text-base text-gray-700 mb-2">{detail.user}</span>
@@ -168,7 +166,7 @@
 							<div
 								id={getColorId(detail.position)}
 								class="relative flex w-fit items-center justify-center gap-1 px-5"
-								bind:this={dropdownRef}
+								bind:this={dropdownRefs[idx]}
 							>
 								{#if selected == 'all'}
 									<button
