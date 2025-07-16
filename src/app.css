@@ -13,7 +13,7 @@
 	background-color: #3d843f;
 }
 .red1 {
-	background-color: #DE0101;
+	background-color: #de0101;
 }
 body.login-page {
 	background-color: #3d843f;
@@ -269,4 +269,5 @@ body.login-page {
 	margin-left: -30px; /* matches sidebar padding for flush left */
 	width: calc(100% + 30px);
 	padding-left: 30px !important; /* keep text aligned with other tabs */
+	min-width: 205px; /* ensures uniform width for all selected tabs */
 }
