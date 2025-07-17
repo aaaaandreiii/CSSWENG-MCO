@@ -37,23 +37,32 @@
 	let rows: { [key: string]: string }[] = [
 		{
 			'Product ID': '1',
-			'Product Name': 'A',
-			'Product Type': 'Gadget',
-			'Product Description': 'Description A',
-			'Product Manufacturer': 'Manufacturer A',
-			'Current Warehouse': 'Warehouse 1',
-			'Stock Amt': '100'
+			'Product Name': 'Ping Pong Paddle',
+			'Product Category': 'Sports',
+			'Product Description': 'Hit me with your best shot!',
+			'Product Supplier': 'Green Paddle',
+			'Product Status': 'Available',
+			'Cost': '150.00',
+			'Retail Price': '300.00',
+			'Stock Quantity': '100',
+			'Units': 'pcs',
+			'Last Edited On': '2025-07-06',
+			'Last Edited By': 'Admin'
 		},
 		{
 			'Product ID': '2',
-			'Product Name': 'B',
-			'Product Type': 'Gadget',
-			'Product Description': 'Description B',
-			'Product Manufacturer': 'Manufacturer B',
-			'Current Warehouse': 'Warehouse 2',
-			'Stock Amt': '50'
+			'Product Name': 'Ping Pong Balls',
+			'Product Category': 'Sports',
+			'Product Description': 'Bouncy balls for ping pong',
+			'Product Supplier': 'Green Paddle',
+			'Product Status': 'Available',
+			'Cost': '20.00',
+			'Retail Price': '50.00',
+			'Stock Quantity': '300',
+			'Units': 'pcs',
+			'Last Edited On': '2025-07-06',
+			'Last Edited By': 'Admin'
 		}
-		// add more dummy entries as needed
 	];
 
 	// init selected rows
