@@ -15,13 +15,13 @@ Scrum Master/Team Leader: Andrei Balingit @aaaaandreiii
 
 UI/UX Designers: Sophia Avelino @Gl1tch8, Marcus Apetreor @Marcus-Apetreor
 
-Developers: Ching Man @ChingManWong, Rafael Navarro, Deo Diamante @DeoZD
+Developers: Ching Man Wong @ChingManWong, Rafael Navarro @ChinoLim, Deo Diamante @DeoZD
 
 Quality Assurance Engineer: Lance Medina @limborock12
 
 
 # Links:
 
-Jira: https://aaaaandreiii.atlassian.net/browse/SCRUM
+Jira: https://aaaaandreiii.atlassian.net/jira/software/projects/CGPI/summary
 
 GitHub: https://github.com/aaaaandreiii/CSSWENG-MCO.git
