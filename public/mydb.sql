@@ -23,14 +23,15 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Product` (
   `productId` INT NOT NULL AUTO_INCREMENT,
   `productName` VARCHAR(255) NOT NULL,
   `category` VARCHAR(45) NOT NULL,
-  `descriptions` VARCHAR(45) NOT NULL,
+  `descriptions` TEXT,
   `supplier` VARCHAR(45) NOT NULL,
   `cost` DOUBLE NOT NULL,
   `retailPrice` DOUBLE NOT NULL,
-  `stockOnHand` INT NULL DEFAULT '0',
-  `units` ENUM('pcs', 'boxes', 'cases', 'packs', 'bundles', 'crates', 'meters', 'centimeters', 'square meters', 'rolls', 'spools', 'sets', 'other') NULL DEFAULT NULL,
-  `lastEditedDate` DATETIME NULL DEFAULT NULL,
-  `lastEditedUser` INT NULL DEFAULT NULL,
+  `stockOnHand` INT DEFAULT '0',
+  `units` ENUM('pcs', 'boxes', 'cases', 'packs', 'bundles', 'crates', 'meters', 'centimeters', 'square meters', 'rolls', 'spools', 'sets', 'other') NOT NULL DEFAULT 'pcs',
+  `pathName` VARCHAR(255) DEFAULT NULL,
+  `lastEditedDate` DATETIME NOT NULL,
+  `lastEditedUser` INT NOT NULL,
   `deleteFlag` TINYINT NOT NULL,
   PRIMARY KEY (`productId`),
   INDEX `fk_Product_lastEditedUser` (`lastEditedUser` ASC) VISIBLE,
@@ -52,7 +53,10 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Users` (
   `userRole` ENUM('admin', 'staff', 'auditor', 'manager') NOT NULL,
   `username` VARCHAR(45) NOT NULL,
   `userPassword` VARCHAR(255) NOT NULL,
+  `pathName` VARCHAR(255) DEFAULT NULL,
   `dateAdded` DATE NOT NULL,
+  `lastEditedDate` DATETIME NOT NULL,
+  `lastEditedUser` INT NOT NULL,
   `deleteFlag` TINYINT NOT NULL,
   PRIMARY KEY (`userId`))
 ENGINE = InnoDB
@@ -72,8 +76,8 @@ CREATE TABLE IF NOT EXISTS `mydb`.`StockEntry` (
   `deliveryReceiptNumber` INT NOT NULL,
   `receivedBy` INT NOT NULL,
   `productId` INT NOT NULL,
-  `lastEditedDate` DATETIME NULL DEFAULT NULL,
-  `lastEditedUser` INT NULL DEFAULT NULL,
+  `lastEditedDate` DATETIME NOT NULL,
+  `lastEditedUser` INT NOT NULL,
   `deleteFlag` TINYINT NOT NULL,
   PRIMARY KEY (`entryId`),
   INDEX `fk_StockEntry_Users1_idx` (`receivedBy`),
@@ -111,13 +115,13 @@ CREATE TABLE IF NOT EXISTS `mydb`.`StockWithdrawal` (
   `withdrawalId` INT NOT NULL AUTO_INCREMENT,
   `dateWithdrawn` DATE NOT NULL,
   `quantityWithdrawn` VARCHAR(45) NOT NULL,
-  `purpose` VARCHAR(45) NOT NULL,
+  `purpose` VARCHAR(45) NULL,
   `entryId` INT NOT NULL,  -- `productId` INT NOT NULL,                      -- called entryID in ching man's
   `withdrawnBy` INT NOT NULL,
   `authorizedBy` INT NOT NULL,
   -- `stockEntryId` INT NULL DEFAULT NULL,  -- not in ching man's
-  `lastEditedDate` DATETIME NULL DEFAULT NULL,
-  `lastEditedUser` INT NULL DEFAULT NULL,
+  `lastEditedDate` DATETIME NOT NULL,
+  `lastEditedUser` INT NOT NULL,
   `deleteFlag` TINYINT NOT NULL,
   PRIMARY KEY (`withdrawalId`),
   -- INDEX `fk_StockWithdrawal_Product1_idx` (`productId` ASC) VISIBLE,      -- not in ching man's
@@ -160,15 +164,15 @@ DROP TABLE IF EXISTS `mydb`.`Orders` ;
 
 CREATE TABLE IF NOT EXISTS `mydb`.`Orders` (
   `orderId` INT UNIQUE NOT NULL AUTO_INCREMENT,
-  `discount` FLOAT NULL DEFAULT NULL,
-  `customer` VARCHAR(45) NOT NULL,
+  `discount` FLOAT DEFAULT '0',
+  `customer` VARCHAR(45),
   `handledBy` INT NOT NULL,
   -- `totalAmount` DOUBLE NULL DEFAULT NULL,  -- not in ching man's
-  `paymentMethod` VARCHAR(50) NULL DEFAULT NULL,
-  `paymentStatus` ENUM('pending', 'paid', 'failed') NULL DEFAULT 'pending',
-  `lastEditedDate` DATETIME NULL DEFAULT NULL,
-  `lastEditedUser` INT NULL DEFAULT NULL,
+  `paymentMethod` ENUM('debit card', 'credit card', 'cash', 'online payment') NOT NULL,
+  `paymentStatus` ENUM('pending', 'paid', 'failed') NOT NULL DEFAULT 'pending',
   `dateOrdered` DATE NOT NULL,
+  `lastEditedDate` DATETIME NOT NULL,
+  `lastEditedUser` INT NOT NULL,
   `deleteFlag` TINYINT NOT NULL,
   PRIMARY KEY (`orderId`),
   INDEX `fk_Sales_Users1_idx` (`handledBy`) VISIBLE,
@@ -197,9 +201,9 @@ CREATE TABLE IF NOT EXISTS `mydb`.`OrderInfo` (
   `quantity` INT NOT NULL,
   `orderId` INT NOT NULL,
   `productId` INT NOT NULL,
-  `unitPriceAtPurchase` DOUBLE NULL DEFAULT NULL,
-  `lastEditedDate` DATETIME NULL DEFAULT NULL,
-  `lastEditedUser` INT NULL DEFAULT NULL,
+  `unitPriceAtPurchase` DOUBLE NOT NULL,
+  `lastEditedDate` DATETIME NOT NULL,
+  `lastEditedUser` INT NOT NULL,
   `deleteFlag` TINYINT NOT NULL,
   PRIMARY KEY (`orderInfoId`, `orderId`, `productId`),
   INDEX `fk_OrderInfo_Sales_idx` (`orderId` ASC) VISIBLE,
@@ -236,8 +240,8 @@ CREATE TABLE IF NOT EXISTS `mydb`.`ReturnExchange` (
   `orderId` INT NOT NULL,
   `handledBy` INT NOT NULL,
   `approvedBy` INT NOT NULL,
-  `lastEditedDate` DATETIME NULL DEFAULT NULL,
-  `lastEditedUser` INT NULL DEFAULT NULL,
+  `lastEditedDate` DATETIME NOT NULL,
+  `lastEditedUser` INT NOT NULL,
   `deleteFlag` TINYINT NOT NULL,
   PRIMARY KEY (`transactionId`),
   INDEX `fk_ReturnExchangeRecord_Users1_idx` (`handledBy` ASC) VISIBLE,
@@ -279,11 +283,11 @@ CREATE TABLE IF NOT EXISTS `mydb`.`ReturnExchangeInfo` (
   `returnedQuantity` INT NOT NULL,
   `exchangeProductId` INT NULL DEFAULT NULL,
   `exchangeQuantity` INT NULL DEFAULT NULL,
-  `reason` VARCHAR(45) NOT NULL,
+  `reason` TEXT NOT NULL,
   `transactionId` INT NOT NULL,
-  `returnType` ENUM('Return', 'Exchange', 'Warranty') NULL DEFAULT 'Return',
-  `lastEditedDate` DATETIME NULL DEFAULT NULL,
-  `lastEditedUser` INT NULL DEFAULT NULL,
+  `returnType` ENUM('Return', 'Exchange', 'Warranty') NOT NULL DEFAULT 'Return',
+  `lastEditedDate` DATETIME NOT NULL,
+  `lastEditedUser` INT NOT NULL,
   `deleteFlag` TINYINT NOT NULL,
   PRIMARY KEY (`detailId`, `returnedProductId`, `transactionId`),
   INDEX `fk_ReturnExchangeDetail_Product1_idx` (`returnedProductId` ASC) VISIBLE,
@@ -313,6 +317,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`ReturnExchangeInfo` (
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4;
 
+
 -- -----------------------------------------------------
 -- Table `mydb`.`AuditLog`
 -- -----------------------------------------------------
@@ -334,6 +339,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`AuditLog` (
 )
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4;
+
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
