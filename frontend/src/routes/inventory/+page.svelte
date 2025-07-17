@@ -24,11 +24,16 @@
 		stocks: [
 			'Product ID',
 			'Product Name',
-			'Product Type',
+			'Product Category',
 			'Product Description',
-			'Product Manufacturer',
-			'Current Warehouse',
-			'Stock Amt'
+			'Product Supplier',
+			'Product Status',
+			'Cost',
+			'Retail Price',
+			'Stock Quantity',
+			'Units',
+			'Last Edited On',
+			'Last Edited By'
 		]
 	};
 
