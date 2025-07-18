@@ -7,10 +7,10 @@
 	// 	{ name: 'Can create users', enabled: false }
 	// ];
 	let details = [
-		{ name: 'Full Name', user: 'Useername123', date: 'January 19, 2955', position: 'Admin' },
-		{ name: 'Staff User', user: 'Staff123', date: 'February 10, 2955', position: 'Staff' },
-		{ name: 'Auditor User', user: 'AuditGuy', date: 'March 5, 2955', position: 'Auditor' },
-		{ name: 'Manager User', user: 'ManagerX', date: 'April 1, 2955', position: 'Manager' }
+		{ userId: 'U001', name: 'Full Name', user: 'Username123', date: 'January 19, 2955', position: 'Admin', profilePic: '../src/images/jett.png' },
+		{ userId: 'U002', name: 'Staff User', user: 'Staff123', date: 'February 10, 2955', position: 'Staff', profilePic: '../src/images/lemon.png' },
+		{ userId: 'U003', name: 'Auditor User', user: 'AuditGuy', date: 'March 5, 2955', position: 'Auditor', profilePic: '../src/images/cat.png' },
+		{ userId: 'U004', name: 'Manager User', user: 'ManagerX', date: 'April 1, 2955', position: 'Manager', profilePic: '../src/images/sage.png' }
 	];
 
 	// Computed filtered details based on selected tab
@@ -145,13 +145,25 @@
 		<hr class="mb-8 border-gray-300" />
 
 	<!-- permissions section, change roles as needed -->
-		<div class=" grid grid-flow-col grid-cols-4 gap-5">
+		<div class="flex flex-wrap gap-5 justify-start">
 			{#if selected === 'all' || selected === 'admin' || selected === 'staff' || selected === 'auditor' || selected === 'manager'}
 				{#each filteredDetails as detail, idx}
-					<div class="mt-8 w-fit rounded-lg bg-white p-8">
+					<div class="mt-8 rounded-lg bg-white p-8 basis-1/7 min-w-[250px] flex-shrink-0">
 						<div class="flex flex-col items-center">
-							<span class="text-lg">{detail.name}</span>
-							<img src="../src/images/logo.png" alt="pfp" />
+							<!-- User ID above full name -->
+							<span class="text-xs text-gray-500 mb-2">{detail.userId}</span>
+							<span class="text-lg py-2 mb-4">{detail.name}</span>
+							<!-- profile pic -->
+							<img 
+								src={detail.profilePic}
+								alt="pfp" 
+								class="rounded-full object-cover mb-4"
+								style="width:150px; height:150px;"
+							/>
+							<!-- Username below profile picture -->
+							<span class="text-base text-gray-700 mb-2">{detail.user}</span>
+							<!-- Join date below username -->
+							<span class="text-sm text-gray-400 mb-4 ">{detail.date}</span>
 							<!-- position tag with dropdown -->
 							<div
 								id={getColorId(detail.position)}

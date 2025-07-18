@@ -247,8 +247,9 @@ body.login-page {
 	padding: 2.5rem;
 	border-radius: 1rem;
 	width: fit-content;
+	min-width: 520px;
+	max-width: 1100px;
 	height: fit-content;
-	max-width: 90vw;
 	max-height: 70vh;
 	overflow: auto;
 	box-shadow: 0 2px 24px rgba(0, 0, 0, 0.2);
@@ -270,4 +271,10 @@ body.login-page {
 	width: calc(100% + 30px);
 	padding-left: 30px !important; /* keep text aligned with other tabs */
 	min-width: 205px; /* ensures uniform width for all selected tabs */
+}
+
+.buttons.selected {
+	background-color: white;
+	color: black;
+	box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.1);
 }
