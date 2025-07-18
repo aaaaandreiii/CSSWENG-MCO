@@ -10,7 +10,9 @@ router.post("/createStockWithdrawal", authenJWT, authorizePermission("edit_stock
     try{
         const {quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy} = req.body;
         const dateWithdrawn = new Date().toISOString().split("T")[0];
-        const withdrawalId = await mysql.createStockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, null, null, 0);
+        const lastEditedDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedUser = req.user.userId;
+        const withdrawalId = await mysql.createStockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, lastEditedDate, lastEditedUser, 0);
         await logAudit("add_stock", `Created withdrawal ID ${withdrawalId} for entry ${entryId} (Qty: ${quantityWithdrawn})`, req.user.userId);
         res.json({message: "Stock Withdrawal created successfully!", id: withdrawalId});
     }catch(err){

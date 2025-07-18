@@ -11,10 +11,12 @@ const router = express.Router();
 router.post("/createOrder", authenJWT, authorizePermission("edit_order"), async(req, res) =>{
     try{
         const {discount, customer, handledBy, paymentMethod, paymentStatus, items} = req.body;  
-        const dateOrdered = new Date().toISOString().split("T")[0];  
-        const orderId = await ordersModel.createOrder(discount, customer, handledBy, paymentMethod, paymentStatus, null, null, dateOrdered, 0);
+        const dateOrdered = new Date().toISOString().split("T")[0];
+        const lastEditedDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedUser = req.user.userId;
+        const orderId = await ordersModel.createOrder(discount, customer, handledBy, paymentMethod, paymentStatus, lastEditedDate, lastEditedUser, dateOrdered, 0);
         for(const item of items){
-            await orderInfoModel.createOrderInfo(item.quantity, orderId, item.productId,  item.unitPriceAtPurchase, null, null, 0);
+            await orderInfoModel.createOrderInfo(item.quantity, orderId, item.productId, item.unitPriceAtPurchase, lastEditedDate, lastEditedUser, 0);
         }
         res.json({message: "Orders and Order Info created successfully!", id: orderId});
     }catch(err){

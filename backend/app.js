@@ -7,6 +7,8 @@ import stockWithdrawalController from "./controller/stockWithdrawalController.js
 import ordersController from "./controller/ordersController.js";
 import returnExchangeController from "./controller/returnExchangeController.js";
 
+// import * as mysql from "./model/userModel.js";
+
 const app = express();
 
 app.use(cors()); //enable CORS during development
@@ -19,5 +21,10 @@ app.use("/api", stockEntryController);
 app.use("/api", stockWithdrawalController);
 app.use("/api", ordersController);
 app.use("/api", returnExchangeController);
+
+// (async() =>{
+//     const date = new Date("2015-02-03");
+//     await mysql.createUser("A", "admin", "aaa", "123", null, date, date, 1, 0);
+// })();
 
 app.listen(5000, () => console.log("Server listening on port 5000."));

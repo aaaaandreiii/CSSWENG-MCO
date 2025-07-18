@@ -31,7 +31,7 @@ router.post("/login", async (req, res) => {
         { expiresIn: "1h" }
         );
 
-        await logAudit("login", `User ${user.fullName} logged in.`, user.userId);
+        await auditModel.logAudit("login", `User ${user.fullName} logged in.`, user.userId);
 
         console.log("Login success! Sending token...");
         return res.json({ message: "Login successful", token });
@@ -44,9 +44,11 @@ router.post("/login", async (req, res) => {
 
 router.post("/createUser", authenJWT, authorizePermission("manage_users"), async(req, res) =>{
     try{
-        const {fullName, userRole, username, userPassword} = req.body;
-        const dateAdded = new Date().toISOString().split("T")[0]
-        const userId = await mysql.createUser(fullName, userRole, username, userPassword, dateAdded, 0);
+        const {fullName, userRole, username, userPassword, pathName} = req.body;
+        const dateAdded = new Date().toISOString().split("T")[0];
+        const lastEditedDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedUser = req.user.userId;
+        const userId = await mysql.createUser(fullName, userRole, username, userPassword, pathName, dateAdded, lastEditedDate, lastEditedUser, 0);
         res.json({message: "User created successfully!", id: userId});
     }catch(err){
         console.error(err);

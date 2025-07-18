@@ -9,12 +9,14 @@ const router = express.Router();
 router.post("/createReturnExchange", authenJWT, authorizePermission("process_returns"), async(req, res) =>{
     try{
         const {transactionStatus, orderId, handledBy, approvedBy, transactions} = req.body;  
-        const dateTransaction = new Date().toISOString().split("T")[0];  
-        const transactionId = await returnExchangeModel.createReturnExchange(dateTransaction, transactionStatus, orderId, handledBy, approvedBy, null, null, 0);
+        const dateTransaction = new Date().toISOString().split("T")[0]; 
+        const lastEditedDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedUser = req.user.userId; 
+        const transactionId = await returnExchangeModel.createReturnExchange(dateTransaction, transactionStatus, orderId, handledBy, approvedBy, lastEditedDate, lastEditedUser, 0);
         for(const transaction of transactions){
             const exchangeProductId = transaction.exchangeProductId ?? null;
             const exchangeQuantity = transaction.exchangeQuantity ?? null;
-            await returnExchangeInfoModel.createReturnExchangeInfo(transaction.returnedProductId, transaction.returnedQuantity, exchangeProductId, exchangeQuantity, transaction.reason, transactionId, transaction.returnType, null, null, 0);
+            await returnExchangeInfoModel.createReturnExchangeInfo(transaction.returnedProductId, transaction.returnedQuantity, exchangeProductId, exchangeQuantity, transaction.reason, transactionId, transaction.returnType, lastEditedDate, lastEditedUser, 0);
         }
         res.json({message: "Return Exchange and Return Exchange Info created successfully!", id: transactionId});
     }catch(err){

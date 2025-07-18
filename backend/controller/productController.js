@@ -7,8 +7,11 @@ const router = express.Router();
 
 router.post("/createProduct", authenJWT, authorizePermission("edit_product"), async(req, res) =>{
     try{
-        const {productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units} = req.body;
-        const productId = await mysql.createProduct(productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, null, null, 0);
+        const {productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, pathName} = req.body;
+        const lastEditedDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        // console.log("Authenticated user:", req.user);
+        const lastEditedUser = req.user.userId;
+        const productId = await mysql.createProduct(productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, pathName, lastEditedDate, lastEditedUser, 0);
         res.json({message: "Product created successfully!", id: productId});
     }catch(err){
         res.status(500).json({ message: "Error creating Product" });

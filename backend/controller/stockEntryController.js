@@ -10,7 +10,9 @@ router.post("/createStockEntry", authenJWT, authorizePermission("edit_stock"), a
     try{
         const {branchName, quantityReceived, deliveryReceiptNumber, receivedBy, productId} = req.body;
         const dateReceived = new Date().toISOString().split("T")[0];
-        const entryId = await mysql.createStockEntry(branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, null, null, 0);
+        const lastEditedDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedUser = req.user.userId;
+        const entryId = await mysql.createStockEntry(branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, lastEditedDate, lastEditedUser, 0);
         await logAudit("add_stock", `Added stock entry ID ${entryId} for product ${productId}`, req.user.userId);
         res.json({message: "Stock Entry created successfully!", id: entryId});
     }catch(err){
