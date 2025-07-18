@@ -10,7 +10,7 @@ router.post("/createStockEntry", authenJWT, authorizePermission("edit_stock"), a
     try{
         const {branchName, quantityReceived, deliveryReceiptNumber, receivedBy, productId} = req.body;
         const dateReceived = new Date().toISOString().split("T")[0];
-        const lastEditedDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
         const lastEditedUser = req.user.userId;
         const entryId = await mysql.createStockEntry(branchName, dateReceived, quantityReceived, deliveryReceiptNumber, receivedBy, productId, lastEditedDate, lastEditedUser, 0);
         await logAudit("add_stock", `Added stock entry ID ${entryId} for product ${productId}`, req.user.userId);
@@ -56,6 +56,10 @@ router.put("/updateStockEntry/:id", authenJWT, authorizePermission("edit_stock")
     try{
         const entryId = parseInt(req.params.id);
         const updatedData = req.body;
+        const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedUser = req.user.userId;
+        updatedData.lastEditedDate = lastEditedDate;
+        updatedData.lastEditedUser = lastEditedUser;
         const result = await mysql.updateStockEntryById(entryId, updatedData);
         if(result){
             await logAudit("edit_stock", `Edited stock entry ID ${entryId}`, req.user.userId);

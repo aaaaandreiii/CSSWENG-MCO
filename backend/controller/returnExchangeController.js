@@ -10,7 +10,7 @@ router.post("/createReturnExchange", authenJWT, authorizePermission("process_ret
     try{
         const {transactionStatus, orderId, handledBy, approvedBy, transactions} = req.body;  
         const dateTransaction = new Date().toISOString().split("T")[0]; 
-        const lastEditedDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
         const lastEditedUser = req.user.userId; 
         const transactionId = await returnExchangeModel.createReturnExchange(dateTransaction, transactionStatus, orderId, handledBy, approvedBy, lastEditedDate, lastEditedUser, 0);
         for(const transaction of transactions){
@@ -91,6 +91,10 @@ router.put("/updateReturnExchange/:id", authenJWT, authorizePermission("process_
     try{
         const transactionId = parseInt(req.params.id);
         const updatedData = req.body;
+        const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedUser = req.user.userId;
+        updatedData.lastEditedDate = lastEditedDate;
+        updatedData.lastEditedUser = lastEditedUser;
         const result = await returnExchangeModel.updateReturnExchangeById(transactionId, updatedData);
         if(result){
             res.json({ message: "Return Exchange updated successfully!", id: transactionId });
@@ -107,6 +111,10 @@ router.put("/updateReturnExchangeInfo/:id", authenJWT, authorizePermission("proc
     try{
         const detailId = parseInt(req.params.id);
         const updatedData = req.body;
+        const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedUser = req.user.userId;
+        updatedData.lastEditedDate = lastEditedDate;
+        updatedData.lastEditedUser = lastEditedUser;
         const result = await returnExchangeInfoModel.updateReturnExchangeInfoById(detailId, updatedData);
         if(result){
             res.json({ message: "Return Exchange Info updated successfully!", id: detailId });

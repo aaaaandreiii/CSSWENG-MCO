@@ -8,8 +8,7 @@ const router = express.Router();
 router.post("/createProduct", authenJWT, authorizePermission("edit_product"), async(req, res) =>{
     try{
         const {productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, pathName} = req.body;
-        const lastEditedDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
-        // console.log("Authenticated user:", req.user);
+        const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
         const lastEditedUser = req.user.userId;
         const productId = await mysql.createProduct(productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, pathName, lastEditedDate, lastEditedUser, 0);
         res.json({message: "Product created successfully!", id: productId});
@@ -54,6 +53,10 @@ router.put("/updateProduct/:id", authenJWT, authorizePermission("edit_product"),
     try{
         const productId = parseInt(req.params.id);
         const updatedData = req.body;
+        const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedUser = req.user.userId;
+        updatedData.lastEditedDate = lastEditedDate;
+        updatedData.lastEditedUser = lastEditedUser;
         const result = await mysql.updateProductById(productId, updatedData);
         if(result){
             res.json({ message: "Product updated successfully!", id: productId });
