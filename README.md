@@ -1,7 +1,15 @@
 # Product Description:
-in cmd, run ``npm i`` 
+
+
+# To Run:
+
+### Frontend
+in cmd/terminal, run ``npm i`` 
 then use ``npm run dev`` to run
 then go to localhost
+
+### Backend
+in cmd/terminal, run ``node app.js``
 
 # Client: 
 
