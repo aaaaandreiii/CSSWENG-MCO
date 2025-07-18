@@ -9,7 +9,8 @@ then use ``npm run dev`` to run
 then go to localhost
 
 ### Backend
-in cmd/terminal, run ``node app.js``
+in cmd/terminal, ``npm i``
+then run ``node app.js``
 
 # Client: 
 
