@@ -31,7 +31,7 @@ router.post("/login", async (req, res) => {
         { expiresIn: "1h" }
         );
 
-        await logAudit("login", `User ${user.fullName} logged in.`, user.userId);
+        await auditModel.logAudit("login", `User ${user.fullName} logged in.`, user.userId);
 
         console.log("Login success! Sending token...");
         return res.json({ message: "Login successful", token });
@@ -41,12 +41,15 @@ router.post("/login", async (req, res) => {
             res.status(500).json({ message: "Internal server error" });
         }
 }); //test: curl -X POST http://localhost:5000/api/login   -H "Content-Type: application/json"   -d '{"username":"janedoe","password":"secret123"}'
+//curl -X POST http://localhost:5000/api/login -H "Content-Type: application/json" -d "{\"username\":\"aaa\",\"password\":\"123\"}"
 
 router.post("/createUser", authenJWT, authorizePermission("manage_users"), async(req, res) =>{
     try{
-        const {fullName, userRole, username, userPassword} = req.body;
-        const dateAdded = new Date().toISOString().split("T")[0]
-        const userId = await mysql.createUser(fullName, userRole, username, userPassword, dateAdded, 0);
+        const {fullName, userRole, username, userPassword, pathName} = req.body;
+        const dateAdded = new Date().toISOString().split("T")[0];
+        const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedUser = req.user.userId;
+        const userId = await mysql.createUser(fullName, userRole, username, userPassword, pathName, dateAdded, lastEditedDate, lastEditedUser, 0);
         res.json({message: "User created successfully!", id: userId});
     }catch(err){
         console.error(err);
@@ -105,6 +108,10 @@ router.put("/updateUser/:id", authenJWT, authorizePermission("manage_users"), as
     try{
         const userId = parseInt(req.params.id);
         const updatedData = req.body;
+        const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedUser = req.user.userId;
+        updatedData.lastEditedDate = lastEditedDate;
+        updatedData.lastEditedUser = lastEditedUser;
         const result = await mysql.updateUserById(userId, updatedData);
         if(result){
             res.json({ message: "User updated successfully!", id: userId });

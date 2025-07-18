@@ -10,7 +10,9 @@ router.post("/createStockWithdrawal", authenJWT, authorizePermission("edit_stock
     try{
         const {quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy} = req.body;
         const dateWithdrawn = new Date().toISOString().split("T")[0];
-        const withdrawalId = await mysql.createStockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, null, null, 0);
+        const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedUser = req.user.userId;
+        const withdrawalId = await mysql.createStockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, lastEditedDate, lastEditedUser, 0);
         await logAudit("add_stock", `Created withdrawal ID ${withdrawalId} for entry ${entryId} (Qty: ${quantityWithdrawn})`, req.user.userId);
         res.json({message: "Stock Withdrawal created successfully!", id: withdrawalId});
     }catch(err){
@@ -53,6 +55,10 @@ router.put("/updateStockWithdrawal/:id", authenJWT, authorizePermission("edit_st
     try{
         const withdrawalId = parseInt(req.params.id);
         const updatedData = req.body;
+        const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedUser = req.user.userId;
+        updatedData.lastEditedDate = lastEditedDate;
+        updatedData.lastEditedUser = lastEditedUser;
         const result = await mysql.updateStockWithdrawalById(withdrawalId, updatedData);
         if(result){
             await logAudit("edit_stock", `Updated withdrawal ID ${withdrawalId}`, req.user.userId);

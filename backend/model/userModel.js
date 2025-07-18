@@ -2,11 +2,11 @@ import db, { processCascade } from "./db.js"
 import argon2 from 'argon2';
 
 //CREATE
-export async function createUser(fullName, userRole, username, userPassword, dateAdded, deleteFlag){
+export async function createUser(fullName, userRole, username, userPassword, pathName, dateAdded, lastEditedDate, lastEditedUser, deleteFlag){
     const hashedPassword = await argon2.hash(userPassword);
-    const sql = 'INSERT INTO Users(fullName, userRole, username, userPassword, dateAdded, deleteFlag) VALUES (?, ?, ?, ?, ?, ?)';
+    const sql = 'INSERT INTO Users(fullName, userRole, username, userPassword, pathName, dateAdded, lastEditedDate, lastEditedUser, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
     const result = await new Promise((resolve, reject) => {
-        db.query(sql, [fullName, userRole, username, hashedPassword, dateAdded, deleteFlag], (err, result) =>{
+        db.query(sql, [fullName, userRole, username, hashedPassword, pathName, dateAdded, lastEditedDate, lastEditedUser, deleteFlag], (err, result) =>{
             if(err) return reject(err);
             resolve(result);
         });
@@ -70,7 +70,10 @@ export async function updateUserById(userId, updatedObject){
             SET fullName = ?, 
                 userRole = ?, 
                 username = ?, 
-                userPassword = ? 
+                userPassword = ?,
+                pathName = ?,
+                lastEditedDate = ?,
+                lastEditedUser = ? 
                 
             WHERE userId = ?
         `;
@@ -79,6 +82,9 @@ export async function updateUserById(userId, updatedObject){
             updatedObject.userRole, 
             updatedObject.username, 
             hashedPassword, 
+            updatedObject.pathName,
+            updatedObject.lastEditedDate,
+            updatedObject.lastEditedUser,
             
             userId
         ];
