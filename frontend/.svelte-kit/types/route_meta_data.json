@@ -1,5 +1,7 @@
 {
-	"/": [],
+	"/": [
+		"src/routes/+page.ts"
+	],
 	"/analytics": [],
 	"/dashboard": [],
 	"/forgot_password": [],
