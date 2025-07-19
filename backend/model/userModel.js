@@ -15,6 +15,46 @@ export async function createUser(fullName, userRole, username, userPassword, pat
     return result.insertId;
 }
 
+//BOOTSTRAP
+export async function bootstrapAdminUser() {
+    const checkSql = `SELECT COUNT(*) AS count FROM Users WHERE userRole = 'admin' AND deleteFlag = 0`;
+    const result = await new Promise((resolve, reject) => {
+        db.query(checkSql, (err, rows) => {
+            if (err) return reject(err);
+            resolve(rows[0]);
+        });
+    });
+
+    if (result.count === 0) {
+        const fullName = "System Admin";
+        const userRole = "admin";
+        const username = "admin";
+        const userPassword = "123456789";
+        const pathName = "";
+
+        const dateAdded = new Date().toISOString().split("T")[0];
+        const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedUser = 0;
+        const deleteFlag = 0;
+
+        const hashedPassword = await argon2.hash(userPassword);
+
+        const insertSql = `
+            INSERT INTO Users(fullName, userRole, username, userPassword, pathName, dateAdded, lastEditedDate, lastEditedUser, deleteFlag)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        await new Promise((resolve, reject) => {
+            db.query(insertSql, [fullName, userRole, username, hashedPassword, pathName, dateAdded, lastEditedDate, lastEditedUser, deleteFlag], (err, result) => {
+                if (err) return reject(err);
+                console.log("System admin user created with ID:", result.insertId);
+                resolve();
+            });
+        });
+    } else {
+        console.log("An admin already exists skipping bootstrap.");
+    }
+}
+
 //READ
 export function getUsers(){
     return new Promise((resolve, reject) =>{

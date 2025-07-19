@@ -6,7 +6,7 @@ import stockEntryController from "./controller/stockEntryController.js";
 import stockWithdrawalController from "./controller/stockWithdrawalController.js";
 import ordersController from "./controller/ordersController.js";
 import returnExchangeController from "./controller/returnExchangeController.js";
-
+import { bootstrapAdminUser } from "./model/userModel.js";
 // import * as mysql from "./model/userModel.js";
 
 const app = express();
@@ -21,6 +21,8 @@ app.use("/api", stockEntryController);
 app.use("/api", stockWithdrawalController);
 app.use("/api", ordersController);
 app.use("/api", returnExchangeController);
+
+bootstrapAdminUser().catch(console.error);
 
 // (async() =>{
 //     const date = new Date("2015-02-03");
