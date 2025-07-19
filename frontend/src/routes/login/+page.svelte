@@ -1,6 +1,25 @@
 <script>
 	let username = '';
 	let password = '';
+
+	async function login(){
+		const res = await fetch('http://localhost:5000/api/login', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({username, password})
+		});
+		const data = await res.json();
+		if(res.ok){
+			localStorage.setItem('token', data.token);
+			alert("Login Successful!");
+			window.location.href = '/dashboard';
+		}
+		else{
+			alert("Login failed");
+		}
+	}
 </script>
 
 <div style="display: flex;  height: 100vh">
@@ -33,12 +52,12 @@
 		</div>
 
 		<div class="p-5 text-center">
-			<a
-				href="/dashboard"
+			<button
+				on:click={login}
 				id="button"
 				class="mt-4 w-full text-center font-semibold"
-				style="display: block;">LOGIN</a
-			>
+				style="display: block;">LOGIN
+			</button>
 		</div>
 		<div class="p-5 text-center">
 			<a href="/signup">SIGN UP</a>

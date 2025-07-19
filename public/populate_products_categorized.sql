@@ -1,6 +1,6 @@
-INSERT INTO Users 
-(fullName, userRole, username, userPassword, dateAdded, deleteFlag)
-VALUES ('Andrei Balingit', 'admin', 'aaa', '123', NOW(), 0);
+-- INSERT INTO Users 
+-- (fullName, userRole, username, userPassword, dateAdded, deleteFlag)
+-- VALUES ('Andrei Balingit', 'admin', 'aaa', '123', NOW(), 0);
 
 INSERT INTO Product 
 (productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, lastEditedDate, lastEditedUser, deleteFlag)

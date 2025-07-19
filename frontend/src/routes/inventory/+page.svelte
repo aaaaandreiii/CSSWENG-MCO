@@ -1,4 +1,5 @@
 <script lang="ts">
+	import {onMount} from 'svelte';
 	type TabType =
 		| 'Product'
 		| 'Orders'
@@ -10,6 +11,16 @@
 
 	let selected: TabType = 'Product';
 
+	const getApiMap: Record<TabType, string> = {
+		Product: 'getProducts',
+		Orders: 'getOrders',
+		OrderInfo: 'getOrderInfo',
+		StockEntry: 'getStockEntries',
+		StockWithdrawal: 'getStockWithdrawals',
+		ReturnExchange: 'getReturnExchanges',
+		ReturnExchangelnfo: 'getReturnExchangeInfo'
+	};
+
 	const headerMap: Record<TabType, string[]> = {
 		Product: [
 			'Product ID',
@@ -17,11 +28,11 @@
 			'Category',
 			'Descriptions',
 			'Supplier',
-			'Product Status',
 			'Cost',
 			'Retail Price',
 			'Stock On Hand',
 			'Units',
+			'Image', //pathName
 			'Last Edited Date',
 			'Last Edited User'
 		],
@@ -32,9 +43,9 @@
 			'Handled By',
 			'Payment Method',
 			'Payment Status',
+			'Date Ordered',
 			'Last Edited Date',
-			'Last Edited User',
-			'Date Ordered'
+			'Last Edited User'
 		],
 		OrderInfo: [
 			'Order Info ID',
@@ -44,7 +55,6 @@
 			'Unit Price At Purchase',
 			'Last Edited Date',
 			'Last Edited User',
-			'Delete Flag'
 		],
 		StockEntry: [
 			'Entry ID',
@@ -107,9 +117,150 @@
 
 	// table data rows, can fill with dummy data
 	let rows: { [key: string]: string }[] = [];
+	
+	let ready = false;
+	onMount(()=>{
+		ready = true;
+	});
+
+	$: if(ready && selected){
+		fetchTabData(selected);
+	}
+
+	async function fetchTabData(tab: TabType){
+		try{
+			const token = localStorage.getItem('token');
+			const endpoint = getApiMap[tab];
+			const res = await fetch(`http://localhost:5000/api/${endpoint}`, {
+				headers: {
+					Authorization: `Bearer ${token}`
+				}
+			});
+			const data = await res.json();
+        	console.log('Fetched data:', data);
+
+			if(tab === "Product"){
+				rows = data.products.map((item: any) =>({
+					'Product ID': item.productId,
+					'Product Name': item.productName,
+					'Category': item.category,
+					'Descriptions': item.descriptions,
+					'Supplier': item.supplier,
+					'Cost': item.cost,
+					'Retail Price': item.retailPrice,
+					'Stock On Hand': item.stockOnHand.toString(),
+					'Units': item.units,
+					'Image': item.pathName,
+					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
+						timeZone: 'Asia/Manila'
+					}),
+					'Last Edited User': item.lastEditedUser
+        		}));
+			}
+			else if(tab === "Orders"){
+				rows = data.orders.map((item: any) =>({
+					'Order ID': item.orderId,
+					'Discount': item.discount,
+					'Customer': item.customer,
+					'Handled By': item.handledBy,
+					'Payment Method': item.paymentMethod,
+					'Payment Status': item.paymentStatus,
+					'Date Ordered': new Date(item.dateOrdered).toLocaleDateString('en-PH', {
+						timeZone: 'Asia/Manila'
+					}),
+					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
+						timeZone: 'Asia/Manila'
+					}),
+					'Last Edited User': item.lastEditedUser
+				}));
+			}
+			else if(tab === "OrderInfo"){
+				rows = data.orderInfo.map((item: any) =>({
+					'Order Info ID': item.orderInfoId,
+					'Quantity': item.quantity,
+					'Order ID': item.orderId,
+					'Product ID': item.productId,
+					'Unit Price At Purchase': item.unitPriceAtPurchase,
+					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
+						timeZone: 'Asia/Manila'
+					}),
+					'Last Edited User': item.lastEditedUser
+				}));
+			}
+			else if(tab === "StockEntry"){
+				rows = data.stockEntries.map((item: any) =>({
+					'Entry ID': item.entryId,
+					'Branch Name': item.branchName,
+					'Date Received': new Date(item.dateReceived).toLocaleDateString('en-PH', {
+						timeZone: 'Asia/Manila'
+					}),
+					'Quantity Received': item.quantityReceived,
+					'Delivery Receipt Number': item.deliveryReceiptNumber,
+					'Received By': item.receivedBy,
+					'Product ID': item.productId,
+					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
+						timeZone: 'Asia/Manila'
+					}),
+					'Last Edited User': item.lastEditedUser
+				}));
+			}
+			else if(tab === "StockWithdrawal"){
+				rows = data.stockWithdrawals.map((item: any) =>({
+					'Withdrawal ID': item.withdrawalId,
+					'Date Withdrawn': new Date(item.dateWithdrawn).toLocaleDateString('en-PH', {
+						timeZone: 'Asia/Manila'
+					}),
+					'Quantity Withdrawn': item.quantityWithdrawn,
+					'Purpose': item.purpose,
+					'Entry ID': item.entryId,
+					'Withdrawn By': item.withdrawnBy,
+					'Authorized By': item.authorizedBy,
+					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
+						timeZone: 'Asia/Manila'
+					}),
+					'Last Edited User': item.lastEditedUser
+				}));
+			}
+			else if(tab === "ReturnExchange"){
+				rows = data.returnExchanges.map((item: any) =>({
+					'Transaction ID': item.transactionId,
+					'Date Transaction': new Date(item.dateTransaction).toLocaleDateString('en-PH', {
+						timeZone: 'Asia/Manila'
+					}),
+					'Transaction Status': item.transactionStatus,
+					'Order ID': item.orderId,
+					'Handled By': item.handledBy,
+					'Approved By': item.approvedBy,
+					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
+						timeZone: 'Asia/Manila'
+					}),
+					'Last Edited User': item.lastEditedUser
+				}));
+			}
+			else if(tab === "ReturnExchangelnfo"){
+				rows = data.returnExchangeInfo.map((item: any) =>({
+					'Detail ID': item.detailId,
+					'Returned Product ID': item.returnedProductId,
+					'Returned Quantity': item.returnedQuantity,
+					'Exchange Product ID': item.exchangeProductId,
+					'Exchange Quantity': item.exchangeQuantity,
+					'Reason': item.reason,
+					'Transaction ID': item.transactionId,
+					'Return Type': item.returnType,
+					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
+						timeZone: 'Asia/Manila'
+					}),
+					'Last Edited User': item.lastEditedUser
+				}));
+			}
+			originalRows = [...rows];
+		}catch(err){
+			console.error("Error fetching tab data: ", err);
+		}
+	}
 
 	// store default order for reset
-	const originalRows = [...rows];
+	let originalRows = [...rows];
 
 	// sortby function for col heads
 	function sortBy(column: string) {
@@ -128,20 +279,29 @@
 			sortDirection = 'asc';
 		}
 		rows = [...rows].sort((a, b) => {
-			if (a[column] < b[column]) return sortDirection === 'asc' ? -1 : 1;
-			if (a[column] > b[column]) return sortDirection === 'asc' ? 1 : -1;
+			let aVal = a[column];
+			let bVal = b[column];
+
+			//Special case for Image column lol
+			if (column === "Image") {
+				aVal = aVal?.split('/').pop() ?? '';
+				bVal = bVal?.split('/').pop() ?? '';
+			}
+
+			if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+			if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
 			return 0;
 		});
 	}
 
 	// constant column headers
-	headerMap.Product.push('Last Updated', 'Edited By');
-	headerMap.Orders.push('Last Updated', 'Edited By');
-	headerMap.OrderInfo.push('Last Updated', 'Edited By');
-	headerMap.StockEntry.push('Last Updated', 'Edited By');
-	headerMap.StockWithdrawal.push('Last Updated', 'Edited By');
-	headerMap.ReturnExchange.push('Last Updated', 'Edited By');
-	headerMap.ReturnExchangelnfo.push('Last Updated', 'Edited By');
+	// headerMap.Product.push('Last Updated', 'Edited By');
+	// headerMap.Orders.push('Last Updated', 'Edited By');
+	// headerMap.OrderInfo.push('Last Updated', 'Edited By');
+	// headerMap.StockEntry.push('Last Updated', 'Edited By');
+	// headerMap.StockWithdrawal.push('Last Updated', 'Edited By');
+	// headerMap.ReturnExchange.push('Last Updated', 'Edited By');
+	// headerMap.ReturnExchangelnfo.push('Last Updated', 'Edited By');
 
 	// edit button in popup
 	let showEditButton = false;
@@ -361,7 +521,15 @@
 							title={row[head]}
 							on:click={() => openModal(row[head], i, head)}
 						>
+						{#if head === "Image"}
+							{#if row[head]}
+								<img src = {row[head]} alt="" class="mx-auto max-h-16 max-w-[100px] object-contain"/>
+							{:else}
+								<span class="text-gray-400 italic">Null</span>
+							{/if}
+						{:else}
 							{row[head]}
+						{/if}
 						</td>
 					{/each}
 					<td class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center">

@@ -11,7 +11,9 @@ import returnExchangeController from "./controller/returnExchangeController.js";
 
 const app = express();
 
-app.use(cors()); //enable CORS during development
+app.use(cors({
+    origin: 'http://localhost:5173'
+})); //enable CORS during development
 app.use(express.json());
 
 //controllers
