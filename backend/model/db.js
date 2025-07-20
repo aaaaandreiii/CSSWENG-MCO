@@ -1,10 +1,12 @@
 import mysql from 'mysql2';
+import dotenv from 'dotenv';
+dotenv.config();
 
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '!1230#AzK', //change to your password
-    database: 'mydb'//'dbdbdb'
+const db = mysql.createConnection({                        //edit your .env file to set these variables
+    host: process.env.DB_HOST || 'localhost',               // hostname of the database server
+    user: process.env.DB_USER,                              //'root' or your username
+    password: "" || process.env.DB_PASSWORD,                      // '!1230#AzK' or your password
+    database: process.env.DB_NAME                           // 'mydb' or 'dbdbdb'
 });
 
 db.connect(err =>{
