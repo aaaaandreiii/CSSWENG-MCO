@@ -21,6 +21,112 @@
 		ReturnExchangelnfo: 'getReturnExchangeInfo'
 	};
 
+	const createApiMap: Record<TabType, string> = {
+		Product: 'createProduct',
+		Orders: 'createOrder',
+		OrderInfo: 'createOrderInfo', // X
+		StockEntry: 'createStockEntry',
+		StockWithdrawal: 'createStockWithdrawal',
+		ReturnExchange: 'createReturnExchange',
+		ReturnExchangelnfo: 'createReturnExchangeInfo' // X
+	};
+
+	const keyMap: Record<TabType, Record<string, string>> = {
+		Product: {
+			'Product Name': 'productName',
+			'Category': 'category',
+			'Descriptions': 'descriptions',
+			'Supplier': 'supplier',
+			'Cost': 'cost',
+			'Retail Price': 'retailPrice',
+			'Stock On Hand': 'stockOnHand',
+			'Units': 'units',
+			'Image': 'pathName'
+		},
+		Orders: {
+			'Discount': 'discount',
+			'Customer': 'customer',
+			'Handled By': 'handledBy',
+			'Payment Method': 'paymentMethod',
+			'Payment Status': 'paymentStatus'
+		},
+		OrderInfo: {
+			'Quantity': 'quantity',
+			'Order ID': 'orderId',
+			'Product ID': 'productId',
+			'Unit Price At Purchase': 'unitPriceAtPurchase'
+		},
+		StockEntry: {
+			'Branch Name': 'branchName',
+			'Quantity Received': 'quantityReceived',
+			'Delivery Receipt Number': 'deliveryReceiptNumber',
+			'Received By': 'receivedBy',
+			'Product ID': 'productId'
+		},
+		StockWithdrawal: {
+			'Quantity Withdrawn': 'quantityWithdrawn',
+			'Purpose': 'purpose',
+			'Entry ID': 'entryId',
+			'Withdrawn By': 'withdrawnBy',
+			'Authorized By': 'authorizedBy'
+		},
+		ReturnExchange: {
+			'Transaction Status': 'transactionStatus',
+			'Order ID': 'orderId',
+			'Handled By': 'handledBy',
+			'Approved By': 'approvedBy'
+		},
+		ReturnExchangelnfo: {
+			'Returned Product ID': 'returnedProductId',
+			'Returned Quantity': 'returnedQuantity',
+			'Exchange Product ID': 'exchangeProductId',
+			'Exchange Quantity': 'exchangeQuantity',
+			'Reason': 'reason',
+			'Transaction ID': 'transactionId',
+			'Return Type': 'returnType'
+		}
+	}
+
+	const idValidationMap: Record<TabType, {field: string; endpoint: string}[]> = {
+		Product: [],
+		Orders: [
+			{field: 'Handled By', endpoint: 'getUserById'}
+		],
+		OrderInfo: [
+			{field: 'Order ID', endpoint: 'getOrderById'},
+			{field: 'Product ID', endpoint: 'getProductById'}
+		],
+		StockEntry: [
+			{field: 'Received By', endpoint: 'getUserById'},
+			{field: 'Product ID', endpoint: 'getProductById'}
+		],
+		StockWithdrawal: [
+			{field: 'Entry ID', endpoint: 'getStockEntryById'},
+			{field: 'Withdrawn By', endpoint: 'getUserById'},
+			{field: 'Authorized By', endpoint: 'getUserById'}
+		],
+		ReturnExchange: [
+			{field: 'Order ID', endpoint: 'getOrderById'},
+			{field: 'Handled By', endpoint: 'getUserById'},
+			{field: 'Approved By', endpoint: 'getUserById'}
+		],
+		ReturnExchangelnfo: [
+			{field: 'Returned Product ID', endpoint: 'getProductById'},
+			{field: 'Exchange Product ID', endpoint: 'getProductById'},
+			{field: 'Transaction ID', endpoint: 'getReturnExchangeById'}
+		]
+	};
+
+	const primaryKeyMap: Record<TabType, string> = {
+		Product: 'Product ID',
+		Orders: 'Order ID',
+		OrderInfo: 'Order Info ID',
+		StockEntry: 'Entry ID',
+		StockWithdrawal: 'Withdrawal ID',
+		ReturnExchange: 'Transaction ID',
+		ReturnExchangelnfo: 'Detail ID'
+	};
+
 	const headerMap: Record<TabType, string[]> = {
 		Product: [
 			'Product ID',
@@ -375,7 +481,7 @@
 		}
 	}
 
-	let addForm: { [key: string]: string } = {};
+	let addForm: { [key: string]: string | null } = {};
 	let isAddForm = false;
 
 	function openAddModal() {
@@ -393,13 +499,93 @@
 		showModal = false;
 	}
 
-	function handleAddFormSave() {
+	async function handleAddFormSave() {
 		// Only add if at least one field is filled
-		if (Object.values(addForm).some((v) => v.trim() !== '')) {
-			rows = [...rows, { ...addForm }];
-			isAddForm = false;
-			showModal = false;
+		if (Object.values(addForm).some((v) => v?.trim() !== '')) {
+			const token = localStorage.getItem('token');
+			const endpoint = createApiMap[selected];
+			try{
+				const finalForm: {[key: string]: any} = {};
+				const varKey = keyMap[selected];
+				
+				const validations = idValidationMap[selected] || [];
+				for(const {field, endpoint: idEndpoint} of validations){
+					const raw = addForm[field]?.trim();
+					if(!raw || isNaN(Number(raw))){
+						alert(`${field} must be a number.`);
+						return;
+					}
+					const id = Number(raw);
+					const exists = await validate(idEndpoint, id)
+					if(!exists){
+						alert(`${field} ${id} does not exist in the database.`);
+						return;
+					}
+					const finalKey = varKey[field];
+					if(finalKey) {
+						finalForm[finalKey] = id;
+					}
+				}
+
+				for(const key in addForm){
+					const bKey = varKey[key];
+					if (!bKey || finalForm.hasOwnProperty(bKey)) continue;
+					const value = addForm[key]?.trim();
+					if(bKey === 'pathName'){
+						finalForm[bKey] = value === '' ? null: value;
+					}
+					else if(value !== ''){
+						if(['cost', 'retailPrice', 'stockOnHand', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)){
+							const num = Number(value);
+							if(isNaN(num) || num < 0){
+								alert(`${bKey} must be a valid number`);
+								return;
+							}
+								finalForm[bKey] = num;
+						}
+						else{
+							finalForm[bKey] = value;
+						}
+					}
+				}
+				// console.log("Final form to submit:", finalForm);
+
+				const res = await fetch(`http://localhost:5000/api/${endpoint}`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${token}`
+					},
+					body: JSON.stringify(finalForm)
+				});
+				// const data = await res.json();
+				// console.log("data: ", data);
+				if(!res.ok){
+					alert("Error creating!");
+					return;
+				}
+
+				await fetchTabData(selected);
+				// rows = [...rows, { ...addForm }];
+				isAddForm = false;
+				showModal = false;
+			}catch(err){
+				console.error("Error creating: ", err);
+			}
 		}
+	}
+	
+	//validate if id exists
+	async function validate(endpoint: string, id: number){
+		const token = localStorage.getItem('token');
+		const res = await fetch(`http://localhost:5000/api/${endpoint}/${id}`, {
+			headers: {
+				Authorization: `Bearer ${token}`
+			}
+		});
+		if(!res.ok) return false;
+		// const data = await res.json();
+		return true;
 	}
 
 	function handleDeleteSelectedRows() {
@@ -579,7 +765,7 @@
 			{#if isAddForm}
 				<!-- add popup form for new row -->
 				<form on:submit|preventDefault={handleAddFormSave}>
-					{#each currentHeaders as head}
+					{#each currentHeaders.filter(h => h !== primaryKeyMap[selected] && !/^date/i.test(h) && !['Last Edited Date', 'Last Edited User'].includes(h)) as head}
 						<div class="mb-2">
 							<label class="mb-1 block" for={'add-' + head}>{head}</label>
 							<input
@@ -594,10 +780,10 @@
 						<button
 							type="submit"
 							class="rounded px-4 py-2 text-white
-								{Object.values(addForm).some((v) => v.trim() !== '')
+								{Object.values(addForm).some((v) => v?.trim() !== '')
 								? 'bg-green-600 hover:bg-green-700'
 								: 'cursor-not-allowed bg-gray-400'}"
-							disabled={!Object.values(addForm).some((v) => v.trim() !== '')}
+							disabled={!Object.values(addForm).some((v) => v?.trim() !== '')}
 						>
 							Add
 						</button>
