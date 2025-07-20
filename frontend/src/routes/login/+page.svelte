@@ -3,22 +3,29 @@
 	let password = '';
 
 	async function login(){
-		const res = await fetch('http://localhost:5000/api/login', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({username, password})
-		});
-		const data = await res.json();
-		if(res.ok){
-			localStorage.setItem('token', data.token);
-			alert("Login Successful!");
-			window.location.href = '/dashboard';
+		try {
+			const res = await fetch('http://localhost:5000/api/login', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({username, password})
+			});
+			const data = await res.json();
+			if(res.ok){
+				localStorage.setItem('token', data.token);
+				alert("Login Successful!");
+				window.location.href = '/dashboard';
+			}
+			else{
+				alert("Login failed");
+			}
+		} catch (error) {
+			console.error("Error during login:", error);
+			alert("An error occurred. Please try again later.");
+			return;
 		}
-		else{
-			alert("Login failed");
-		}
+		
 	}
 </script>
 
