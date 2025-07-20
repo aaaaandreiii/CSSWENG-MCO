@@ -21,7 +21,7 @@
 </script>
 
 <nav>
-	<img src="../src/images/logo.png" alt="logo" class="pb-5" />
+	<a href = "/dashboard"> <img src="../src/images/logo.png" alt="logo" class="pb-5"/> </a>
 	<ul>
 		<div class="justify-items-start">
 			{#each tabs as tab, index}
@@ -54,10 +54,10 @@
 		<li>
 			<a
 				href="/login"
-				class="mr-4 flex w-full items-center justify-center gap-x-2 rounded-lg bg-[#de0101] py-1.5"
+				class="mr-4 flex w-full items-center justify-center gap-x-2 rounded-lg bg-[#de0101] py-1.5 hover:bg-[#a30000] transition-colors duration-150"
 			>
 				<img src="../src/icons/logout-2.svg" alt="home" style="width: 23px" />
-				<p class="font-medium" style="font-size: 14px; color:#FFFFF">Log out</p>
+				<p class="font-medium" style="font-size: 14px; color:#FFFFFF;">Log out</p>
 			</a>
 		</li>
 	</ul>

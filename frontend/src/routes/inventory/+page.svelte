@@ -419,13 +419,13 @@
 
 	<div class="flex gap-3">
 		<div class="flex w-fit rounded-4xl bg-white px-3">
-			<input type="text" placeholder="Search" class="w-55 p-2" style="outline:none" />
+			<input type="text" placeholder="Search" class="w-55 p-1" style="outline:none" />
 			<img src="../src/icons/search.svg" alt="search" style="width:15px; " />
 		</div>
 		<div class="flex w-fit rounded-4xl bg-white px-3">
 			<!-- dropdown for order by, auto includes all col headers -->
 			<select
-				class="w-35 p-2 outline-none"
+				class="w-35 p-1 outline-none"
 				bind:value={sortColumn}
 				on:change={() => sortBy(sortColumn)}
 			>
@@ -469,7 +469,7 @@
 			Delete
 		</button>
 		<button
-			class="green1 flex w-28 items-center justify-center gap-2 rounded-lg font-bold text-white hover:bg-green-900"
+			class="button w-28"
 			on:click={openAddModal}
 		>
 			Add

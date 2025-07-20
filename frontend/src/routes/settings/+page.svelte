@@ -1,17 +1,15 @@
 <script lang="ts">
 	let selected = 'all'; // default selected tab = profile
-	// let permissions = [
-	// 	{ name: 'Can view', enabled: false },
-	// 	{ name: 'Can edit', enabled: false },
-	// 	{ name: 'Can approve', enabled: false },
-	// 	{ name: 'Can create users', enabled: false }
-	// ];
+
+	let hasDropdownChanged = false;
+	
 	let details = [
 		{ userId: 'U001', name: 'Full Name', user: 'Username123', date: 'January 19, 2955', position: 'Admin', profilePic: '../src/images/jett.png' },
 		{ userId: 'U002', name: 'Staff User', user: 'Staff123', date: 'February 10, 2955', position: 'Staff', profilePic: '../src/images/lemon.png' },
 		{ userId: 'U003', name: 'Auditor User', user: 'AuditGuy', date: 'March 5, 2955', position: 'Auditor', profilePic: '../src/images/cat.png' },
 		{ userId: 'U004', name: 'Manager User', user: 'ManagerX', date: 'April 1, 2955', position: 'Manager', profilePic: '../src/images/sage.png' }
 	];
+
 
 	// Computed filtered details based on selected tab
 	$: filteredDetails =
@@ -41,7 +39,11 @@
 	const dropdownOptions = ['admin', 'staff', 'auditor', 'manager'];
 
 	function selectPosition(option: string, idx: number) {
-		details[idx].position = option.charAt(0).toUpperCase() + option.slice(1);
+		const newPosition = option.charAt(0).toUpperCase() + option.slice(1);
+		if (details[idx].position !== newPosition) {
+			details[idx].position = newPosition;
+			hasDropdownChanged = true;
+		}
 		openDropdownIndex = null;
 	}
 
@@ -69,80 +71,96 @@
 			document.removeEventListener('mousedown', handleClickOutside);
 		};
 	});
+
+	// Edit mode state
+	let isEditMode = false;
+
 </script>
 
-<div class="flex min-h-screen bg-gray-200">
-	<div class="flex-1 p-8">
+<div class="flex ">
+	<div class="flex-1 p-7">
 		<!-- header -->
-		<header class="mb-8 flex items-center justify-between">
-			<h1 class="text-2xl font-normal">Settings</h1>
+		<header class="mb-4 flex items-center justify-between">
+			<h1>Settings</h1>
 			<div class="flex w-fit rounded-4xl bg-white px-3">
-				<input type="text" placeholder="Search" class="w-55 p-2" style="outline:none" />
+				<input type="text" placeholder="Search" class="w-55 p-1" style="outline:none" />
 				<img src="../src/icons/search.svg" alt="search" style="width:15px; " />
 			</div>
 		</header>
 
 		<!-- settings nav bar -->
-		<nav class="mb-0.">
-			<ul class="flex space-x-4">
+		<nav class="mb-0. flex justify-between">
+			<ul class="flex space-x-4 self-end">
 				<li>
-					<a
-						href="#all"
-						class="px-4 text-lg {selected === 'all'
-							? 'border-b-4 border-green-700 font-bold text-green-700'
-							: 'text-black'}"
-						onclick={() => { selected = 'all'; openDropdownIndex = null; }}
-					>
-						All
-					</a>
+<a
+	href="#all"
+	class="px-4 text-lg {selected === 'all'
+		? 'border-b-4 border-green-700 font-bold text-green-700'
+		: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
+	onclick={() => { if (!isEditMode) { selected = 'all'; openDropdownIndex = null; } }}
+	tabindex={isEditMode ? -1 : 0}
+>
+	All
+</a>
 				</li>
 				<li>
-					<a
-						href="#admin"
-						class="px-4 text-lg {selected === 'admin'
-							? 'border-b-4 border-green-700 font-bold text-green-700'
-							: 'text-black'}"
-						onclick={() => { selected = 'admin'; openDropdownIndex = null; }}
-					>
-						Admin
-					</a>
+<a
+	href="#admin"
+	class="px-4 text-lg {selected === 'admin'
+		? 'border-b-4 border-green-700 font-bold text-green-700'
+		: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
+	onclick={() => { if (!isEditMode) { selected = 'admin'; openDropdownIndex = null; } }}
+	tabindex={isEditMode ? -1 : 0}
+>
+	Admin
+</a>
 				</li>
 				<li>
-					<a
-						href="#staff"
-						class="px-4 text-lg {selected === 'staff'
-							? 'border-b-4 border-green-700 font-bold text-green-700'
-							: 'text-black'}"
-						onclick={() => { selected = 'staff'; openDropdownIndex = null; }}
-					>
-						Staff
-					</a>
+<a
+	href="#staff"
+	class="px-4 text-lg {selected === 'staff'
+		? 'border-b-4 border-green-700 font-bold text-green-700'
+		: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
+	onclick={() => { if (!isEditMode) { selected = 'staff'; openDropdownIndex = null; } }}
+	tabindex={isEditMode ? -1 : 0}
+>
+	Staff
+</a>
 				</li>
 				<li>
-					<a
-						href="#auditor"
-						class="px-4 text-lg {selected === 'auditor'
-							? 'border-b-4 border-green-700 font-bold text-green-700'
-							: 'text-black'}"
-						onclick={() => { selected = 'auditor'; openDropdownIndex = null; }}
-					>
-						Auditor
-					</a>
+<a
+	href="#auditor"
+	class="px-4 text-lg {selected === 'auditor'
+		? 'border-b-4 border-green-700 font-bold text-green-700'
+		: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
+	onclick={() => { if (!isEditMode) { selected = 'auditor'; openDropdownIndex = null; } }}
+	tabindex={isEditMode ? -1 : 0}
+>
+	Auditor
+</a>
 				</li>
 				<li>
-					<a
-						href="#manager"
-						class="px-4 text-lg {selected === 'manager'
-							? 'border-b-4 border-green-700 font-bold text-green-700'
-							: 'text-black'}"
-						onclick={() => { selected = 'manager'; openDropdownIndex = null; }}
-					>
-						Manager
-					</a>
+<a
+	href="#manager"
+	class="px-4 text-lg {selected === 'manager'
+		? 'border-b-4 border-green-700 font-bold text-green-700'
+		: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
+	onclick={() => { if (!isEditMode) { selected = 'manager'; openDropdownIndex = null; } }}
+	tabindex={isEditMode ? -1 : 0}
+>
+	Manager
+</a>
 				</li>
 			</ul>
+<button
+	class="button mb-1.5 w-28 {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none bg-gray-300 text-gray-500' : ''}"
+	onclick={() => { if (!isEditMode) { isEditMode = true; hasDropdownChanged = false; } }}
+	disabled={isEditMode}
+>
+	Edit
+</button>
 		</nav>
-		<hr class="mb-8 border-gray-300" />
+		<hr class="mb-0 border-gray-300" />
 
 	<!-- permissions section, change roles as needed -->
 		<div class="flex flex-wrap gap-5 justify-start">
@@ -172,32 +190,39 @@
 							>
 								{#if selected == 'all'}
 									<button
-										class="flex w-full items-center justify-center gap-1 rounded-full px-3 py-1 focus:outline-none"
-										onclick={() =>
-											openDropdownIndex === idx
-												? (openDropdownIndex = null)
-												: (openDropdownIndex = idx)}
-											
+										class="flex w-full items-center justify-center gap-1 rounded-full px-3 py-1 
+										focus:outline-none"
+										onclick={() => {
+											if (isEditMode) {
+												openDropdownIndex === idx
+													? (openDropdownIndex = null)
+													: (openDropdownIndex = idx);
+											}
+										}}
 										aria-label="Show dropdown"
-										style="background: none; border: none; cursor: pointer;"
+										style="background: none; border: none;"
+										disabled={!isEditMode}
+										tabindex={isEditMode ? 0 : -1}
 									>
 										<p class="mb-0 select-none">{detail.position}</p>
-										<img
-											src="../src/icons/down-black.svg"
-											alt="dropdown arrow"
-											style="width:16px;"
-										/>
+										{#if isEditMode}
+											<img
+												src="../src/icons/down-black.svg"
+												alt="dropdown arrow"
+												style="width:16px;"
+											/>
+										{/if}
 									</button>
 								{:else}
 									<div
 										class="flex w-full items-center justify-center gap-1 rounded-full px-3 py-1 focus:outline-none"
-										style="background: none; border: none; cursor: pointer;"
+										style="background: none; border: none;"
 									>
 										<p class="mb-0 select-none">{detail.position}</p>
 									</div>
 								{/if}
 
-								{#if openDropdownIndex === idx}
+								{#if openDropdownIndex === idx && isEditMode}
 									<ul
 										class="absolute top-full left-0 z-10 mt-1 w-32 rounded border border-gray-200 bg-white shadow"
 									>
@@ -218,5 +243,33 @@
 				{/each}
 			{/if}
 		</div>
+
+		{#if isEditMode}
+			<button
+				class="absolute bottom-10 left-70 rounded-full green1 edit-btn"
+			>
+				<img src="../src/icons/add.svg" alt="Add" style="width: 50px;" />
+			</button>
+		{/if}
+		{#if isEditMode}
+			<div class="fixed right-10 bottom-10 flex gap-4 z-50">
+				{#if hasDropdownChanged}
+				<button
+					class="px-8 py-3 rounded-lg bg-green-700 text-white font-bold shadow-lg hover:bg-green-800 transition-colors duration-150"
+					onclick={() => { isEditMode = false; openDropdownIndex = null; hasDropdownChanged = false; }}
+					type="button"
+				>
+					Save
+				</button>
+				{/if}
+				<button
+					class="px-8 py-3 rounded-lg bg-gray-500 text-white font-bold shadow-lg hover:bg-gray-400 transition-colors duration-150"
+					onclick={() => { isEditMode = false; openDropdownIndex = null; hasDropdownChanged = false; }}
+					type="button"
+				>
+					Cancel
+				</button>
+			</div>
+		{/if}
 	</div>
 </div>

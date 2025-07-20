@@ -48,19 +48,18 @@
 					class="gray3_txt"
 				/>
 			</div>
-			<h1 class="gray2_txt text-right font-bold"><a href="/forgot_password">Forgot password</a></h1>
+		<h1 class="gray2_txt text-right font-bold">
+			<a href="/forgot_password" class="transition-colors duration-150 hover:text-gray-800">Forgot password</a>
+		</h1>
 		</div>
 
 		<div class="p-5 text-center">
 			<button
 				on:click={login}
-				id="button"
-				class="mt-4 w-full text-center font-semibold"
-				style="display: block;">LOGIN
+				class="button mt-4 w-full text-center py-2"
+				style="display: block;"
+			>LOGIN
 			</button>
-		</div>
-		<div class="p-5 text-center">
-			<a href="/signup">SIGN UP</a>
 		</div>
 	</div>
 </div>
