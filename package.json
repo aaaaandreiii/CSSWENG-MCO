@@ -20,5 +20,8 @@
     "preview": "npm run preview --prefix frontend",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": []
+  "keywords": [],
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
 }
