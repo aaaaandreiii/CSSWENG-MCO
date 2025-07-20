@@ -30,7 +30,7 @@ export async function bootstrapAdminUser() {
         const userRole = "admin";
         const username = "admin";
         const userPassword = "123456789";
-        const pathName = "";
+        const pathName = null;
 
         const dateAdded = new Date().toISOString().split("T")[0];
         const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
