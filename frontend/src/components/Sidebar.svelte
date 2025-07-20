@@ -18,6 +18,26 @@
 		const current = tabs.find((tab) => tab.link === $page.url.pathname);
 		if (current) selected = current.name;
 	}
+
+	let username = '';
+	let role = '';
+	let profilePic = '../src/icons/user.svg';
+	onMount(async() =>{
+		try{
+			const token = localStorage.getItem('token');
+			const res = await fetch('http://localhost:5000/api/getUserProfile', {
+				headers: {
+					Authorization: `Bearer ${token}`
+				}
+			});
+			const data = await res.json();
+			username = data.user.username;
+			role = data.user.userRole;
+			profilePic = data.user.pathName || '../src/icons/user.svg';
+		}catch(err){
+			console.error("Error fetching profile: ", err);
+		}
+	})
 </script>
 
 <nav>
@@ -46,8 +66,8 @@
 					<img src="../src/icons/user.svg" alt="pfp" style="width:65px;" />
 				</div>
 				<div class="flex-col">
-					<h2 class="text-lg">Username123</h2>
-					<p class="gray3_txt text-sm">Auditor</p>
+					<h2 class="text-lg">{username}</h2>
+					<p class="gray3_txt text-sm">{role}</p>
 				</div>
 			</a>
 		</li>

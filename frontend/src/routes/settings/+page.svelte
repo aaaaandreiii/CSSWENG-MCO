@@ -3,13 +3,44 @@
 
 	let hasDropdownChanged = false;
 	
-	let details = [
-		{ userId: 'U001', name: 'Full Name', user: 'Username123', date: 'January 19, 2955', position: 'Admin', profilePic: '../src/images/jett.png' },
-		{ userId: 'U002', name: 'Staff User', user: 'Staff123', date: 'February 10, 2955', position: 'Staff', profilePic: '../src/images/lemon.png' },
-		{ userId: 'U003', name: 'Auditor User', user: 'AuditGuy', date: 'March 5, 2955', position: 'Auditor', profilePic: '../src/images/cat.png' },
-		{ userId: 'U004', name: 'Manager User', user: 'ManagerX', date: 'April 1, 2955', position: 'Manager', profilePic: '../src/images/sage.png' }
-	];
+	type UserDetails = { 
+		userId: string; 
+		name: string; 
+		user: string; 
+		date: string; 
+		position: string; 
+		profilePic: string
+	};
+	let details: UserDetails[] = [];
+	
+		// { userId: 'U001', name: 'Full Name', user: 'Username123', date: 'January 19, 2955', position: 'Admin', profilePic: '../src/images/jett.png' },
+		// { userId: 'U002', name: 'Staff User', user: 'Staff123', date: 'February 10, 2955', position: 'Staff', profilePic: '../src/images/lemon.png' },
+		// { userId: 'U003', name: 'Auditor User', user: 'AuditGuy', date: 'March 5, 2955', position: 'Auditor', profilePic: '../src/images/cat.png' },
+		// { userId: 'U004', name: 'Manager User', user: 'ManagerX', date: 'April 1, 2955', position: 'Manager', profilePic: '../src/images/sage.png' }
 
+	onMount(async() =>{
+		try{
+			const token = localStorage.getItem('token');
+			const res = await fetch('http://localhost:5000/api/getUsers', {
+				headers: {
+					Authorization: `Bearer ${token}`
+				}
+			});
+			const data = await res.json();
+			details = data.users.map((item: any) => ({
+				userId: item.userId,
+				name: item.fullName,
+				user: item.username,
+				date: new Date(item.dateAdded).toLocaleDateString('en-PH', {
+					timeZone: 'Asia/Manila'
+				}),
+				position: item.userRole,
+				profilePic: item.pathName || "../src/icons/user.svg"
+			}));
+		}catch(err){
+			console.error("Error fetching user lists: ", err);
+		}
+	});
 
 	// Computed filtered details based on selected tab
 	$: filteredDetails =

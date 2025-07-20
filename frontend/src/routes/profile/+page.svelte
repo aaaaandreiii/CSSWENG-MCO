@@ -1,9 +1,39 @@
-<script>
-	let details = [
-        {name: 'Full Name', user: 'Useername123', date: 'January 19, 2955', position: 'Admin'},
+<script lang="ts">
+	import {onMount} from 'svelte';
 	
-	];
+	type UserDetails = { 
+		// userId: string; 
+		name: string; 
+		user: string; 
+		date: string; 
+		position: string; 
+		profilePic: string
+	};
 
+	let details: UserDetails[] = [];
+
+	onMount(async() =>{
+		try{
+			const token = localStorage.getItem('token');
+			const res = await fetch('http://localhost:5000/api/getUserProfile', {
+				headers: {
+					Authorization: `Bearer ${token}`
+				}
+			});
+			const data = await res.json();
+			details = [{
+				name: data.user.fullName,
+				user: data.user.username,
+				date: new Date(data.user.dateAdded).toLocaleDateString('en-PH', {
+					timeZone: 'Asia/Manila'
+				}),
+				position: data.user.userRole,
+				profilePic: data.user.pathName || "../src/icons/user.svg"
+			}]
+		}catch(err){
+			console.error("Error fetching user data: ", err);
+		}
+	});
 </script>
 
 
@@ -12,7 +42,7 @@
 <div class="p-10">
 	<section class="rounded-lg bg-white p-8">
 		<div class="profile-photo mb-8 flex items-start gap-4">
-			<img src="../src/icons/user.svg" alt="Profile" class="avatar h-48 w-48 rounded-full" />
+			<img src={detail.profilePic} alt="Profile" class="avatar h-48 w-48 rounded-full" />
 			<div class="upload-section flex flex-col items-start">
 				<h1 class="text-5xl font-bold py-5">{detail.name}</h1>
                 <button
