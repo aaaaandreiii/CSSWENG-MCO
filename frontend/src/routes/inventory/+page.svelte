@@ -801,11 +801,11 @@
 			confirm(`Are you sure you want to delete ${selectedRows.length} selected row(s)?`)
 		) {
 			const token = localStorage.getItem('token');
-			const failedDeletes: number[] = [];
+			const failedDeletes: number[] = []; 
 
 			for (const idx of selectedRows) {
 				const row = rows[idx];
-				const productId = row["Product ID"] || row.productId || row.id;
+				const productId= row["Product ID"] || row.productId || row.id; // might need to change datatype to any to remove error
 
 				if (!productId) {
 					console.warn("No product ID found in row:", row);
