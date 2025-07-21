@@ -1,10 +1,10 @@
 import db, { processCascade } from "./db.js"
 
 //CREATE
-export function createProduct(productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, pathName, lastEditedDate, lastEditedUser, deleteFlag){
-    const sql = 'INSERT INTO Product(productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, pathName, lastEditedDate, lastEditedUser, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+export function createProduct(productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, pathName, safeStockCount, restockFlag, lastEditedDate, lastEditedUser, deleteFlag){
+    const sql = 'INSERT INTO Product(productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, pathName, safeStockCount, restockFlag, lastEditedDate, lastEditedUser, deleteFlag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
     return new Promise((resolve, reject) =>{
-        db.query(sql, [productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, pathName, lastEditedDate, lastEditedUser, deleteFlag], (err, result) =>{
+        db.query(sql, [productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, pathName, safeStockCount, restockFlag, lastEditedDate, lastEditedUser, deleteFlag], (err, result) =>{
             if(err) return reject(err);
             console.log("Product created: ", result.insertId);
             resolve(result.insertId);
@@ -55,6 +55,8 @@ export function updateProductById(productId, updatedObject){
                 stockOnHand = ?,
                 units = ?,
                 pathName = ?,
+                safeStockCount = ?,
+                restockFlag = ?,
                 lastEditedDate = ?, 
                 lastEditedUser =?
 
@@ -70,6 +72,8 @@ export function updateProductById(productId, updatedObject){
             updatedObject.stockOnHand,
             updatedObject.units,
             updatedObject.pathName,
+            updatedObject.safeStockCount, 
+            updatedObject.restockFlag,
             updatedObject.lastEditedDate,
             updatedObject.lastEditedUser,
             
