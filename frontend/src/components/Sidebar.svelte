@@ -61,20 +61,20 @@
 	</ul>
 	<ul class="absolute bottom-7">
 		<li>
-			<a href="/profile" class="flex items-center gap-2 pb-8">
-				<div id="pfp" class="profile flex">
-					<img src="../src/icons/user.svg" alt="pfp" style="width:65px;" />
+			<a href="/profile" class="flex items-center gap-3 pb-8 w-full">
+				<div id="pfp" class="profile flex-shrink-0">
+					<img src="../src/icons/user.svg" alt="pfp" style="width:45px; height:45px;" />
 				</div>
-				<div class="flex-col">
-					<h2 class="text-lg">{username}</h2>
-					<p class="gray3_txt text-sm">{role}</p>
+				<div class="flex flex-col items-start ml-2 min-w-0" style="width: 0; flex: 0;">
+					<h2 class="text-lg truncate max-w-[180px]">{username}</h2>
+					<p class="gray3_txt text-sm truncate max-w-[180px]">{role}</p>
 				</div>
 			</a>
 		</li>
 		<li>
 			<a
 				href="/login"
-				class="mr-4 flex w-full items-center justify-center gap-x-2 rounded-lg bg-[#de0101] py-1.5 hover:bg-[#a30000] transition-colors duration-150"
+				class="flex items-center justify-center gap-x-2 rounded-lg bg-[#de0101] py-2 px-14 hover:bg-[#a30000] transition-colors duration-150 mx-auto"
 			>
 				<img src="../src/icons/logout-2.svg" alt="home" style="width: 23px" />
 				<p class="font-medium" style="font-size: 14px; color:#FFFFFF;">Log out</p>

@@ -233,14 +233,16 @@
 
 	// table data rows, can fill with dummy data
 	let rows: { [key: string]: string }[] = [];
-	
+
 	let ready = false;
 	onMount(()=>{
 		ready = true;
 	});
 
-	$: if(ready && selected){
-		fetchTabData(selected);
+	$: if (ready && selected) {
+		(async () => {
+			await fetchTabData(selected);
+		})();
 	}
 
 	async function fetchTabData(tab: TabType){
@@ -256,7 +258,7 @@
         	console.log('Fetched data:', data);
 
 			if(tab === "Product"){
-				rows = data.products.map((item: any) =>({
+				rows = data.products.slice(0, 100).map((item: any) =>({
 					'Product ID': item.productId,
 					'Product Name': item.productName,
 					'Category': item.category,
@@ -274,7 +276,7 @@
         		}));
 			}
 			else if(tab === "Orders"){
-				rows = data.orders.map((item: any) =>({
+				rows = data.orders.slice(0, 100).map((item: any) =>({
 					'Order ID': item.orderId,
 					'Discount': item.discount,
 					'Customer': item.customer,
@@ -291,7 +293,7 @@
 				}));
 			}
 			else if(tab === "OrderInfo"){
-				rows = data.orderInfo.map((item: any) =>({
+				rows = data.orderInfo.slice(0, 100).map((item: any) =>({
 					'Order Info ID': item.orderInfoId,
 					'Quantity': item.quantity,
 					'Order ID': item.orderId,
@@ -304,7 +306,7 @@
 				}));
 			}
 			else if(tab === "StockEntry"){
-				rows = data.stockEntries.map((item: any) =>({
+				rows = data.stockEntries.slice(0, 100).map((item: any) =>({
 					'Entry ID': item.entryId,
 					'Branch Name': item.branchName,
 					'Date Received': new Date(item.dateReceived).toLocaleDateString('en-PH', {
@@ -321,7 +323,7 @@
 				}));
 			}
 			else if(tab === "StockWithdrawal"){
-				rows = data.stockWithdrawals.map((item: any) =>({
+				rows = data.stockWithdrawals.slice(0, 100).map((item: any) =>({
 					'Withdrawal ID': item.withdrawalId,
 					'Date Withdrawn': new Date(item.dateWithdrawn).toLocaleDateString('en-PH', {
 						timeZone: 'Asia/Manila'
@@ -338,7 +340,7 @@
 				}));
 			}
 			else if(tab === "ReturnExchange"){
-				rows = data.returnExchanges.map((item: any) =>({
+				rows = data.returnExchanges.slice(0, 100).map((item: any) =>({
 					'Transaction ID': item.transactionId,
 					'Date Transaction': new Date(item.dateTransaction).toLocaleDateString('en-PH', {
 						timeZone: 'Asia/Manila'
@@ -354,7 +356,7 @@
 				}));
 			}
 			else if(tab === "ReturnExchangelnfo"){
-				rows = data.returnExchangeInfo.map((item: any) =>({
+				rows = data.returnExchangeInfo.slice(0, 100).map((item: any) =>({
 					'Detail ID': item.detailId,
 					'Returned Product ID': item.returnedProductId,
 					'Returned Quantity': item.returnedQuantity,
@@ -551,11 +553,136 @@
 	}
 
 	// func to handle saving the cell edit form
-	function handleCellEditFormSave() {
+	async function handleCellEditFormSave() {
 		if (modalRowIndex !== -1 && modalColumn) {
-			rows[modalRowIndex][modalColumn] = cellEditForm.value;
-			isCellEditForm = false;
-			showModal = false;
+			const token = localStorage.getItem('token');
+			const endpoint = updateApiMap[selected];
+			const primaryKey = primaryKeyMap[selected];
+			const rowId = rows[modalRowIndex][primaryKey]; //primary key: id
+			const rowData = rows[modalRowIndex]; //data before update
+			const varKey = keyMap[selected];
+
+			const updatedRow = {...rowData, [modalColumn]: cellEditForm.value}; 
+			
+			const validations = idValidationMap[selected] || [];
+			const foreignIds = validations.map(v => v.field);
+
+			const convertedRow: Record<string, any> = {}; //convert datatype
+			for(const displayKey in updatedRow){
+				const bKey = varKey[displayKey]; //converts Product Name to productName(match backend)
+				if(bKey){ 
+					let value = updatedRow[displayKey] as string | number;
+					if(foreignIds.includes(bKey)){ //if foreign Id
+						const num = Number(value);
+						value = num;
+					}
+					else if (typeof value === 'string') {
+						value = value.trim();
+					}	
+					convertedRow[bKey] = value;
+				}
+			}
+			if(typeof convertedRow.cost === 'string'){
+				convertedRow.cost = Number(convertedRow.cost);
+			}
+			if(typeof convertedRow.retailPrice === 'string'){
+				convertedRow.retailPrice = Number(convertedRow.retailPrice);
+			}
+			if(typeof convertedRow.stockOnHand === 'string'){
+				convertedRow.stockOnHand = Number(convertedRow.stockOnHand);
+			}
+			if(typeof convertedRow.discount === 'string'){
+				convertedRow.discount = Number(convertedRow.discount);
+			}
+			if(typeof convertedRow.quantity === 'string'){
+				convertedRow.quantity = Number(convertedRow.quantity);
+			}
+			if(typeof convertedRow.unitPriceAtPurchase === 'string'){
+				convertedRow.unitPriceAtPurchase = Number(convertedRow.unitPriceAtPurchase);
+			}
+			if(typeof convertedRow.quantityReceived === 'string'){
+				convertedRow.quantityReceived = Number(convertedRow.quantityReceived);
+			}
+			if(typeof convertedRow.deliveryReceiptNumber === 'string'){
+				convertedRow.deliveryReceiptNumber = Number(convertedRow.deliveryReceiptNumber);
+			}
+			if(typeof convertedRow.quantityWithdrawn === 'string'){
+				convertedRow.quantityWithdrawn = Number(convertedRow.quantityWithdrawn);
+			}
+			if(typeof convertedRow.returnedQuantity === 'string'){
+				convertedRow.returnedQuantity = Number(convertedRow.returnedQuantity);
+			}
+			if(typeof convertedRow.exchangeQuantity === 'string'){
+				convertedRow.exchangeQuantity = Number(convertedRow.exchangeQuantity);
+			}
+
+			const finalForm: Record<string, any> ={
+				...convertedRow
+			};
+			
+			const field = modalColumn;
+			const raw = cellEditForm.value;
+			const trim = typeof raw === 'string' ? raw.trim(): raw;		
+			const validation = validations.find(v => v.field === field);
+			if(validation){
+				if(trim === '' || isNaN(Number(trim))){
+					alert(`${field} must be a number.`);
+					return;
+				}
+				const id = Number(trim);
+				const exists = await validate(validation.endpoint, id)
+				if(!exists){
+					alert(`${field} ${id} does not exist in the database.`);
+					return;
+				}
+				const finalKey = varKey[field];
+				if(finalKey) {
+					finalForm[finalKey] = id;
+				}
+			}
+			else{
+				const bKey = varKey[field];
+				if(bKey === 'pathName'){
+					finalForm[bKey] = trim === '' ? null: trim;
+				}
+				else if(trim !== '' && trim !== null && trim !== undefined){
+					if(['cost', 'retailPrice', 'stockOnHand', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)){
+						const num = Number(trim);
+						if(isNaN(num) || num < 0){
+							alert(`${bKey} must be a valid number`);
+							return;
+						}
+							finalForm[bKey] = num;
+					}
+					else{
+						finalForm[bKey] = trim;
+					}
+				}
+			}
+			// console.log("finalForm", finalForm);
+			// console.log("updatedRow", updatedRow);
+			try{
+				const res = await fetch(`http://localhost:5000/api/${endpoint}/${rowId}`, {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${token}`
+					},
+					body: JSON.stringify(finalForm)
+				});
+				// const data = await res.json();
+				if(!res.ok){
+					alert("Error updating!");
+					return;
+				}
+				await fetchTabData(selected);
+		
+				// rows[modalRowIndex][modalColumn] = cellEditForm.value;
+				isCellEditForm = false;
+				showModal = false;
+			}catch(err){
+			console.error("Error updating: ", err);
+			}
 		}
 	}
 
@@ -666,15 +793,56 @@
 		return true;
 	}
 
-	function handleDeleteSelectedRows() {
+	async function handleDeleteSelectedRows() {
 		if (
 			selectedRows.length > 0 &&
 			confirm(`Are you sure you want to delete ${selectedRows.length} selected row(s)?`)
 		) {
-			rows = rows.filter((_, idx) => !selectedRows.includes(idx));
+			const token = localStorage.getItem('token');
+			const failedDeletes: number[] = [];
+
+			for (const idx of selectedRows) {
+				const row = rows[idx];
+				const productId = row["Product ID"] || row.productId || row.id;
+
+				if (!productId) {
+					console.warn("No product ID found in row:", row);
+					failedDeletes.push(-1);
+					continue;
+				}
+
+				try {
+					const res = await fetch(`http://localhost:5000/api/deleteProduct/${productId}`, {
+						method: "DELETE",
+						headers: {
+							"Content-Type": "application/json",
+							Authorization: `Bearer ${token}`
+						}
+					});
+
+					if (!res.ok) {
+						const err = await res.json();
+						console.error(`Failed to delete product ${productId}:`, err.message || err);
+						failedDeletes.push(productId);
+					}
+				} catch (err) {
+					console.error(`Error deleting product ${productId}:`, err);
+					failedDeletes.push(productId);
+				}
+			}
+
 			selectedRows = [];
+
+			await fetchTabData(selected);
+
+			if (failedDeletes.length > 0) {
+				alert(`Some deletions failed: ${failedDeletes.join(", ")}`);
+			} else {
+				alert("Deletion successful.");
+			}
 		}
 	}
+
 </script>
 
 <!-- header w/ search bar and filter-->
@@ -723,7 +891,7 @@
 	<!-- buttons for actions -->
 	<div class="ml-auto flex gap-5 p-2.5 pr-10">
 		<button
-			class="flex w-28 items-center justify-center gap-2 rounded-lg font-bold
+			class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold
 				{selectedRows.length === 0
 				? 'cursor-not-allowed bg-gray-400 text-gray-200'
 				: 'red1 text-white hover:bg-red-700'}"
@@ -733,7 +901,7 @@
 			Delete
 		</button>
 		<button
-			class="button w-28"
+			class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold bg-[#3d843f] text-white hover:bg-[#3b7f3b]"
 			on:click={openAddModal}
 		>
 			Add
@@ -910,13 +1078,26 @@
 							class="w-full rounded border px-2 py-1"
 							type="text"
 							bind:value={cellEditForm.value}
+							readonly={ //primary key, date_, last edited fields
+								modalColumn === primaryKeyMap[selected] ||
+								/^date/i.test(modalColumn) ||
+								modalColumn === 'Last Edited Date' ||
+								modalColumn === 'Last Edited User'
+							}
 						/>
 					</div>
 					<div class="mt-4 flex gap-2">
-						<button
-							type="submit"
-							class="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700">Save</button
-						>
+						<!-- {#if !(
+							modalColumn === primaryKeyMap[selected] ||
+							/^date/i.test(modalColumn) ||
+							modalColumn === 'Last Edited Date' ||
+							modalColumn === 'Last Edited User'
+						)} -->
+							<button
+								type="submit"
+								class="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700">Save</button
+							>
+						<!-- {/if} -->
 						<button
 							type="button"
 							class="rounded bg-gray-400 px-4 py-2 text-white hover:bg-gray-500"
