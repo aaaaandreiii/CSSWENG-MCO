@@ -256,7 +256,7 @@
         	console.log('Fetched data:', data);
 
 			if(tab === "Product"){
-				rows = data.products.map((item: any) =>({
+				rows = data.products.slice(0, 100).map((item: any) =>({
 					'Product ID': item.productId,
 					'Product Name': item.productName,
 					'Category': item.category,
@@ -274,7 +274,7 @@
         		}));
 			}
 			else if(tab === "Orders"){
-				rows = data.orders.map((item: any) =>({
+				rows = data.orders.slice(0, 100).map((item: any) =>({
 					'Order ID': item.orderId,
 					'Discount': item.discount,
 					'Customer': item.customer,
@@ -291,7 +291,7 @@
 				}));
 			}
 			else if(tab === "OrderInfo"){
-				rows = data.orderInfo.map((item: any) =>({
+				rows = data.orderInfo.slice(0, 100).map((item: any) =>({
 					'Order Info ID': item.orderInfoId,
 					'Quantity': item.quantity,
 					'Order ID': item.orderId,
@@ -304,7 +304,7 @@
 				}));
 			}
 			else if(tab === "StockEntry"){
-				rows = data.stockEntries.map((item: any) =>({
+				rows = data.stockEntries.slice(0, 100).map((item: any) =>({
 					'Entry ID': item.entryId,
 					'Branch Name': item.branchName,
 					'Date Received': new Date(item.dateReceived).toLocaleDateString('en-PH', {
@@ -321,7 +321,7 @@
 				}));
 			}
 			else if(tab === "StockWithdrawal"){
-				rows = data.stockWithdrawals.map((item: any) =>({
+				rows = data.stockWithdrawals.slice(0, 100).map((item: any) =>({
 					'Withdrawal ID': item.withdrawalId,
 					'Date Withdrawn': new Date(item.dateWithdrawn).toLocaleDateString('en-PH', {
 						timeZone: 'Asia/Manila'
@@ -338,7 +338,7 @@
 				}));
 			}
 			else if(tab === "ReturnExchange"){
-				rows = data.returnExchanges.map((item: any) =>({
+				rows = data.returnExchanges.slice(0, 100).map((item: any) =>({
 					'Transaction ID': item.transactionId,
 					'Date Transaction': new Date(item.dateTransaction).toLocaleDateString('en-PH', {
 						timeZone: 'Asia/Manila'
@@ -354,7 +354,7 @@
 				}));
 			}
 			else if(tab === "ReturnExchangelnfo"){
-				rows = data.returnExchangeInfo.map((item: any) =>({
+				rows = data.returnExchangeInfo.slice(0, 100).map((item: any) =>({
 					'Detail ID': item.detailId,
 					'Returned Product ID': item.returnedProductId,
 					'Returned Quantity': item.returnedQuantity,
@@ -723,7 +723,7 @@
 	<!-- buttons for actions -->
 	<div class="ml-auto flex gap-5 p-2.5 pr-10">
 		<button
-			class="flex w-28 items-center justify-center gap-2 rounded-lg font-bold
+			class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold
 				{selectedRows.length === 0
 				? 'cursor-not-allowed bg-gray-400 text-gray-200'
 				: 'red1 text-white hover:bg-red-700'}"
@@ -733,7 +733,7 @@
 			Delete
 		</button>
 		<button
-			class="button w-28"
+			class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold bg-[#3d843f] text-white hover:bg-[#3b7f3b]"
 			on:click={openAddModal}
 		>
 			Add

@@ -106,6 +106,38 @@
 	// Edit mode state
 	let isEditMode = false;
 
+	// Modal state and form fields for account creation
+	let showAddModal = false;
+	let newEmail = '';
+	let newPassword = '';
+	let newUsername = '';
+	let addError = '';
+
+	function openAddModal() {
+		showAddModal = true;
+		newEmail = '';
+		newPassword = '';
+		newUsername = '';
+		addError = '';
+	}
+
+	function closeAddModal() {
+		showAddModal = false;
+		addError = '';
+	}
+
+	async function handleAddAccount() {
+		// Basic validation
+		if (!newEmail || !newPassword || !newUsername) {
+			addError = 'All fields are required.';
+			return;
+		}
+		// ...submit logic here (e.g., API call)...
+		// On success:
+		closeAddModal();
+		// Optionally refresh user list
+	}
+
 </script>
 
 <div class="flex ">
@@ -278,10 +310,75 @@
 		{#if isEditMode}
 			<button
 				class="absolute bottom-10 left-70 rounded-full green1 edit-btn"
+				on:click={openAddModal}
 			>
 				<img src="../src/icons/add.svg" alt="Add" style="width: 50px;" />
 			</button>
 		{/if}
+
+		<!-- Add Account Modal -->
+		{#if showAddModal}
+			<div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+				<div class="bg-white rounded-lg shadow-lg p-8 w-96 relative">
+					<h2 class="text-xl font-bold mb-4">Create New Account</h2>
+					<form on:submit|preventDefault={handleAddAccount}>
+						<div class="mb-3">
+							<label class="block mb-1 text-sm font-medium">Email</label>
+							<input
+								type="email"
+								class="w-full border rounded px-3 py-2"
+								bind:value={newEmail}
+								required
+							/>
+						</div>
+						<div class="mb-3">
+							<label class="block mb-1 text-sm font-medium">Username</label>
+							<input
+								type="text"
+								class="w-full border rounded px-3 py-2"
+								bind:value={newUsername}
+								required
+							/>
+						</div>
+						<div class="mb-3">
+							<label class="block mb-1 text-sm font-medium">Password</label>
+							<input
+								type="password"
+								class="w-full border rounded px-3 py-2"
+								bind:value={newPassword}
+								required
+							/>
+						</div>
+						{#if addError}
+							<p class="text-red-600 text-sm mb-2">{addError}</p>
+						{/if}
+						<div class="flex justify-end gap-2 mt-4">
+							<button
+								type="button"
+								class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+								on:click={closeAddModal}
+							>
+								Cancel
+							</button>
+							<button
+								type="submit"
+								class="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-800"
+							>
+								Create
+							</button>
+						</div>
+					</form>
+					<button
+						class="absolute top-2 right-2 text-gray-500 hover:text-black"
+						on:click={closeAddModal}
+						aria-label="Close"
+					>
+						&times;
+					</button>
+				</div>
+			</div>
+		{/if}
+
 		{#if isEditMode}
 			<div class="fixed right-10 bottom-10 flex gap-4 z-50">
 				{#if hasDropdownChanged}

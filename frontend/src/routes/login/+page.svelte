@@ -1,6 +1,7 @@
 <script>
 	let username = '';
 	let password = '';
+	let showPassword = false;
 
 	async function login(){
 		try {
@@ -47,12 +48,21 @@
 			<div class="flex-scol pt-3">
 				<h1 class="text-lg">Password</h1>
 				<input
-					type="password"
+					type={showPassword ? "text" : "password"}
 					bind:value={password}
 					placeholder="Type your password"
 					id="input"
 					class="gray3_txt"
 				/>
+				<div class="flex items-center mt-2">
+					<input
+						type="checkbox"
+						id="show-password"
+						bind:checked={showPassword}
+						class="mr-2"
+					/>
+					<label for="show-password" class="text-sm select-none">Show password</label>
+				</div>
 			</div>
 		<h1 class="gray2_txt text-right font-bold">
 			<a href="/forgot_password" class="transition-colors duration-150 hover:text-gray-800">Forgot password</a>
