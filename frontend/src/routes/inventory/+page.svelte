@@ -31,6 +31,16 @@
 		ReturnExchangelnfo: 'createReturnExchangeInfo' // X
 	};
 
+	const updateApiMap: Record<TabType, string> = {
+		Product: 'updateProduct',
+		Orders: 'updateOrder',
+		OrderInfo: 'updateOrderInfo',
+		StockEntry: 'updateStockEntry',
+		StockWithdrawal: 'updateStockWithdrawal',
+		ReturnExchange: 'updateReturnExchange',
+		ReturnExchangelnfo: 'updateReturnExchangeInfo'
+	};
+
 	const keyMap: Record<TabType, Record<string, string>> = {
 		Product: {
 			'Product Name': 'productName',
@@ -457,11 +467,79 @@
 	let isCellEditForm = false;
 
 	// func to handle saving the edit form
-	function handleEditFormSave() {
+	async function handleEditFormSave() {
 		if (modalRowIndex !== -1) {
-			rows[modalRowIndex] = { ...editForm };
-			isEditForm = false;
-			showModal = false;
+			const token = localStorage.getItem('token');
+			const endpoint = updateApiMap[selected];
+			const primaryKey = primaryKeyMap[selected];
+			const rowId = rows[modalRowIndex][primaryKey];
+			const finalForm: {[key: string]: any} = {};
+			const varKey = keyMap[selected];
+
+			const validations = idValidationMap[selected] || [];
+				for(const {field, endpoint: idEndpoint} of validations){
+					const raw = editForm[field];
+					const trim = typeof raw === 'string' ? raw.trim(): raw;
+					if(trim === '' || isNaN(Number(trim))){
+						alert(`${field} must be a number.`);
+						return;
+					}
+					const id = Number(trim);
+					const exists = await validate(idEndpoint, id)
+					if(!exists){
+						alert(`${field} ${id} does not exist in the database.`);
+						return;
+					}
+					const finalKey = varKey[field];
+					if(finalKey) {
+						finalForm[finalKey] = id;
+					}
+				}
+
+			for(const key in editForm){
+				const bKey = varKey[key];
+				if (!bKey || finalForm.hasOwnProperty(bKey)) continue;
+				const raw = editForm[key];
+				const value = typeof raw === 'string'? raw.trim(): raw;
+				if(bKey === 'pathName'){
+					finalForm[bKey] = value === '' ? null: value;
+				}
+				else if(value !== '' && value !== null && value !== undefined){
+					if(['cost', 'retailPrice', 'stockOnHand', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)){
+						const num = Number(value);
+						if(isNaN(num) || num < 0){
+							alert(`${bKey} must be a valid number`);
+							return;
+						}
+							finalForm[bKey] = num;
+					}
+					else{
+						finalForm[bKey] = value;
+					}
+				}
+			}
+			try{
+				const res = await fetch(`http://localhost:5000/api/${endpoint}/${rowId}`, {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${token}`
+					},
+					body: JSON.stringify(finalForm)
+				});
+				// const data = await res.json();
+				if(!res.ok){
+					alert("Error updating!");
+					return;
+				}
+				await fetchTabData(selected);
+				
+				// rows[modalRowIndex] = { ...editForm };
+				isEditForm = false;
+				showModal = false;
+			}catch(err){
+				console.error("Error updating: ", err);
+			}
 		}
 	}
 
@@ -797,7 +875,7 @@
 			{:else if isEditForm}
 				<!-- edit popup form for entire row -->
 				<form on:submit|preventDefault={handleEditFormSave}>
-					{#each currentHeaders as head}
+					{#each currentHeaders.filter(h => h !== primaryKeyMap[selected] && !/^date/i.test(h) && !['Last Edited Date', 'Last Edited User'].includes(h)) as head}
 						<div class="mb-2">
 							<label class="mb-1 block font-bold" for={'edit-' + head}>{head}</label>
 							<input
