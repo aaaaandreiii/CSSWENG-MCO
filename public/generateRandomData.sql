@@ -76,7 +76,7 @@ FROM seq;
 
 -- populate Product
 INSERT INTO `mydb`.`Product`
-  (productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, pathName, restockFlag, lastEditedDate, lastEditedUser, deleteFlag)
+  (productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, pathName, safeStockCount, restockFlag, lastEditedDate, lastEditedUser, deleteFlag)
 SELECT
   CONCAT('Product ', n),
   ELT((n % 5) + 1, 'Electronics','Furniture','Clothing','Food','Books'),
@@ -87,6 +87,7 @@ SELECT
   FLOOR(RAND() * 100),
   ELT((n % 12) + 1, 'pcs','boxes','cases','packs','bundles','crates','meters','centimeters','square meters','rolls','spools','sets'),
   NULL,
+  (ROUND(10 + RAND() * 90, 2) % 15),
   (RAND() % 2),
   NOW() - INTERVAL (n % 365) DAY,
   ((n % 50) + 1),
