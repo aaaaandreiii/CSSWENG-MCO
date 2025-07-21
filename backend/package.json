@@ -1,5 +1,5 @@
 {
-	"name": "project",
+	"name": "green-paddle-webapp-backend",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
@@ -33,6 +33,7 @@
 		"dotenv": "^17.2.0",
 		"express": "^5.1.0",
 		"jsonwebtoken": "^9.0.2",
+		"lodash": "^4.17.21",
 		"mysql2": "^3.14.1"
 	}
 }

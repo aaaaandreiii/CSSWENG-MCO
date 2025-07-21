@@ -1,5 +1,12 @@
 <script lang="ts">
     import { items } from '$lib/index.js';
+    import Chart, { type ChartItem } from 'chart.js/auto';
+
+    import { onMount, onDestroy } from 'svelte';
+    import { browser } from '$app/environment';
+
+    let chartEl: HTMLCanvasElement;
+    let chart: any;
 
     let infos = [
         { value: '50293', label: 'Sales', color: '#AECABD' },
@@ -46,7 +53,6 @@
     }
 
     // outside click handler for dropdowns
-    import { onMount, onDestroy } from 'svelte';
     function handleClickOutside(event: MouseEvent) {
         if (dropdownOpenSales && dropdownRefSales && !dropdownRefSales.contains(event.target as Node)) {
             dropdownOpenSales = false;
@@ -55,12 +61,15 @@
             dropdownOpenAnnual = false;
         }
     }
-    onMount(() => {
-        document.addEventListener('mousedown', handleClickOutside);
-    });
-    onDestroy(() => {
-        document.removeEventListener('mousedown', handleClickOutside);
-    });
+
+    // gonna comment out this line for my data analysis component
+    // onMount(() => {
+    //     document.addEventListener('mousedown', handleClickOutside);
+    // });
+
+    // onDestroy(() => {
+    //     document.removeEventListener('mousedown', handleClickOutside);
+    // });
 
     // dropdown logic for ordering, asc/desc
     let orderDropdownOpen = false;
@@ -95,6 +104,48 @@
         dropdownOpenSales = false;
         isChosen = true;
     }
+
+
+    // Initialize Chart.js
+    let turnoverData = [];
+
+    onMount(async () => {
+        if (!browser) return;             // bail out during SSR
+
+        // now it's safe to touch document
+        document.addEventListener('mousedown', handleClickOutside);
+
+        // dynamically load Chart.js
+        const { default: Chart } = await import('chart.js/auto');
+
+        // fetch your turnover data
+        const res = await fetch('http://localhost:5000/api/dataAnalysisController');
+        const turnoverData = await res.json();
+
+        const labels = turnoverData.map((d: any) => d.productName);
+        const data   = turnoverData.map((d: any) => +d.turnoverRate.toFixed(2));
+
+        chart = new Chart(chartEl, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{ label: 'Inventory Turnover Rate', data }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+            x: { ticks: { autoSkip: false } },
+            y: { beginAtZero: true }
+            }
+        }
+        });
+    });
+
+    onDestroy(() => {
+        if (!browser) return;
+        document.removeEventListener('mousedown', handleClickOutside);
+        chart?.destroy();
+    });
 
 </script>
 
@@ -316,3 +367,11 @@
         </div>
     </div>
 </div>
+
+
+<style>
+  canvas { max-width: 100%; height: auto; }
+</style>
+
+<h2>Top 10 Products by Inventory Turnover (2024–2025)</h2>
+<canvas bind:this={chartEl}></canvas>
