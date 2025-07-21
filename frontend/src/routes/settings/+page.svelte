@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { PUBLIC_API_BASE_URL } from '$env/static/public';
+
 	let selected = 'all'; // default selected tab = profile
 
 	let hasDropdownChanged = false;
@@ -21,7 +23,7 @@
 	onMount(async() =>{
 		try{
 			const token = localStorage.getItem('token');
-			const res = await fetch('http://localhost:5000/api/getUsers', {
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getUsers`, {
 				headers: {
 					Authorization: `Bearer ${token}`
 				}

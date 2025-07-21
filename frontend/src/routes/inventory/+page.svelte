@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { PUBLIC_API_BASE_URL } from '$env/static/public';
+	
 	import {onMount} from 'svelte';
 	type TabType =
 		| 'Product'
@@ -249,7 +251,7 @@
 		try{
 			const token = localStorage.getItem('token');
 			const endpoint = getApiMap[tab];
-			const res = await fetch(`http://localhost:5000/api/${endpoint}`, {
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
 				headers: {
 					Authorization: `Bearer ${token}`
 				}
@@ -521,7 +523,7 @@
 				}
 			}
 			try{
-				const res = await fetch(`http://localhost:5000/api/${endpoint}/${rowId}`, {
+				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
 					method: 'PUT',
 					headers: {
 						'Content-Type': 'application/json',
@@ -662,7 +664,7 @@
 			// console.log("finalForm", finalForm);
 			// console.log("updatedRow", updatedRow);
 			try{
-				const res = await fetch(`http://localhost:5000/api/${endpoint}/${rowId}`, {
+				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
 					method: 'PUT',
 					headers: {
 						'Content-Type': 'application/json',
@@ -755,7 +757,7 @@
 				}
 				// console.log("Final form to submit:", finalForm);
 
-				const res = await fetch(`http://localhost:5000/api/${endpoint}`, {
+				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
@@ -783,7 +785,7 @@
 	//validate if id exists
 	async function validate(endpoint: string, id: number){
 		const token = localStorage.getItem('token');
-		const res = await fetch(`http://localhost:5000/api/${endpoint}/${id}`, {
+		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${id}`, {
 			headers: {
 				Authorization: `Bearer ${token}`
 			}
@@ -812,7 +814,7 @@
 				}
 
 				try {
-					const res = await fetch(`http://localhost:5000/api/deleteProduct/${productId}`, {
+					const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteProduct/${productId}`, {
 						method: "DELETE",
 						headers: {
 							"Content-Type": "application/json",

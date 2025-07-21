@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { PUBLIC_API_BASE_URL } from '$env/static/public';
+
 	import {onMount} from 'svelte';
 	
 	type UserDetails = { 
@@ -15,7 +17,7 @@
 	onMount(async() =>{
 		try{
 			const token = localStorage.getItem('token');
-			const res = await fetch('http://localhost:5000/api/getUserProfile', {
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getUserProfile`, {
 				headers: {
 					Authorization: `Bearer ${token}`
 				}
