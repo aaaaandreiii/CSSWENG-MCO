@@ -706,7 +706,7 @@
 
 			selectedRows = [];
 
-			await fetchTabData(selected); // refresh the table
+			await fetchTabData(selected);
 
 			if (failedDeletes.length > 0) {
 				alert(`Some deletions failed: ${failedDeletes.join(", ")}`);
@@ -715,8 +715,6 @@
 			}
 		}
 	}
-
-
 
 </script>
 
