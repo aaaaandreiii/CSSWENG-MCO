@@ -11,9 +11,13 @@ import { bootstrapAdminUser } from "./model/userModel.js";
 import dataAnalysisController from './controller/dataAnalysisController.js';
 
 const app = express();
+const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-    origin: 'http://localhost:5173'
+    origin: 'http://localhost:5173',
+    methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+    allowedHeaders: ['Content-Type','Authorization']
+
 })); //enable CORS during development
 app.use(express.json());
 
@@ -24,13 +28,10 @@ app.use("/api", stockEntryController);
 app.use("/api", stockWithdrawalController);
 app.use("/api", ordersController);
 app.use("/api", returnExchangeController);
-app.use("/api/dataAnalysisController", dataAnalysisController);
+app.use("/api", dataAnalysisController);
 
 bootstrapAdminUser().catch(console.error);
 
-// (async() =>{
-//     const date = new Date("2015-02-03");
-//     await mysql.createUser("A", "admin", "aaa", "123", null, date, date, 1, 0);
-// })();
-
-app.listen(5000, () => console.log("Server listening on port 5000."));
+app.listen(PORT, () => {
+  console.log(`Backend listening on http://localhost:${PORT}`);
+});

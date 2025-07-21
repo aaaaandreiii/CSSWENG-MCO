@@ -1,18 +1,20 @@
 import express from 'express';
-import { pool } from '../db.js';
+import db from "../model/db.js"
 import _ from 'lodash';
 
 const router = express.Router();
 
 router.get('/', async (req, res, next) => {
   try {
+    console.log('⚡️  GET /api/dataAnalysisController hit');
+
     // 1. load all tables
-    const [products]       = await pool.query('SELECT productId, productName, cost, stockOnHand FROM Product');
-    const [users]          = await pool.query('SELECT * FROM Users');
-    const [stockEntry]     = await pool.query('SELECT entryId, productId, quantityReceived, dateReceived FROM StockEntry');
-    const [stockWithdraw]  = await pool.query('SELECT entryId, quantityWithdrawn, dateWithdrawn FROM StockWithdrawal');
-    const [orders]         = await pool.query('SELECT orderId, dateOrdered, paymentStatus FROM Orders');
-    const [orderInfo]      = await pool.query('SELECT orderId, productId, quantity FROM OrderInfo');
+    const [products]       = await db.query('SELECT productId, productName, cost, stockOnHand FROM Product');
+    const [users]          = await db.query('SELECT * FROM Users');
+    const [stockEntry]     = await db.query('SELECT entryId, productId, quantityReceived, dateReceived FROM StockEntry');
+    const [stockWithdraw]  = await db.query('SELECT entryId, quantityWithdrawn, dateWithdrawn FROM StockWithdrawal');
+    const [orders]         = await db.query('SELECT orderId, dateOrdered, paymentStatus FROM Orders');
+    const [orderInfo]      = await db.query('SELECT orderId, productId, quantity FROM OrderInfo');
     // (you can also load Returns and AuditLog if needed)
 
     const startDate = new Date('2024-01-01');
@@ -123,9 +125,70 @@ router.get('/', async (req, res, next) => {
       .take(10)
       .value();
 
-    res.json(turnover);
+    // res.json(turnover);
+
+    // debugging purposes: Total COGS per product
+    console.log('\n📦 Total COGS per product:');
+    console.table(
+      cogsPerProd.map(p => ({
+        'Product ID':    p.productId,
+        'Product Name':  p.productName,
+        'Total COGS':    p.total_cogs.toFixed(2)
+      }))
+    );
+
+    // debugging purposes: Turnover rate per product (for all products with COGS)
+    const turnoverAll = _(cogsPerProd)
+      .keyBy('productId')
+      .mapValues(prod => {
+        const beg   = begInv.find(b => b.productId === prod.productId)?.beg_units || 0;
+        const end   = endInv.find(e => e.productId === prod.productId) || { stockOnHand:0, cost:0 };
+        const avgU  = (beg + end.stockOnHand) / 2;
+        const avgV  = avgU * end.cost;
+        const rate  = avgV > 0 ? prod.total_cogs / avgV : 0;
+        return {
+          productId:    prod.productId,
+          productName:  prod.productName,
+          turnoverRate: rate
+        };
+      })
+      .values()
+      .value();
+
+    console.log('\n🔄 Turnover rate per product:');
+    console.table(
+      turnoverAll.map(t => ({
+        'Product ID':    t.productId,
+        'Product Name':  t.productName,
+        'Turnover Rate': t.turnoverRate.toFixed(2)
+      }))
+    );
+
+    // debugging purposes: Top 10 by turnover rate
+    const top10 = _(turnoverAll)
+      .orderBy('turnoverRate', 'desc')
+      .take(10)
+      .value();
+
+    console.log('\n🏆 Top 10 Products by Inventory Turnover Rate:');
+    console.table(
+      top10.map((t, i) => ({
+        Rank:           i + 1,
+        'Product ID':   t.productId,
+        'Product Name': t.productName,
+        'Turnover Rate': t.turnoverRate.toFixed(2)
+      }))
+    );
+
+    console.log('Total COGS per product:', cogsPerProd);
+    console.log('Turnover rate per product:', turnoverAll);
+    console.log('Top 10 Products by Turnover Rate:', top10);
+
+
+    res.json(top10);
 
   } catch (err) {
+    console.log('⚡️  GET /api/dataAnalysisController NOT hit');
     next(err);
   }
 });
