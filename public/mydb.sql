@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Product` (
   `pathName` VARCHAR(255) DEFAULT NULL,
   `lastEditedDate` DATETIME NOT NULL,
   `lastEditedUser` INT NOT NULL,
+  `restockFlag` TINYINT NOT NULL,
   `deleteFlag` TINYINT NOT NULL,
   PRIMARY KEY (`productId`),
   INDEX `fk_Product_lastEditedUser` (`lastEditedUser` ASC) VISIBLE,
