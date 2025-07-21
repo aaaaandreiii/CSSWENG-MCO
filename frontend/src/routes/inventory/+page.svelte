@@ -983,7 +983,8 @@
 <!-- modal popup-->
 {#if showModal}
 	<div
-		class="modal-backdrop"
+		class="modal-backdrop backdrop-blur-sm"
+		style="background-color: rgba(10, 10, 10, 0.5);"
 		role="button"
 		tabindex="0"
 		aria-label="Close modal"
