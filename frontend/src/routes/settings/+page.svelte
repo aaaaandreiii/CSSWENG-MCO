@@ -126,7 +126,8 @@
 		addError = '';
 	}
 
-	async function handleAddAccount() {
+	async function handleAddAccount(event: SubmitEvent) {
+		event.preventDefault();
 		// Basic validation
 		if (!newEmail || !newPassword || !newUsername) {
 			addError = 'All fields are required.';
@@ -138,7 +139,53 @@
 		// Optionally refresh user list
 	}
 
+	// tab animation logic for underline effect
+	let tabNavRef: HTMLUListElement;
+	let underlineStyle = '';
+
+	function updateUnderline() {
+		if (!tabNavRef) return;
+		
+		const activeTab = tabNavRef.querySelector(`a[href="#${selected}"]`) as HTMLElement;
+		if (activeTab) {
+			const navRect = tabNavRef.getBoundingClientRect();
+			const tabRect = activeTab.getBoundingClientRect();
+			
+			const left = tabRect.left - navRect.left;
+			const width = tabRect.width;
+			
+			underlineStyle = `left: ${left}px; width: ${width}px;`;
+		}
+	}
+
+	$: if (selected && tabNavRef) {
+		setTimeout(updateUnderline, 0);
+	}
+
+	onMount(() => {
+		updateUnderline();
+	});
+
 </script>
+
+<style>
+	.tab-nav {
+		position: relative;
+	}
+	
+	.tab-underline {
+		position: absolute;
+		bottom: 0;
+		height: 4px;
+		background-color: #15803d;
+		transition: all 0.3s ease;
+		z-index: 1;
+	}
+	
+	.tab-link {
+		transition: color 0.3s ease, font-weight 0.3s ease;
+	}
+</style>
 
 <div class="flex ">
 	<div class="flex-1 p-7">
@@ -153,12 +200,13 @@
 
 		<!-- settings nav bar -->
 		<nav class="mb-0. flex justify-between">
-			<ul class="flex space-x-4 self-end">
+			<ul class="flex space-x-4 self-end tab-nav" bind:this={tabNavRef}>
+				<div class="tab-underline" style={underlineStyle}></div>
 				<li>
 <a
 	href="#all"
-	class="px-4 text-lg {selected === 'all'
-		? 'border-b-4 border-green-700 font-bold text-green-700'
+	class="px-4 text-lg tab-link {selected === 'all'
+		? 'font-bold text-green-700'
 		: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
 	onclick={() => { if (!isEditMode) { selected = 'all'; openDropdownIndex = null; } }}
 	tabindex={isEditMode ? -1 : 0}
@@ -169,8 +217,8 @@
 				<li>
 <a
 	href="#admin"
-	class="px-4 text-lg {selected === 'admin'
-		? 'border-b-4 border-green-700 font-bold text-green-700'
+	class="px-4 text-lg tab-link {selected === 'admin'
+		? 'font-bold text-green-700'
 		: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
 	onclick={() => { if (!isEditMode) { selected = 'admin'; openDropdownIndex = null; } }}
 	tabindex={isEditMode ? -1 : 0}
@@ -181,8 +229,8 @@
 				<li>
 <a
 	href="#staff"
-	class="px-4 text-lg {selected === 'staff'
-		? 'border-b-4 border-green-700 font-bold text-green-700'
+	class="px-4 text-lg tab-link {selected === 'staff'
+		? 'font-bold text-green-700'
 		: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
 	onclick={() => { if (!isEditMode) { selected = 'staff'; openDropdownIndex = null; } }}
 	tabindex={isEditMode ? -1 : 0}
@@ -193,8 +241,8 @@
 				<li>
 <a
 	href="#auditor"
-	class="px-4 text-lg {selected === 'auditor'
-		? 'border-b-4 border-green-700 font-bold text-green-700'
+	class="px-4 text-lg tab-link {selected === 'auditor'
+		? 'font-bold text-green-700'
 		: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
 	onclick={() => { if (!isEditMode) { selected = 'auditor'; openDropdownIndex = null; } }}
 	tabindex={isEditMode ? -1 : 0}
@@ -205,8 +253,8 @@
 				<li>
 <a
 	href="#manager"
-	class="px-4 text-lg {selected === 'manager'
-		? 'border-b-4 border-green-700 font-bold text-green-700'
+	class="px-4 text-lg tab-link {selected === 'manager'
+		? 'font-bold text-green-700'
 		: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
 	onclick={() => { if (!isEditMode) { selected = 'manager'; openDropdownIndex = null; } }}
 	tabindex={isEditMode ? -1 : 0}
@@ -310,76 +358,10 @@
 		{#if isEditMode}
 			<button
 				class="absolute bottom-10 left-70 rounded-full green1 edit-btn"
-				on:click={openAddModal}
+				onclick={openAddModal}
 			>
 				<img src="../src/icons/add.svg" alt="Add" style="width: 50px;" />
 			</button>
-		{/if}
-
-		<!-- Add Account Modal -->
-		{#if showAddModal}
-			<div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-				<div class="bg-white rounded-lg shadow-lg p-8 w-96 relative">
-					<h2 class="text-xl font-bold mb-4">Create New Account</h2>
-					<form on:submit|preventDefault={handleAddAccount}>
-						<div class="mb-3">
-							<label class="block mb-1 text-sm font-medium">Email</label>
-							<input
-								type="email"
-								class="w-full border rounded px-3 py-2"
-								bind:value={newEmail}
-								required
-							/>
-						</div>
-						<div class="mb-3">
-							<label class="block mb-1 text-sm font-medium">Username</label>
-							<input
-								type="text"
-								class="w-full border rounded px-3 py-2"
-								bind:value={newUsername}
-								required
-							/>
-						</div>
-						<div class="mb-3">
-							<label class="block mb-1 text-sm font-medium">Password</label>
-							<input
-								type="password"
-								class="w-full border rounded px-3 py-2"
-								bind:value={newPassword}
-								required
-							/>
-						</div>
-						{#if addError}
-							<p class="text-red-600 text-sm mb-2">{addError}</p>
-						{/if}
-						<div class="flex justify-end gap-2 mt-4">
-							<button
-								type="button"
-								class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
-								on:click={closeAddModal}
-							>
-								Cancel
-							</button>
-							<button
-								type="submit"
-								class="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-800"
-							>
-								Create
-							</button>
-						</div>
-					</form>
-					<button
-						class="absolute top-2 right-2 text-gray-500 hover:text-black"
-						on:click={closeAddModal}
-						aria-label="Close"
-					>
-						&times;
-					</button>
-				</div>
-			</div>
-		{/if}
-
-		{#if isEditMode}
 			<div class="fixed right-10 bottom-10 flex gap-4 z-50">
 				{#if hasDropdownChanged}
 				<button
@@ -397,6 +379,83 @@
 				>
 					Cancel
 				</button>
+			</div>
+		{/if}
+
+		<!-- Add Account Modal -->
+		{#if showAddModal}
+			<div 
+				class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm" 
+				style="background-color: rgba(10, 10, 10, 0.5);"
+				onclick={closeAddModal}
+				onkeydown={(e) => { if (e.key === 'Enter') closeAddModal(); }}
+				role="button"
+				tabindex="0"
+				aria-label="Close modal"
+			>
+				<div 
+					class="bg-white rounded-lg shadow-lg p-8 w-96 relative"
+					onclick={(e) => e.stopPropagation()}
+					onkeydown={(e) => { if (e.key === 'Enter') e.stopPropagation(); }}
+					role="dialog"
+					tabindex="0"
+				>
+					<h2 class="text-xl font-bold mb-4">Create New Account</h2>
+					<form onsubmit={handleAddAccount}>
+						<div class="mb-3">
+							<label for="newEmail" class="block mb-1 text-sm font-medium">Email</label>
+							<input
+								id="newEmail"
+								type="email"
+								class="w-full border rounded px-3 py-2"
+								bind:value={newEmail}
+								required
+							/>
+						</div>
+						<div class="mb-3">
+							<label for="newUsername" class="block mb-1 text-sm font-medium">Username</label>
+							<input
+								id="newUsername"
+								type="text"
+								class="w-full border rounded px-3 py-2"
+								bind:value={newUsername}
+								required
+							/>
+						</div>
+						<div class="mb-3">
+							<label for="newPassword" class="block mb-1 text-sm font-medium">Password</label>
+							<input
+								id="newPassword"
+								type="password"
+								class="w-full border rounded px-3 py-2"
+								bind:value={newPassword}
+								required
+							/>
+						</div>
+						{#if addError}
+							<p class="text-red-600 text-sm mb-2">{addError}</p>
+						{/if}
+						<div class="flex justify-end gap-2 mt-4">
+							<button
+								type="button"
+								class="px-4 py-2 rounded bg-gray-400 hover:bg-gray-500 text-white"
+								onclick={closeAddModal}
+							>
+								Cancel
+							</button>
+							<button
+								type="submit"
+								class="px-4 py-2 rounded text-white
+									{newEmail.trim() && newUsername.trim() && newPassword.trim()
+									? 'bg-green-700 hover:bg-green-800'
+									: 'cursor-not-allowed bg-gray-400'}"
+								disabled={!(newEmail.trim() && newUsername.trim() && newPassword.trim())}
+							>
+								Create
+							</button>
+						</div>
+					</form>
+				</div>
 			</div>
 		{/if}
 	</div>
