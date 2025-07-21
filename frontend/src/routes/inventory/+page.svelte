@@ -666,15 +666,58 @@
 		return true;
 	}
 
-	function handleDeleteSelectedRows() {
+	async function handleDeleteSelectedRows() {
 		if (
 			selectedRows.length > 0 &&
 			confirm(`Are you sure you want to delete ${selectedRows.length} selected row(s)?`)
 		) {
-			rows = rows.filter((_, idx) => !selectedRows.includes(idx));
+			const token = localStorage.getItem('token');
+			const failedDeletes: number[] = [];
+
+			for (const idx of selectedRows) {
+				const row = rows[idx];
+				const productId = row["Product ID"] || row.productId || row.id;
+
+				if (!productId) {
+					console.warn("No product ID found in row:", row);
+					failedDeletes.push(-1);
+					continue;
+				}
+
+				try {
+					const res = await fetch(`http://localhost:5000/api/deleteProduct/${productId}`, {
+						method: "DELETE",
+						headers: {
+							"Content-Type": "application/json",
+							Authorization: `Bearer ${token}`
+						}
+					});
+
+					if (!res.ok) {
+						const err = await res.json();
+						console.error(`Failed to delete product ${productId}:`, err.message || err);
+						failedDeletes.push(productId);
+					}
+				} catch (err) {
+					console.error(`Error deleting product ${productId}:`, err);
+					failedDeletes.push(productId);
+				}
+			}
+
 			selectedRows = [];
+
+			await fetchTabData(selected); // refresh the table
+
+			if (failedDeletes.length > 0) {
+				alert(`Some deletions failed: ${failedDeletes.join(", ")}`);
+			} else {
+				alert("Deletion successful.");
+			}
 		}
 	}
+
+
+
 </script>
 
 <!-- header w/ search bar and filter-->
