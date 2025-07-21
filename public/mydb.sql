@@ -30,9 +30,9 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Product` (
   `stockOnHand` INT DEFAULT '0',
   `units` ENUM('pcs', 'boxes', 'cases', 'packs', 'bundles', 'crates', 'meters', 'centimeters', 'square meters', 'rolls', 'spools', 'sets', 'other') NOT NULL DEFAULT 'pcs',
   `pathName` VARCHAR(255) DEFAULT NULL,
+  `restockFlag` TINYINT DEFAULT '0', -- restockFlag - flag to indicate if the product is wants to be restocked (0) or not (1); in case store does not want to restock, it will not be included in the low stock report
   `lastEditedDate` DATETIME NOT NULL,
   `lastEditedUser` INT NOT NULL,
-  `restockFlag` TINYINT NOT NULL,
   `deleteFlag` TINYINT NOT NULL,
   PRIMARY KEY (`productId`),
   INDEX `fk_Product_lastEditedUser` (`lastEditedUser` ASC) VISIBLE,
