@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { PUBLIC_API_BASE_URL } from '$env/static/public';
+	import { onMount } from 'svelte';
 
 	let selected = 'all'; // default selected tab = profile
 
@@ -14,35 +15,33 @@
 		profilePic: string
 	};
 	let details: UserDetails[] = [];
-	
-		// { userId: 'U001', name: 'Full Name', user: 'Username123', date: 'January 19, 2955', position: 'Admin', profilePic: '../src/images/jett.png' },
-		// { userId: 'U002', name: 'Staff User', user: 'Staff123', date: 'February 10, 2955', position: 'Staff', profilePic: '../src/images/lemon.png' },
-		// { userId: 'U003', name: 'Auditor User', user: 'AuditGuy', date: 'March 5, 2955', position: 'Auditor', profilePic: '../src/images/cat.png' },
-		// { userId: 'U004', name: 'Manager User', user: 'ManagerX', date: 'April 1, 2955', position: 'Manager', profilePic: '../src/images/sage.png' }
 
-	onMount(async() =>{
-		try{
+	let newFullName = '';
+	let newUserRole = 'staff';
+
+	async function fetchUsers() {
+		try {
 			const token = localStorage.getItem('token');
 			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getUsers`, {
-				headers: {
-					Authorization: `Bearer ${token}`
-				}
+			headers: { Authorization: `Bearer ${token}` }
 			});
-			const data = await res.json();
-			details = data.users.map((item: any) => ({
-				userId: item.userId,
-				name: item.fullName,
-				user: item.username,
-				date: new Date(item.dateAdded).toLocaleDateString('en-PH', {
-					timeZone: 'Asia/Manila'
-				}),
-				position: item.userRole,
-				profilePic: item.pathName || "../src/icons/user.svg"
+			const { users } = await res.json();
+			details = users.map((item: any) => ({
+			userId: item.userId,
+			name: item.fullName,
+			user: item.username,
+			date: new Date(item.dateAdded).toLocaleDateString('en-PH', {
+				timeZone: 'Asia/Manila'
+			}),
+			position: item.userRole,
+			profilePic: item.pathName || '../src/icons/user.svg'
 			}));
-		}catch(err){
-			console.error("Error fetching user lists: ", err);
+		} catch (err) {
+			console.error('Error fetching user lists:', err);
 		}
-	});
+	}
+
+	onMount(fetchUsers);
 
 	// Computed filtered details based on selected tab
 	$: filteredDetails =
@@ -80,17 +79,7 @@
 		openDropdownIndex = null;
 	}
 
-	import { onMount } from 'svelte';
-
 	let dropdownRef: HTMLDivElement | null = null;
-
-	// function handleClickOutside(event: MouseEvent) { 
-	// // doesnt update dropdownindex to new selection, 
-	// //instead it closes dropdown by becoming null (retains old index in the process)
-	// 	if (openDropdownIndex !== null && dropdownRef && !dropdownRef.contains(event.target as Node)) {
-	// 		openDropdownIndex = null;
-	// 	}
-	// }
 
 	function handleClickOutside(event: MouseEvent) { //this fn does nothing
 		if (showDropdown && dropdownRef && !dropdownRef.contains(event.target as Node)) {
@@ -130,14 +119,50 @@
 
 	async function handleAddAccount(event: SubmitEvent) {
 		event.preventDefault();
-		// Basic validation
-		if (!newEmail || !newPassword || !newUsername) {
+		addError = '';
+		//1. basic validation
+		if (!newFullName.trim() || !newUsername.trim() || !newPassword.trim()) {
 			addError = 'All fields are required.';
 			return;
 		}
+
+		// 2) Build payload
+		const payload = {
+			fullName:   newFullName.trim(),
+			userRole:   newUserRole,
+			username:   newUsername.trim(),
+			userPassword: newPassword,
+			pathName:   null
+		};
+
+		try {
+			const token = localStorage.getItem('token');
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/createUser`, {
+			method:  'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization:   `Bearer ${token}`
+			},
+			body: JSON.stringify(payload)
+			});
+
+			const result = await res.json();
+			if (!res.ok) {
+			addError = result.message || 'Failed to create user.';
+			return;
+			}
+
+			// 3) Success: close modal, reload list
+			closeAddModal();
+			await fetchUsers();
+
+		} catch (err) {
+			console.error(err);
+			addError = 'Network error. Please try again.';
+		}
 		// ...submit logic here (e.g., API call)...
 		// On success:
-		closeAddModal();
+		// closeAddModal();
 		// Optionally refresh user list
 	}
 
@@ -434,6 +459,30 @@
 								required
 							/>
 						</div>
+						<div class="mb-3">
+							<label for="newFullName" class="block mb-1 text-sm font-medium">Full Name</label>
+							<input
+								id="newFullName"
+								type="text"
+								class="w-full border rounded px-3 py-2"
+								bind:value={newFullName}
+								required
+							/>
+							</div>
+
+							<div class="mb-3">
+							<label for="newUserRole" class="block mb-1 text-sm font-medium">Role</label>
+							<select
+								id="newUserRole"
+								class="w-full border rounded px-3 py-2"
+								bind:value={newUserRole}
+							>
+								{#each dropdownOptions as option}
+								<option value={option}>{option.charAt(0).toUpperCase() + option.slice(1)}</option>
+								{/each}
+							</select>
+						</div>
+
 						{#if addError}
 							<p class="text-red-600 text-sm mb-2">{addError}</p>
 						{/if}
