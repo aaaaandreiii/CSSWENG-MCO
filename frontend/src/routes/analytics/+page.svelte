@@ -107,8 +107,6 @@
         isChosen = true;
     }
 
-
-    // Initialize Chart.js
     let turnoverData: {
         productName: string;
         total_cogs: number;
@@ -116,34 +114,33 @@
     }[] = [];
 
     onMount(async () => {
-        if (!browser) return; // bail out during SSR
-
-        // now it's safe to touch document
+        if (!browser) return;
         document.addEventListener('mousedown', handleClickOutside);
 
-        // dynamically load Chart.js
-        const { default: Chart } = await import('chart.js/auto');
-
-        // fetch your turnover data
+        // 1) fetch the object { allProducts, top10 }
         const res = await fetch(`${PUBLIC_API_BASE_URL}/api/dataAnalysisController`);
-        const turnoverData = await res.json();
+        const payload = await res.json();               // payload = { allProducts: [...], top10: [...] }
 
-        const labels = turnoverData.map((d: any) => d.productName);
-        const data   = turnoverData.map((d: any) => +d.turnoverRate.toFixed(2));
+        // 2) pick the list you actually want to show
+        turnoverData = payload.top10;                    // ← assign into the outer var
+
+        // 3) now build your chart off of turnoverData
+        const labels = turnoverData.map(d => d.productName);
+        const data   = turnoverData.map(d => +d.turnoverRate.toFixed(2));
 
         chart = new Chart(chartEl, {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: [{ label: 'Inventory Turnover Rate', data }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-            x: { ticks: { autoSkip: false } },
-            y: { beginAtZero: true }
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{ label: 'Inventory Turnover Rate', data }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { ticks: { autoSkip: false } },
+                    y: { beginAtZero: true }
+                }
             }
-        }
         });
     });
 
@@ -370,43 +367,44 @@
                     </div>
                 </div>
             </div>
+        <div>
+            <style>
+            canvas { max-width: 100%; height: auto; }
+            </style>
+        </div>
+
+        <div>
+            <h2>Top 10 Products by Inventory Turnover (2024–2025)</h2>
+            <canvas bind:this={chartEl}></canvas>
+
+            <section class="mt-8 overflow-auto">
+            <h3 class="text-lg font-semibold mb-4">COGS &amp; Turnover by Product</h3>
+            <table class="min-w-full bg-white border">
+                <thead>
+                <tr class="bg-gray-100">
+                    <th class="px-4 py-2 border">Product</th>
+                    <th class="px-4 py-2 border text-right">Total COGS</th>
+                    <th class="px-4 py-2 border text-right">Turnover Rate</th>
+                </tr>
+                </thead>
+                <tbody>
+                {#each turnoverData as { productName, total_cogs, turnoverRate }}
+                    <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-2 border">{productName}</td>
+                    <td class="px-4 py-2 border text-right">
+                        ${total_cogs.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td class="px-4 py-2 border text-right">
+                        {turnoverRate.toFixed(2)}
+                    </td>
+                    </tr>
+                {/each}
+                </tbody>
+            </table>
+            </section>
+        </div>   
+            
         </div>
     </div>
 </div>
 
-
-<style>
-  canvas { max-width: 100%; height: auto; }
-</style>
-
-<h2>Top 10 Products by Inventory Turnover (2024–2025)</h2>
-<canvas bind:this={chartEl}></canvas>
-
-
-<canvas bind:this={chartEl}></canvas>
-
-<section class="mt-8 overflow-auto">
-  <h3 class="text-lg font-semibold mb-4">COGS &amp; Turnover by Product</h3>
-  <table class="min-w-full bg-white border">
-    <thead>
-      <tr class="bg-gray-100">
-        <th class="px-4 py-2 border">Product</th>
-        <th class="px-4 py-2 border text-right">Total COGS</th>
-        <th class="px-4 py-2 border text-right">Turnover Rate</th>
-      </tr>
-    </thead>
-    <tbody>
-      {#each turnoverData as { productName, total_cogs, turnoverRate }}
-        <tr class="hover:bg-gray-50">
-          <td class="px-4 py-2 border">{productName}</td>
-          <td class="px-4 py-2 border text-right">
-            ${total_cogs.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-          </td>
-          <td class="px-4 py-2 border text-right">
-            {turnoverRate.toFixed(2)}
-          </td>
-        </tr>
-      {/each}
-    </tbody>
-  </table>
-</section>
