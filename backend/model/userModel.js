@@ -109,7 +109,6 @@ export async function getUserById(userId) {
         console.log("User not found or deleted.");
         return null;
     }
-
 }
 
 // export function getUserByUsername(username){
@@ -181,8 +180,8 @@ export async function updateUserById(userId, updatedObject){
     const ok = result.affectedRows > 0;
     console.log(
         ok
-        ? `User ${userId} updated successfully`
-        : `No rows updated for user ${userId}`
+            ? `User ${userId} updated successfully: ${result}`
+            : `No rows updated for user ${userId}: ${result}`
     );
     return ok;
 }
@@ -212,8 +211,8 @@ export async function deleteUserById(userId) {
     const ok = result.affectedRows > 0;
     console.log(
         ok
-        ? `User ${userId} soft-deleted successfully`
-        : `No rows deleted for user ${userId}`
+        ? `User ${userId} soft-deleted successfully: ${result}`
+        : `No rows deleted for user ${userId}: ${result}`
     );
     return ok;
 }

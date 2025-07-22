@@ -1,49 +1,68 @@
 import db, { processCascade } from "./db.js"
 
 // CREATE: Add a new audit log entry
-export function logAudit(actionType, description, userId) {
-    return new Promise((resolve, reject) => {
+// export function logAudit(actionType, description, userId) {
+export async function logAudit(actionType, description, userId) {
+    // return new Promise((resolve, reject) => {
         const sql = `
             INSERT INTO AuditLog (actionType, description, userId)
             VALUES (?, ?, ?)
         `;
-        db.query(sql, [actionType, description, userId], (err, result) => {
-            if (err) return reject(err);
-            console.log("Audit log created:", result.insertId);
-            resolve(result.insertId);
-        });
-    });
+    //     db.query(sql, [actionType, description, userId], (err, result) => {
+    //         if (err) return reject(err);
+    //         console.log("Audit log created:", result.insertId);
+    //         resolve(result.insertId);
+    //     });
+    // });
+    const [result] = await db.query(sql, [
+        actionType, description, userId
+    ]);
+    console.log("Audit log created:", result.insertId);
+    return result.insertId;
 }
 
 // READ: Get all audit logs (with full name of the user)
-export function getAllAuditLogs() {
-    return new Promise((resolve, reject) => {
+// export function getAllAuditLogs() {
+export async function getAllAuditLogs() {
+    // return new Promise((resolve, reject) => {
         const sql = `
             SELECT AuditLog.*, Users.fullName
             FROM AuditLog
             JOIN Users ON AuditLog.userId = Users.userId
             ORDER BY AuditLog.timestamp DESC
         `;
-        db.query(sql, (err, results) => {
-            if (err) return reject(err);
-            console.log("Audit logs fetched:", results.length);
-            resolve(results);
-        });
-    });
+    //     db.query(sql, (err, results) => {
+    //         if (err) return reject(err);
+    //         console.log("Audit logs fetched:", results.length);
+    //         resolve(results);
+    //     });
+    // });
+    const [results] = await db.query(sql);
+    console.log("Audit logs fetched:", results);
+    return results;
 }
 
 // READ: Get audit logs for a specific user
-export function getAuditLogsByUser(userId) {
-    return new Promise((resolve, reject) => {
+// export function getAuditLogsByUser(userId) {
+export async function getAuditLogsByUser(userId) {
+    // return new Promise((resolve, reject) => {
         const sql = `
             SELECT *
             FROM AuditLog
             WHERE userId = ?
             ORDER BY timestamp DESC
         `;
-        db.query(sql, [userId], (err, results) => {
-            if (err) return reject(err);
-            resolve(results);
-        });
-    });
+    //     db.query(sql, [userId], (err, results) => {
+    //         if (err) return reject(err);
+    //         resolve(results);
+    //     });
+    // });
+    const [results] = await db.query(sql, [userId]);
+    if (results.length) {
+        console.log("Audit log entry found:", results[0]);
+        return results[0];
+    } else {
+        console.log("Audit log entry not found or deleted.");
+        return null;
+    }
 }
