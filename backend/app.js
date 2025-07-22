@@ -28,7 +28,7 @@ app.use("/api", stockEntryController);
 app.use("/api", stockWithdrawalController);
 app.use("/api", ordersController);
 app.use("/api", returnExchangeController);
-app.use("/api", dataAnalysisController);
+app.use("/api/dataAnalysisController", dataAnalysisController);
 
 bootstrapAdminUser().catch(console.error);
 
