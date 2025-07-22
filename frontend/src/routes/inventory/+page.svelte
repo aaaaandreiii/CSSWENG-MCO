@@ -236,6 +236,12 @@
 	// table data rows, can fill with dummy data
 	let rows: { [key: string]: string }[] = [];
 
+	// pagination and infinite scroll state
+	let currentOffset = 0;
+	let isLoading = false;
+	let hasMoreData = true;
+	const ITEMS_PER_PAGE = 100;
+
 	let ready = false;
 	onMount(()=>{
 		ready = true;
@@ -243,15 +249,22 @@
 
 	$: if (ready && selected) {
 		(async () => {
+			// Reset pagination when tab changes
+			currentOffset = 0;
+			hasMoreData = true;
+			rows = [];
 			await fetchTabData(selected);
 		})();
 	}
 
-	async function fetchTabData(tab: TabType){
+	async function fetchTabData(tab: TabType, offset = 0, append = false){
+		if (isLoading) return;
+		isLoading = true;
+		
 		try{
 			const token = localStorage.getItem('token');
 			const endpoint = getApiMap[tab];
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}?offset=${offset}&limit=${ITEMS_PER_PAGE}`, {
 				headers: {
 					Authorization: `Bearer ${token}`
 				}
@@ -259,8 +272,10 @@
 			const data = await res.json();
         	console.log('Fetched data:', data);
 
+			let newRows: { [key: string]: string }[] = [];
+
 			if(tab === "Product"){
-				rows = data.products.slice(0, 100).map((item: any) =>({
+				newRows = data.products.map((item: any) =>({
 					'Product ID': item.productId,
 					'Product Name': item.productName,
 					'Category': item.category,
@@ -278,7 +293,7 @@
         		}));
 			}
 			else if(tab === "Orders"){
-				rows = data.orders.slice(0, 100).map((item: any) =>({
+				newRows = data.orders.map((item: any) =>({
 					'Order ID': item.orderId,
 					'Discount': item.discount,
 					'Customer': item.customer,
@@ -295,7 +310,7 @@
 				}));
 			}
 			else if(tab === "OrderInfo"){
-				rows = data.orderInfo.slice(0, 100).map((item: any) =>({
+				newRows = data.orderInfo.map((item: any) =>({
 					'Order Info ID': item.orderInfoId,
 					'Quantity': item.quantity,
 					'Order ID': item.orderId,
@@ -308,7 +323,7 @@
 				}));
 			}
 			else if(tab === "StockEntry"){
-				rows = data.stockEntries.slice(0, 100).map((item: any) =>({
+				newRows = data.stockEntries.map((item: any) =>({
 					'Entry ID': item.entryId,
 					'Branch Name': item.branchName,
 					'Date Received': new Date(item.dateReceived).toLocaleDateString('en-PH', {
@@ -325,7 +340,7 @@
 				}));
 			}
 			else if(tab === "StockWithdrawal"){
-				rows = data.stockWithdrawals.slice(0, 100).map((item: any) =>({
+				newRows = data.stockWithdrawals.map((item: any) =>({
 					'Withdrawal ID': item.withdrawalId,
 					'Date Withdrawn': new Date(item.dateWithdrawn).toLocaleDateString('en-PH', {
 						timeZone: 'Asia/Manila'
@@ -342,7 +357,7 @@
 				}));
 			}
 			else if(tab === "ReturnExchange"){
-				rows = data.returnExchanges.slice(0, 100).map((item: any) =>({
+				newRows = data.returnExchanges.map((item: any) =>({
 					'Transaction ID': item.transactionId,
 					'Date Transaction': new Date(item.dateTransaction).toLocaleDateString('en-PH', {
 						timeZone: 'Asia/Manila'
@@ -358,7 +373,7 @@
 				}));
 			}
 			else if(tab === "ReturnExchangelnfo"){
-				rows = data.returnExchangeInfo.slice(0, 100).map((item: any) =>({
+				newRows = data.returnExchangeInfo.map((item: any) =>({
 					'Detail ID': item.detailId,
 					'Returned Product ID': item.returnedProductId,
 					'Returned Quantity': item.returnedQuantity,
@@ -373,9 +388,42 @@
 					'Last Edited User': item.lastEditedUser
 				}));
 			}
-			originalRows = [...rows];
+
+			// Check if we have more data
+			hasMoreData = newRows.length === ITEMS_PER_PAGE;
+
+			if (append) {
+				rows = [...rows, ...newRows];
+			} else {
+				rows = newRows;
+			}
+			
+			if (!append) {
+				originalRows = [...rows];
+			} else {
+				originalRows = [...originalRows, ...newRows];
+			}
 		}catch(err){
 			console.error("Error fetching tab data: ", err);
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	async function loadMoreData() {
+		if (!hasMoreData || isLoading) return;
+		
+		currentOffset += ITEMS_PER_PAGE; //increments the offset by 100 per page, so it doesn't display the same 100 rows per refresh
+		await fetchTabData(selected, currentOffset, true);
+	}
+
+	function handleScroll(event: Event) {
+		const target = event.target as HTMLElement;
+		const { scrollTop, scrollHeight, clientHeight } = target;
+		
+		// Load more when user is near the bottom (within 200px)
+		if (scrollHeight - scrollTop - clientHeight < 200 && hasMoreData && !isLoading) {
+			loadMoreData();
 		}
 	}
 
@@ -538,6 +586,12 @@
 				}
 				await fetchTabData(selected);
 				
+				// Reset pagination and reload from beginning after edit
+				currentOffset = 0;
+				hasMoreData = true;
+				rows = [];
+				await fetchTabData(selected);
+				
 				// rows[modalRowIndex] = { ...editForm };
 				isEditForm = false;
 				showModal = false;
@@ -679,6 +733,12 @@
 				}
 				await fetchTabData(selected);
 		
+				// Reset pagination and reload from beginning after edit
+				currentOffset = 0;
+				hasMoreData = true;
+				rows = [];
+				await fetchTabData(selected);
+
 				// rows[modalRowIndex][modalColumn] = cellEditForm.value;
 				isCellEditForm = false;
 				showModal = false;
@@ -773,6 +833,13 @@
 				}
 
 				await fetchTabData(selected);
+				
+				// Reset pagination and reload from beginning after add
+				currentOffset = 0;
+				hasMoreData = true;
+				rows = [];
+				await fetchTabData(selected);
+				
 				// rows = [...rows, { ...addForm }];
 				isAddForm = false;
 				showModal = false;
@@ -835,6 +902,10 @@
 
 			selectedRows = [];
 
+			// Reset pagination and reload from beginning after delete
+			currentOffset = 0;
+			hasMoreData = true;
+			rows = [];
 			await fetchTabData(selected);
 
 			if (failedDeletes.length > 0) {
@@ -912,7 +983,7 @@
 </div>
 
 <!-- table -->
-<div class="w-full overflow-x-auto">
+<div class="w-full overflow-x-auto" on:scroll={handleScroll}>
 	<table class="w-full table-fixed border-collapse">
 		<thead class="border-b border-black bg-white">
 			<tr>
@@ -978,6 +1049,27 @@
 					</td>
 				</tr>
 			{/each}
+			
+			<!-- Loading indicator -->
+			{#if isLoading}
+				<tr>
+					<td colspan={currentHeaders.length + 2} class="py-8 text-center">
+						<div class="flex items-center justify-center gap-2">
+							<div class="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
+							<span>Loading more data...</span>
+						</div>
+					</td>
+				</tr>
+			{/if}
+			
+			<!-- End of data indicator -->
+			{#if !hasMoreData && rows.length > 0}
+				<tr>
+					<td colspan={currentHeaders.length + 2} class="py-4 text-center text-gray-500">
+						No more data to load
+					</td>
+				</tr>
+			{/if}
 		</tbody>
 	</table>
 </div>
