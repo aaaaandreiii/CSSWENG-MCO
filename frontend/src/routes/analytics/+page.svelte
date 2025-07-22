@@ -187,12 +187,12 @@
             },
             {
                 value: lowStockAlerts.length.toString(),
-                label: 'Low‑Stock',
+                label: 'Low-Stock',
                 color: '#F4C0C0'
             },
             {
                 value: outOfStockItems.length.toString(),
-                label: 'Out‑of‑Stock',
+                label: 'Out-of-Stock',
                 color: '#F7D6A5'
             },
             {
@@ -463,7 +463,7 @@
         </div>
 
         <div>
-            <h2>Top 10 Products by Inventory Turnover (2024–2025)</h2>
+            <h2>Top 10 Products by Inventory Turnover</h2>
             <canvas bind:this={chartEl}></canvas>
 
             <section class="mt-8 overflow-auto">
@@ -494,9 +494,9 @@
         </div>
         
         <section class="p-5 bg-white rounded-lg shadow mb-6">
-            <h2 class="text-lg font-semibold mb-2">Low‑Stock Alerts</h2>
+            <h2 class="text-lg font-semibold mb-2">Low-Stock Alerts</h2>
             {#if lowStockAlerts.length === 0}
-                <p class="text-gray-500">All good—no low‑stock items.</p>
+                <p class="text-gray-500">All good—no low-stock items.</p>
             {:else}
                 <table class="w-full table-auto border">
                 <thead>
@@ -518,7 +518,7 @@
             </section>
 
             <section class="p-5 bg-white rounded-lg shadow mb-6">
-            <h2 class="text-lg font-semibold mb-2">Out‑of‑Stock Items</h2>
+            <h2 class="text-lg font-semibold mb-2">Out-of-Stock Items</h2>
             {#if outOfStockItems.length === 0}
                 <p class="text-gray-500">None—everything is in stock.</p>
             {:else}
