@@ -44,6 +44,7 @@
 					placeholder="Type your username"
 					id="input"
 					class="gray3_txt"
+					on:keydown={(e) => { if (e.key === 'Enter') login(); }}
 				/>
 			</div>
 
@@ -55,6 +56,7 @@
 					placeholder="Type your password"
 					id="input"
 					class="gray3_txt"
+					on:keydown={(e) => { if (e.key === 'Enter') login(); }}
 				/>
 				<div class="flex items-center mt-2">
 					<input
