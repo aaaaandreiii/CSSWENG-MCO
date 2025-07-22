@@ -6,7 +6,10 @@ const router = express.Router();
 
 router.get('/', async (req, res, next) => {
   try {
-    console.log('⚡️  GET /api/dataAnalysisController hit');
+    const rawStart = req.query.startDate;
+    const rawEnd   = req.query.endDate;
+    const startDate = rawStart ? new Date(rawStart) : new Date('2024-01-01');
+    const endDate   = rawEnd   ? new Date(rawEnd)   : new Date('2025-12-31');
 
     // 1. load all tables
     const [products]      = await db.query('SELECT productId, productName, cost, stockOnHand FROM Product');
@@ -15,9 +18,6 @@ router.get('/', async (req, res, next) => {
     const [orders]        = await db.query('SELECT orderId, dateOrdered, paymentStatus FROM Orders');
     const [orderInfo]     = await db.query('SELECT orderId, productId, quantity FROM OrderInfo');
     // (you can also load Users, Returns, AuditLog if you actually need them)
-
-    const startDate = new Date('2024-01-01');
-    const endDate   = new Date('2025-12-31');
 
     // 2a. only paid orders
     const paidOrders = orders.filter(o => o.paymentStatus === 'paid');
@@ -113,10 +113,63 @@ router.get('/', async (req, res, next) => {
       .take(10)
       .value();
 
-    // **ONE** JSON response, then return:
+    // Current Monetary Stock Value
+    const currentMonetaryValue = _.sumBy(
+      products,
+      p => p.stockOnHand * p.cost
+    );
+
+    // Total Items in Stock
+    const totalItemsInStock = _.sumBy(products, 'stockOnHand');
+
+    // Thresholds (you can also pull these from config or req.query)
+    const lowStockThreshold    = 100;
+    const overstockThreshold   = 50;
+
+    // Low‑Stock Alerts (excluding already flagged for restock)
+    const lowStockAlerts = products
+      .filter(p =>
+        p.stockOnHand <= lowStockThreshold &&
+        p.restockFlag !== 1
+      )
+      .map(p => ({
+        productId:   p.productId,
+        productName: p.productName,
+        stockOnHand: p.stockOnHand
+      }));
+
+    // Out‑of‑Stock Items
+    const outOfStockItems = products
+      .filter(p =>
+        p.stockOnHand === 0 &&
+        p.restockFlag !== 1
+      )
+      .map(p => ({
+        productId:   p.productId,
+        productName: p.productName
+      }));
+
+    // Overstock Items
+    const overstockItems = products
+      .filter(p => p.stockOnHand >= overstockThreshold)
+      .map(p => ({
+        productId:   p.productId,
+        productName: p.productName,
+        stockOnHand: p.stockOnHand
+      }));
+
+    //  Final JSON payload
     return res.json({
-      allProducts: turnoverAll,
-      top10
+      startDate: startDate.toISOString().slice(0,10),
+      endDate:   endDate.toISOString().slice(0,10),
+
+      allProducts:             turnoverAll,          // your existing turnover array
+      top10,                                        // your existing top‑10
+      currentMonetaryValue,                        // ₱ value of total stock
+      totalItemsInStock,                           // total units on hand
+      lowStockAlerts,                              // list of low‑stock SKUs
+      outOfStockItems,                             // list of out‑of‑stock SKUs
+      overstockItems                              // list of overstocked SKUs
     });
 
   } catch (err) {

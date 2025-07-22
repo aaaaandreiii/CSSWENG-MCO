@@ -1,35 +1,31 @@
 <script lang="ts">
     import { PUBLIC_API_BASE_URL } from '$env/static/public';
-
     import { items } from '$lib/index.js';
-    import Chart, { type ChartItem } from 'chart.js/auto';
-
     import { onMount, onDestroy } from 'svelte';
     import { browser } from '$app/environment';
+    import Chart, { type ChartItem } from 'chart.js/auto';
 
+    let filterStart: string;
+    let filterEnd:   string;
+
+    let turnoverData: {
+        productName: string;
+        total_cogs: number;
+        turnoverRate: number;
+    }[] = [];
     let chartEl: HTMLCanvasElement;
     let chart: any;
 
-    let infos = [
-        { value: '50293', label: 'Sales', color: '#AECABD' },
-        { value: '50293', label: 'Sales', color: '#AECABD' },
-        { value: '50293', label: 'Sales', color: '#AECABD' },
-        { value: '50293', label: 'Sales', color: '#EAAEAE' }
-    ];
+    let currentMonetaryValue = 0;
+    let totalItemsInStock    = 0;
+    let lowStockAlerts: { productId: number; productName: string; stockOnHand: number }[] = [];
+    let outOfStockItems: { productId: number; productName: string }[] = [];
+    let overstockItems: { productId: number; productName: string; stockOnHand: number }[] = [];
+
+    let infos: any = [];
 
     let scrollRef: HTMLDivElement | null = null;
 
-    function scrollNext() {
-        if (scrollRef) {
-        scrollRef.scrollBy({ left: 1200, behavior: 'smooth' });
-        }
-    }
-    
-    function scrollPrev() {
-        scrollRef?.scrollBy({ left: -1200, behavior: 'smooth' });
-    } 
-
-    // dropdown logic for orderby itemsales
     let dropdownOpenSales = false;
     let selectedRangeSales = '10 days';
     let dropdownRefSales: HTMLDivElement | null = null;
@@ -44,6 +40,49 @@
     const currentYear = new Date().getFullYear();
     const rangesAnnual = ['10 years', '5 years', '1 year'];
 
+
+    // dropdown logic for ordering, asc/desc
+    let orderDropdownOpen = false;
+    let orderBy = 'Order by';
+
+
+    let isChosen = false;
+    let isChosenB = false; // for annual statistics
+    // true = last, false = custom date range
+
+
+    // Custom date range validation for item sales
+    let customStart = '';
+    let customEnd = '';
+    $: endDateInvalid = customEnd && customStart && customEnd < customStart;
+
+    // Custom date range validation for annual statistics (years only)
+    let annualStart = '';
+    let annualEnd = '';
+    $: annualEndDateInvalid = annualEnd && annualStart && annualEnd < annualStart;
+
+
+
+    function formatCurrency(n: number) {
+        return new Intl.NumberFormat('en-PH', {
+        style: 'currency',
+        currency: 'PHP',
+        minimumFractionDigits: 2
+        }).format(n);
+    }
+    
+    function scrollNext() {
+        if (scrollRef) {
+        scrollRef.scrollBy({ left: 1200, behavior: 'smooth' });
+        }
+    }
+    
+    function scrollPrev() {
+        scrollRef?.scrollBy({ left: -1200, behavior: 'smooth' });
+    } 
+
+    // dropdown logic for orderby itemsales
+    
     function handleDropdownClickAnnual() {
         dropdownOpenAnnual = !dropdownOpenAnnual;
         isChosenB = true;
@@ -64,42 +103,15 @@
         }
     }
 
-    // gonna comment out this line for my data analysis component
-    // onMount(() => {
-    //     document.addEventListener('mousedown', handleClickOutside);
-    // });
-
-    // onDestroy(() => {
-    //     document.removeEventListener('mousedown', handleClickOutside);
-    // });
-
-    // dropdown logic for ordering, asc/desc
-    let orderDropdownOpen = false;
-    let orderBy = 'Order by';
     function setOrder(order: string) {
         orderBy = order;
         orderDropdownOpen = false;
     }
-    
-    let isChosen = false;
-    let isChosenB = false; // for annual statistics
-    // true = last, false = custom date range
-
-    // Custom date range validation for item sales
-    let customStart = '';
-    let customEnd = '';
-    $: endDateInvalid = customEnd && customStart && customEnd < customStart;
-
-    // Custom date range validation for annual statistics (years only)
-    let annualStart = '';
-    let annualEnd = '';
-    $: annualEndDateInvalid = annualEnd && annualStart && annualEnd < annualStart;
 
     function handleDropdownClickSales() {
         dropdownOpenSales = !dropdownOpenSales;
         isChosen = true;
     }
-
 
     function selectRangeSales(range: string) {
         selectedRangeSales = range;
@@ -107,14 +119,46 @@
         isChosen = true;
     }
 
-    let turnoverData: {
-        productName: string;
-        total_cogs: number;
-        turnoverRate: number;
-    }[] = [];
+    async function loadData() {
+        // require both
+        if (!filterStart || !filterEnd) return;
+        const url = new URL(`${PUBLIC_API_BASE_URL}/api/dataAnalysisController`);
+        url.searchParams.set('startDate', filterStart);
+        url.searchParams.set('endDate',   filterEnd);
+
+        const res = await fetch(url.toString());
+        const payload = await res.json();
+
+        // assign all your state:
+        turnoverData          = payload.top10;
+        currentMonetaryValue  = payload.currentMonetaryValue;
+        totalItemsInStock     = payload.totalItemsInStock;
+        lowStockAlerts        = payload.lowStockAlerts;
+        outOfStockItems       = payload.outOfStockItems;
+        overstockItems        = payload.overstockItems;
+
+        // redraw chart
+        chart?.destroy();
+        const labels = turnoverData.map(d => d.productName);
+        const data   = turnoverData.map(d => +d.turnoverRate.toFixed(2));
+        chart = new Chart(chartEl, {
+            type: 'bar',
+            data:  { labels, datasets: [{ label: 'Inventory Turnover', data }] },
+            options: { responsive: true, scales: { y:{ beginAtZero:true } } }
+        });
+    }
 
     onMount(async () => {
         if (!browser) return;
+
+        const today = new Date();
+        const prior = new Date(today);
+        prior.setDate(prior.getDate() - 30);
+
+        filterStart = prior.toISOString().slice(0,10);
+        filterEnd   = today.toISOString().slice(0,10);
+        loadData();
+
         document.addEventListener('mousedown', handleClickOutside);
 
         // 1) fetch the object { allProducts, top10 }
@@ -123,6 +167,40 @@
 
         // 2) pick the list you actually want to show
         turnoverData = payload.top10;                    // ← assign into the outer var
+
+        currentMonetaryValue = payload.currentMonetaryValue;
+        totalItemsInStock    = payload.totalItemsInStock;
+        lowStockAlerts       = payload.lowStockAlerts;
+        outOfStockItems      = payload.outOfStockItems;
+        overstockItems       = payload.overstockItems;
+
+        infos = [
+            {
+                value: formatCurrency(currentMonetaryValue),
+                label: 'Stock Value',
+                color: '#AECABD'
+            },
+            {
+                value: totalItemsInStock.toLocaleString(),
+                label: 'Total Units',
+                color: '#AEDFF7'
+            },
+            {
+                value: lowStockAlerts.length.toString(),
+                label: 'Low‑Stock',
+                color: '#F4C0C0'
+            },
+            {
+                value: outOfStockItems.length.toString(),
+                label: 'Out‑of‑Stock',
+                color: '#F7D6A5'
+            },
+            {
+                value: overstockItems.length.toString(),
+                label: 'Overstock',
+                color: '#C8E6C9'
+            }
+        ];
 
         // 3) now build your chart off of turnoverData
         const labels = turnoverData.map(d => d.productName);
@@ -156,15 +234,16 @@
     <h1>Analytics</h1>
 </header>
 
-<div class="flex justify-evenly">
-    {#each infos as info}
-        <div class="whitebox flex-col content-center" style="background-color: {info.color}">
-            <div class="flex-col items-center">
-                <h1 class="header">{info.value}</h1>
-                <p class="pb-2 text-start">{info.label}</p>
-            </div>
-        </div>
-    {/each}
+<div class="flex justify-evenly gap-4 p-7">
+  {#each infos as info}
+    <div
+      class="whitebox flex-col content-center p-6 rounded shadow"
+      style="background-color: {info.color}"
+    >
+      <h1 class="text-2xl font-bold">{info.value}</h1>
+      <p class="text-sm text-gray-700">{info.label}</p>
+    </div>
+  {/each}
 </div>
 
 <!-- item sales -->
@@ -373,6 +452,16 @@
             </style>
         </div>
 
+        <div class="flex items-center gap-2 mb-4">
+            <label for="start" class="font-medium">From:</label>
+            <input id="start" type="date" bind:value={filterStart} onchange={loadData}
+                    class="border rounded px-2 py-1"/>
+
+            <label for="end" class="font-medium ml-4">To:</label>
+            <input id="end" type="date" bind:value={filterEnd} onchange={loadData}
+                    class="border rounded px-2 py-1"/>
+        </div>
+
         <div>
             <h2>Top 10 Products by Inventory Turnover (2024–2025)</h2>
             <canvas bind:this={chartEl}></canvas>
@@ -402,7 +491,69 @@
                 </tbody>
             </table>
             </section>
-        </div>   
+        </div>
+        
+        <section class="p-5 bg-white rounded-lg shadow mb-6">
+            <h2 class="text-lg font-semibold mb-2">Low‑Stock Alerts</h2>
+            {#if lowStockAlerts.length === 0}
+                <p class="text-gray-500">All good—no low‑stock items.</p>
+            {:else}
+                <table class="w-full table-auto border">
+                <thead>
+                    <tr class="bg-gray-100">
+                    <th class="px-4 py-2 border">Product</th>
+                    <th class="px-4 py-2 border">On Hand</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {#each lowStockAlerts as { productName, stockOnHand }}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-2 border">{productName}</td>
+                        <td class="px-4 py-2 border text-center">{stockOnHand}</td>
+                    </tr>
+                    {/each}
+                </tbody>
+                </table>
+            {/if}
+            </section>
+
+            <section class="p-5 bg-white rounded-lg shadow mb-6">
+            <h2 class="text-lg font-semibold mb-2">Out‑of‑Stock Items</h2>
+            {#if outOfStockItems.length === 0}
+                <p class="text-gray-500">None—everything is in stock.</p>
+            {:else}
+                <ul class="list-disc pl-5">
+                {#each outOfStockItems as { productName }}
+                    <li>{productName}</li>
+                {/each}
+                </ul>
+            {/if}
+            </section>
+
+            <section class="p-5 bg-white rounded-lg shadow mb-6">
+            <h2 class="text-lg font-semibold mb-2">Overstock Items</h2>
+            {#if overstockItems.length === 0}
+                <p class="text-gray-500">No overstocked SKUs.</p>
+            {:else}
+                <table class="w-full table-auto border">
+                <thead>
+                    <tr class="bg-gray-100">
+                    <th class="px-4 py-2 border">Product</th>
+                    <th class="px-4 py-2 border">On Hand</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {#each overstockItems as { productName, stockOnHand }}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-2 border">{productName}</td>
+                        <td class="px-4 py-2 border text-center">{stockOnHand}</td>
+                    </tr>
+                    {/each}
+                </tbody>
+                </table>
+            {/if}
+        </section>
+
             
         </div>
     </div>
