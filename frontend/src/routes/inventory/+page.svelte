@@ -53,7 +53,9 @@
 			'Retail Price': 'retailPrice',
 			'Stock On Hand': 'stockOnHand',
 			'Units': 'units',
-			'Image': 'pathName'
+			'Image': 'pathName',
+			'Safe Stock Count': 'safeStockCount',
+			'Restock Flag': 'restockFlag'
 		},
 		Orders: {
 			'Discount': 'discount',
@@ -151,6 +153,8 @@
 			'Stock On Hand',
 			'Units',
 			'Image', //pathName
+			'Safe Stock Count',
+			'Restock Flag',
 			'Last Edited Date',
 			'Last Edited User'
 		],
@@ -283,9 +287,11 @@
 					'Supplier': item.supplier,
 					'Cost': item.cost,
 					'Retail Price': item.retailPrice,
-					'Stock On Hand': item.stockOnHand.toString(),
+					'Stock On Hand': item.stockOnHand,
 					'Units': item.units,
 					'Image': item.pathName,
+					'Safe Stock Count': item.safeStockCount,
+					'Restock Flag': item.restockFlag,
 					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
 						timeZone: 'Asia/Manila'
 					}),
@@ -557,7 +563,7 @@
 					finalForm[bKey] = value === '' ? null: value;
 				}
 				else if(value !== '' && value !== null && value !== undefined){
-					if(['cost', 'retailPrice', 'stockOnHand', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)){
+					if(['cost', 'retailPrice', 'stockOnHand', 'safeStockCount', 'restockFlag', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)){
 						const num = Number(value);
 						if(isNaN(num) || num < 0){
 							alert(`${bKey} must be a valid number`);
@@ -647,6 +653,12 @@
 			if(typeof convertedRow.stockOnHand === 'string'){
 				convertedRow.stockOnHand = Number(convertedRow.stockOnHand);
 			}
+			if(typeof convertedRow.safeStockCount === 'string'){
+				convertedRow.safeStockCount = Number(convertedRow.safeStockCount);
+			}
+			if(typeof convertedRow.restockFlag === 'string'){
+				convertedRow.restockFlag = Number(convertedRow.restockFlag);
+			}
 			if(typeof convertedRow.discount === 'string'){
 				convertedRow.discount = Number(convertedRow.discount);
 			}
@@ -702,7 +714,7 @@
 					finalForm[bKey] = trim === '' ? null: trim;
 				}
 				else if(trim !== '' && trim !== null && trim !== undefined){
-					if(['cost', 'retailPrice', 'stockOnHand', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)){
+					if(['cost', 'retailPrice', 'stockOnHand', 'safeStockCount', 'restockFlag', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)){
 						const num = Number(trim);
 						if(isNaN(num) || num < 0){
 							alert(`${bKey} must be a valid number`);
@@ -802,7 +814,7 @@
 						finalForm[bKey] = value === '' ? null: value;
 					}
 					else if(value !== ''){
-						if(['cost', 'retailPrice', 'stockOnHand', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)){
+						if(['cost', 'retailPrice', 'stockOnHand', 'safeStockCount', 'restockFlag', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)){
 							const num = Number(value);
 							if(isNaN(num) || num < 0){
 								alert(`${bKey} must be a valid number`);
@@ -1182,17 +1194,17 @@
 						/>
 					</div>
 					<div class="mt-4 flex gap-2">
-						<!-- {#if !(
+						{#if !(
 							modalColumn === primaryKeyMap[selected] ||
 							/^date/i.test(modalColumn) ||
 							modalColumn === 'Last Edited Date' ||
 							modalColumn === 'Last Edited User'
-						)} -->
+						)}
 							<button
 								type="submit"
 								class="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700">Save</button
 							>
-						<!-- {/if} -->
+						{/if}
 						<button
 							type="button"
 							class="rounded bg-gray-400 px-4 py-2 text-white hover:bg-gray-500"
