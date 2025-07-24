@@ -12,7 +12,7 @@ router.get('/', async (req, res, next) => {
     const endDate   = rawEnd   ? new Date(rawEnd)   : new Date('2025-12-31');
 
     // 1. load all tables
-    const [products]      = await db.query('SELECT productId, productName, cost, stockOnHand FROM Product');
+    const [products]      = await db.query('SELECT productId, productName, cost, stockOnHand, category, supplier, safeStockCount, units FROM Product');
     const [stockEntry]    = await db.query('SELECT entryId, productId, quantityReceived, dateReceived FROM StockEntry');
     const [stockWithdraw] = await db.query('SELECT entryId, quantityWithdrawn, dateWithdrawn FROM StockWithdrawal');
     const [orders]        = await db.query('SELECT orderId, dateOrdered, paymentStatus FROM Orders');
@@ -123,8 +123,8 @@ router.get('/', async (req, res, next) => {
     const totalItemsInStock = _.sumBy(products, 'stockOnHand');
 
     // Thresholds (you can also pull these from config or req.query)
-    const lowStockThreshold    = 100;
-    const overstockThreshold   = 50;
+    const lowStockThreshold  = +req.query.lowThreshold  || 100;
+    const overstockThreshold = +req.query.overThreshold || 50;
 
     // Low‑Stock Alerts (excluding already flagged for restock)
     const lowStockAlerts = products
@@ -157,19 +157,58 @@ router.get('/', async (req, res, next) => {
         productName: p.productName,
         stockOnHand: p.stockOnHand
       }));
+    
+    // 1) salesQtyPerProd = {productId: totalQtySold}
+    const salesQtyPerProd = _(sales)
+      .groupBy('productId')
+      .mapValues(items => _.sumBy(items, 'quantity'))
+      .value();
+
+    const windowDays = (endDate - startDate) / (1000*60*60*24);
+
+    const statusItems = products.map(p => {
+      const soldQty     = salesQtyPerProd[p.productId] || 0;
+      const avgDaily    = windowDays > 0 ? soldQty / windowDays : 0;
+      const daysCover   = avgDaily > 0 ? p.stockOnHand / avgDaily : Infinity;
+      const reorderQty  = Math.max(p.safeStockCount - p.stockOnHand, 0);
+
+      // classify
+      let status = 'ok';
+      if (p.stockOnHand === 0)            status = 'out';
+      else if (p.stockOnHand <= p.safeStockCount) status = 'low';
+      else if (p.stockOnHand >= overstockThreshold) status = 'over';
+
+      return {
+        productId:     p.productId,
+        productName:   p.productName,
+        category:      p.category,
+        supplier:      p.supplier,
+        units:         p.units,
+        cost:          p.cost,
+        stockOnHand:   p.stockOnHand,
+        safeStockCount:p.safeStockCount,
+        avgDailySales: +avgDaily.toFixed(2),
+        daysCover:     +daysCover.toFixed(1),
+        reorderQty,
+        status
+      };
+    });
+
 
     //  Final JSON payload
     return res.json({
       startDate: startDate.toISOString().slice(0,10),
       endDate:   endDate.toISOString().slice(0,10),
-
+      statusItems,
       allProducts:             turnoverAll,          // your existing turnover array
       top10,                                        // your existing top‑10
       currentMonetaryValue,                        // ₱ value of total stock
       totalItemsInStock,                           // total units on hand
       lowStockAlerts,                              // list of low‑stock SKUs
       outOfStockItems,                             // list of out‑of‑stock SKUs
-      overstockItems                              // list of overstocked SKUs
+      overstockItems,                              // list of overstocked SKUs
+      lowThreshold:  lowStockThreshold,
+      overThreshold: overstockThreshold
     });
 
   } catch (err) {

@@ -1,3 +1,4 @@
+import db from "../model/db.js";
 import express from "express";
 import * as mysql from "../model/productModel.js";
 import { authenJWT } from "../middleware/authenJWT.js";
@@ -48,6 +49,108 @@ router.get("/getProductById/:id", authenJWT, authorizePermission("edit_product")
         res.status(500).json({ message: "Error fetching Product" });
     }
 }); //test: curl -X GET http://localhost:5000/api/getProductById/1 -H "Authorization: Bearer TOKEN_HERE"
+
+// GET /api/stockHistory?productId=…
+// returns { dates: [...], stockLevels: [...], sales: [...] } for the last 30 days
+router.get('/stockHistory', async (req, res) => {
+  try {
+    const pid = Number(req.query.productId);
+    if (!pid) return res.status(400).json({ message: 'productId is required' });
+
+    // 1. Define our window: last 30 days
+    const endDate   = new Date();
+    const startDate = new Date(endDate);
+    startDate.setDate(endDate.getDate() - 30);
+
+    // format for MySQL DATETIME
+    const fmt = d => d.toISOString().slice(0,19).replace('T',' ');
+    const startStr = fmt(startDate);
+    const endStr   = fmt(endDate);
+
+    // 2. Pull daily sales from paid orders
+    const [salesRows] = await db.query(
+      `SELECT DATE(o.dateOrdered) AS date,
+              SUM(oi.quantity)    AS salesQty
+       FROM Orders o
+       JOIN OrderInfo oi ON o.orderId = oi.orderId
+       WHERE oi.productId   = ?
+         AND o.paymentStatus = 'paid'
+         AND o.dateOrdered BETWEEN ? AND ?
+       GROUP BY DATE(o.dateOrdered)`,
+      [pid, startStr, endStr]
+    );
+
+    // 3. Pull daily stock entries
+    const [entryRows] = await db.query(
+      `SELECT DATE(dateReceived)     AS date,
+              SUM(quantityReceived) AS recvQty
+       FROM StockEntry
+       WHERE productId   = ?
+         AND dateReceived BETWEEN ? AND ?
+       GROUP BY DATE(dateReceived)`,
+      [pid, startStr, endStr]
+    );
+
+    // 4. Pull daily withdrawals
+    const [withdrawRows] = await db.query(
+      `SELECT DATE(sw.dateWithdrawn)     AS date,
+              SUM(sw.quantityWithdrawn) AS withdrawQty
+       FROM StockWithdrawal sw
+       JOIN StockEntry se ON sw.entryId = se.entryId
+       WHERE se.productId      = ?
+         AND sw.dateWithdrawn BETWEEN ? AND ?
+       GROUP BY DATE(sw.dateWithdrawn)`,
+      [pid, startStr, endStr]
+    );
+
+    // 5. Compute initial stock = all received − all withdrawn before startDate
+    const [[{ totalRecvBefore = 0 }]] = await db.query(
+      `SELECT IFNULL(SUM(quantityReceived),0) AS totalRecvBefore
+       FROM StockEntry
+       WHERE productId = ? AND dateReceived < ?`,
+      [pid, startStr]
+    );
+    const [[{ totalWithdrawBefore = 0 }]] = await db.query(
+      `SELECT IFNULL(SUM(sw.quantityWithdrawn),0) AS totalWithdrawBefore
+       FROM StockWithdrawal sw
+       JOIN StockEntry se ON sw.entryId = se.entryId
+       WHERE se.productId = ? AND sw.dateWithdrawn < ?`,
+      [pid, startStr]
+    );
+    let runningStock = totalRecvBefore - totalWithdrawBefore;
+
+    // 6. Build day‑by‑day arrays
+    const dates       = [];
+    const stockLevels = [];
+    const sales       = [];
+    const oneDayMs    = 24 * 60 * 60 * 1000;
+
+    for (let ts = startDate.getTime(); ts <= endDate.getTime(); ts += oneDayMs) {
+      const d        = new Date(ts);
+      const day      = d.toISOString().slice(0,10);
+      dates.push(day);
+
+      // look up sums for this date (or zero)
+      const recv     = entryRows.find(r => r.date === day)?.recvQty      || 0;
+      const withdr   = withdrawRows.find(r => r.date === day)?.withdrawQty || 0;
+      const sold     = salesRows  .find(r => r.date === day)?.salesQty    || 0;
+
+      // update runningStock by physical movements only
+      runningStock   += recv - withdr;
+
+      stockLevels.push(runningStock);
+      sales.push(sold);
+    }
+
+    // 7. Return the series
+    res.json({ dates, stockLevels, sales });
+  }
+  catch (err) {
+    console.error('⚡️ GET /api/stockHistory error:', err);
+    res.status(500).json({ message: 'Error fetching stock history' });
+  }
+});
+
 
 router.put("/updateProduct/:id", authenJWT, authorizePermission("edit_product"), async(req, res) =>{
     try{
