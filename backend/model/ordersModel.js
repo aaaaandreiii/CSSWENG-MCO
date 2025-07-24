@@ -32,7 +32,7 @@ export async function getOrders(){
     //     });
     // });
     const [results] = await db.query(sql);
-    console.log("Orders:", results);
+    console.log("Orders:", results.length);
     return results;
 }
 

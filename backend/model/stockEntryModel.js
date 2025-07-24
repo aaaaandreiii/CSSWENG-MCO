@@ -32,7 +32,7 @@ export async function getStockEntries(){
     //     });
     // });
     const [results] = await db.query(sql);
-    console.log("Stock Entries: ", results);
+    console.log("Stock Entries: ", results.length);
     return results;
 }
 

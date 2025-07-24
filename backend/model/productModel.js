@@ -33,7 +33,7 @@ export async function getProducts(){
     //     });
     // });
     const [results] = await db.query(sql);
-    console.log("Products:", results);
+    console.log("Products:", results.length);
     return results;
 }
 

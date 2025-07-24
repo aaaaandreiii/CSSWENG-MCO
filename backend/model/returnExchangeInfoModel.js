@@ -32,7 +32,7 @@ export async function getReturnExchangeInfo(){
     //     });
     // });
     const [results] = await db.query(sql);
-    console.log("Return Exchange Info:", results);
+    console.log("Return Exchange Info:", results.length);
     return results;
 }
 

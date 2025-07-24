@@ -38,7 +38,7 @@ export async function getAllAuditLogs() {
     //     });
     // });
     const [results] = await db.query(sql);
-    console.log("Audit logs fetched:", results);
+    console.log("Audit logs fetched:", results.length);
     return results;
 }
 

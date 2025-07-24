@@ -29,7 +29,7 @@ export async function getStockWithdrawals(){
     //     });
     // });
     const [results] = await db.query(sql);
-    console.log("Stock Withdrawals: ", results);
+    console.log("Stock Withdrawals: ", results.length);
     return results;
 }
 

@@ -32,7 +32,7 @@ export async function getOrderInfo(){
     //     });
     // });
     const [results] = await db.query(sql);
-    console.log("Users:", results);
+    console.log("Users:", results.length);
     return results;
 }
 
