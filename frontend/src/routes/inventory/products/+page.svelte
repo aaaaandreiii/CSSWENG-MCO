@@ -82,9 +82,35 @@
       return 0;
     });
   }
+
+$: currentHeaders = headers[selected];
+
 </script>
 
-<h1 class="text-xl font-bold mb-4">Products</h1>
+<header class="flex justify-between p-7">
+	<h1>Inventory</h1>
+
+	<div class="flex gap-3">
+		<div class="flex w-fit rounded-4xl bg-white px-3">
+			<input type="text" placeholder="Search" class="w-55 p-1" style="outline:none" />
+			<img src="../src/icons/search.svg" alt="search" style="width:15px; " />
+		</div>
+		<div class="flex w-fit rounded-4xl bg-white px-3">
+			<!-- dropdown for order by, auto includes all col headers -->
+			<select
+				class="w-35 p-1 outline-none"
+				bind:value={sortColumn}
+				on:change={() => sortBy(sortColumn)}
+			>
+				<option value="">All</option>
+				{#each currentHeaders as head}
+					<option value={head}>{head}</option>
+				{/each}
+			</select>
+		</div>
+	</div>
+</header>
+
 <div class="overflow-x-auto">
   <table class="table-auto w-full">
     <thead>
