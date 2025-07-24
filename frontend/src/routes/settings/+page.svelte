@@ -471,13 +471,15 @@
 						</div>
 						<div class="mb-3">
 							<label for="newUserRole" class="block mb-1 text-sm font-medium">User Role</label>
-							<input
+							<select
 								id="newUserRole"
-								type="text"
-								class="w-full border rounded px-3 py-2"
+								class="w-full border rounded px-10 py-2"
 								bind:value={newUserRole}
-								required
-							/>
+							>
+								{#each dropdownOptions as option}
+								<option value={option}>{option.charAt(0).toUpperCase() + option.slice(1)}</option>
+								{/each}
+							</select>
 						</div>
 						<div class="mb-3">
 							<label for="newPassword" class="block mb-1 text-sm font-medium">Password</label>
@@ -498,21 +500,7 @@
 								bind:value={newFullName}
 								required
 							/>
-							</div>
-
-							<div class="mb-3">
-							<label for="newUserRole" class="block mb-1 text-sm font-medium">Role</label>
-							<select
-								id="newUserRole"
-								class="w-full border rounded px-3 py-2"
-								bind:value={newUserRole}
-							>
-								{#each dropdownOptions as option}
-								<option value={option}>{option.charAt(0).toUpperCase() + option.slice(1)}</option>
-								{/each}
-							</select>
 						</div>
-
 						<div class="mb-3">
 							<label for="newPathName" class="block mb-1 text-sm font-medium">Profile Picture</label>
 							<input
