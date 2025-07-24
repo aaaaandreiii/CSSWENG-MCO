@@ -1,5 +1,5 @@
 <header>
-    <h1>Error 404</h1>
+    <h1 class="text-xl font-bold mb-4">Error 404</h1>
     <p>Page Not Found</p>
 </header>
 <div>
