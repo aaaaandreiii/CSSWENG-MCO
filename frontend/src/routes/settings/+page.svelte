@@ -16,25 +16,23 @@
 	};
 	let details: UserDetails[] = [];
 
-	let newFullName = '';
-	let newUserRole = 'staff';
-
 	async function fetchUsers() {
 		try {
 			const token = localStorage.getItem('token');
 			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getUsers`, {
 			headers: { Authorization: `Bearer ${token}` }
 			});
-			const { users } = await res.json();
-			details = users.map((item: any) => ({
-			userId: item.userId,
-			name: item.fullName,
-			user: item.username,
-			date: new Date(item.dateAdded).toLocaleDateString('en-PH', {
-				timeZone: 'Asia/Manila'
-			}),
-			position: item.userRole,
-			profilePic: item.pathName || '../src/icons/user.svg'
+			const data = await res.json();
+        	console.log('Fetched data:', data);
+			details = data.users.map((item: any) => ({
+				userId: item.userId,
+				name: item.fullName,
+				user: item.username,
+				date: new Date(item.dateAdded).toLocaleDateString('en-PH', {
+					timeZone: 'Asia/Manila'
+				}),
+				position: item.userRole,
+				profilePic: item.pathName || "../src/icons/user.svg"
 			}));
 		} catch (err) {
 			console.error('Error fetching user lists:', err);
@@ -99,16 +97,24 @@
 
 	// Modal state and form fields for account creation
 	let showAddModal = false;
-	let newEmail = '';
-	let newPassword = '';
+	let newFullName = '';
 	let newUsername = '';
+	let newUserRole = '';
+	let newPassword = '';
+	let newPathName = '';
+	
+	// let newEmail = '';
+	
 	let addError = '';
 
 	function openAddModal() {
 		showAddModal = true;
-		newEmail = '';
-		newPassword = '';
+		// newEmail = '';
+		newFullName = '';
 		newUsername = '';
+		newUserRole = '';
+		newPassword = '';
+		newPathName = '';
 		addError = '';
 	}
 
@@ -121,18 +127,32 @@
 		event.preventDefault();
 		addError = '';
 		//1. basic validation
-		if (!newFullName.trim() || !newUsername.trim() || !newPassword.trim()) {
+		if (!newFullName.trim() || !newUsername.trim() || !newPassword.trim() || !newUserRole.trim()) {
 			addError = 'All fields are required.';
+			return;
+		}
+
+		if(newPathName.trim() !== '') {
+			try {
+				new URL(newPathName.trim());
+			}catch(_) {
+				addError = 'Invalid path name.';
+				return;
+			}
+		}
+		const role = newUserRole.trim().toLowerCase();
+		if(!(role === 'admin' || role === 'manager' || role === 'staff' || role === 'auditor')){
+			addError = 'Only admin, manager, staff, auditor are valid user role';
 			return;
 		}
 
 		// 2) Build payload
 		const payload = {
-			fullName:   newFullName.trim(),
-			userRole:   newUserRole,
-			username:   newUsername.trim(),
-			userPassword: newPassword,
-			pathName:   null
+			fullName:   	newFullName.trim(),
+			userRole:   	newUserRole.trim(),
+			username:   	newUsername.trim(),
+			userPassword: 	newPassword,
+			pathName:   	newPathName.trim() || null
 		};
 
 		try {
@@ -430,12 +450,12 @@
 					<h2 class="text-xl font-bold mb-4">Create New Account</h2>
 					<form onsubmit={handleAddAccount}>
 						<div class="mb-3">
-							<label for="newEmail" class="block mb-1 text-sm font-medium">Email</label>
+							<label for="newFullName" class="block mb-1 text-sm font-medium">Full Name</label>
 							<input
-								id="newEmail"
-								type="email"
+								id="newFullName"
+								type="newFullName"
 								class="w-full border rounded px-3 py-2"
-								bind:value={newEmail}
+								bind:value={newFullName}
 								required
 							/>
 						</div>
@@ -446,6 +466,16 @@
 								type="text"
 								class="w-full border rounded px-3 py-2"
 								bind:value={newUsername}
+								required
+							/>
+						</div>
+						<div class="mb-3">
+							<label for="newUserRole" class="block mb-1 text-sm font-medium">User Role</label>
+							<input
+								id="newUserRole"
+								type="text"
+								class="w-full border rounded px-3 py-2"
+								bind:value={newUserRole}
 								required
 							/>
 						</div>
@@ -483,6 +513,16 @@
 							</select>
 						</div>
 
+						<div class="mb-3">
+							<label for="newPathName" class="block mb-1 text-sm font-medium">Profile Picture</label>
+							<input
+								id="newPathName"
+								type="text"
+								class="w-full border rounded px-3 py-2"
+								bind:value={newPathName}
+								
+							/>
+						</div>
 						{#if addError}
 							<p class="text-red-600 text-sm mb-2">{addError}</p>
 						{/if}
@@ -497,10 +537,10 @@
 							<button
 								type="submit"
 								class="px-4 py-2 rounded text-white
-									{newEmail.trim() && newUsername.trim() && newPassword.trim()
+									{newFullName.trim() && newUsername.trim() && newUserRole.trim() && newPassword.trim()
 									? 'bg-green-700 hover:bg-green-800'
 									: 'cursor-not-allowed bg-gray-400'}"
-								disabled={!(newEmail.trim() && newUsername.trim() && newPassword.trim())}
+								disabled={!(newFullName.trim() && newUsername.trim() && newUserRole.trim() && newPassword.trim())}
 							>
 								Create
 							</button>
