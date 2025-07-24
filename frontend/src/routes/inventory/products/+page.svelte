@@ -868,7 +868,7 @@
 
 <!-- header w/ search bar and filter-->
 <header class="flex justify-between p-7">
-	<h1>Inventory</h1>
+	<h1>Products</h1>
 
 	<div class="flex gap-3">
 		<div class="flex w-fit rounded-4xl bg-white px-3">

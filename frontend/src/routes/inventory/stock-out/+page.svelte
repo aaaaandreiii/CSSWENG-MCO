@@ -9,7 +9,7 @@
 		| 'StockEntry'
 		| 'StockWithdrawal'
 		| 'ReturnExchange'
-		| 'ReturnExchangelnfo';
+		| 'Users';
 
 	let selected: TabType = 'Product';
 
@@ -20,7 +20,7 @@
 		StockEntry: 'getStockEntries',
 		StockWithdrawal: 'getStockWithdrawals',
 		ReturnExchange: 'getReturnExchanges',
-		ReturnExchangelnfo: 'getReturnExchangeInfo'
+		Users: 'getUsers'
 	};
 
 	const createApiMap: Record<TabType, string> = {
@@ -30,7 +30,7 @@
 		StockEntry: 'createStockEntry',
 		StockWithdrawal: 'createStockWithdrawal',
 		ReturnExchange: 'createReturnExchange',
-		ReturnExchangelnfo: 'createReturnExchangeInfo' // X
+		Users: 'createUsers' // X
 	};
 
 	const updateApiMap: Record<TabType, string> = {
@@ -40,7 +40,7 @@
 		StockEntry: 'updateStockEntry',
 		StockWithdrawal: 'updateStockWithdrawal',
 		ReturnExchange: 'updateReturnExchange',
-		ReturnExchangelnfo: 'updateReturnExchangeInfo'
+		Users: 'updateUsers'
 	};
 
 	const keyMap: Record<TabType, Record<string, string>> = {
@@ -90,7 +90,7 @@
 			'Handled By': 'handledBy',
 			'Approved By': 'approvedBy'
 		},
-		ReturnExchangelnfo: {
+		Users: {
 			'Returned Product ID': 'returnedProductId',
 			'Returned Quantity': 'returnedQuantity',
 			'Exchange Product ID': 'exchangeProductId',
@@ -124,7 +124,7 @@
 			{field: 'Handled By', endpoint: 'getUserById'},
 			{field: 'Approved By', endpoint: 'getUserById'}
 		],
-		ReturnExchangelnfo: [
+		Users: [
 			{field: 'Returned Product ID', endpoint: 'getProductById'},
 			{field: 'Exchange Product ID', endpoint: 'getProductById'},
 			{field: 'Transaction ID', endpoint: 'getReturnExchangeById'}
@@ -138,7 +138,7 @@
 		StockEntry: 'Entry ID',
 		StockWithdrawal: 'Withdrawal ID',
 		ReturnExchange: 'Transaction ID',
-		ReturnExchangelnfo: 'Detail ID'
+		Users: 'Detail ID'
 	};
 
 	const headerMap: Record<TabType, string[]> = {
@@ -180,7 +180,7 @@
 			'Last Edited Date',
 			'Last Edited User'
 		],
-		ReturnExchangelnfo: [ //change to users
+		Users: [ //change to users
 			'Detail ID',
 			'Returned Product ID',
 			'Returned Quantity',
@@ -348,8 +348,8 @@
 					'Last Edited User': item.lastEditedUser
 				}));
 			}
-			else if(tab === "ReturnExchangelnfo"){
-				newRows = data.returnExchangeInfo.map((item: any) =>({
+			else if(tab === "Users"){
+				newRows = data.Users.map((item: any) =>({
 					'Detail ID': item.detailId,
 					'Returned Product ID': item.returnedProductId,
 					'Returned Quantity': item.returnedQuantity,
@@ -445,7 +445,7 @@
 	// headerMap.StockEntry.push('Last Updated', 'Edited By');
 	// headerMap.StockWithdrawal.push('Last Updated', 'Edited By');
 	// headerMap.ReturnExchange.push('Last Updated', 'Edited By');
-	// headerMap.ReturnExchangelnfo.push('Last Updated', 'Edited By');
+	// headerMap.Users.push('Last Updated', 'Edited By');
 
 	// edit button in popup
 	let showEditButton = false;
@@ -743,6 +743,7 @@
 		isCellEditForm = false;
 	}
 
+
 	function handleAddFormCancel() {
 		isAddForm = false;
 		showModal = false;
@@ -897,17 +898,106 @@
 			}
 		}
 	}
+	// Additional helpers for the new Withdraw Stock form
+	type EntryOption = { id: number; label: string };
+	type UserOption = { id: number; name: string };
+	type ProductMap = Record<number, { productName: string }>;
+	type EntryMap = Record<number, { branchName: string; productId: number }>;
 
+	let productMap: ProductMap = {};
+	let entryMap: EntryMap = {};
+	let userOptions: UserOption[] = [];
+	let entryOptions: EntryOption[] = [];
+
+	async function preloadData() {
+		const token = localStorage.getItem('token');
+		const [entriesRes, usersRes, productsRes] = await Promise.all([
+			fetch(`${PUBLIC_API_BASE_URL}/api/getStockEntries`, { headers: { Authorization: `Bearer ${token}` } }),
+			fetch(`${PUBLIC_API_BASE_URL}/api/getUsers`, { headers: { Authorization: `Bearer ${token}` } }),
+			fetch(`${PUBLIC_API_BASE_URL}/api/getProducts`, { headers: { Authorization: `Bearer ${token}` } })
+		]);
+
+		const entries = (await entriesRes.json()).stockEntries;
+		entryOptions = entries.map((e: any) => ({ id: e.entryId, label: `${e.branchName} (Entry #${e.entryId})` }));
+		entryMap = entries.reduce((acc: any, e: any) => {
+			acc[e.entryId] = { branchName: e.branchName, productId: e.productId };
+			return acc;
+		}, {});
+
+		const users = (await usersRes.json()).users;
+		userOptions = users.map((u: any) => ({ id: u.userId, name: u.name }));
+
+		const products = (await productsRes.json()).products;
+		productMap = products.reduce((acc: any, p: any) => {
+			acc[p.productId] = { productName: p.productName };
+			return acc;
+		}, {});
+	}
+
+	let withdrawForm = {
+		entryId: '',
+		quantityWithdrawn: '',
+		purpose: '',
+		withdrawnBy: '',
+		authorizedBy: ''
+	};
+
+	function openWithdrawModal() {
+		withdrawForm = { entryId: '', quantityWithdrawn: '', purpose: '', withdrawnBy: '', authorizedBy: '' };
+		preloadData();
+		isWithdrawForm = true;
+		showModal = true;
+		modalContent = '';
+		isEditForm = false;
+		isCellEditForm = false;
+		isAddForm = false;
+	}
+
+	let isWithdrawForm = false;
+
+	async function handleWithdrawSave() {
+		const token = localStorage.getItem('token');
+		const endpoint = 'createStockWithdrawal';
+
+		const { entryId, quantityWithdrawn, purpose, withdrawnBy, authorizedBy } = withdrawForm;
+		if (!entryId || !quantityWithdrawn || !purpose || !withdrawnBy || !authorizedBy) {
+			alert('All fields are required.');
+			return;
+		}
+
+		const payload = {
+			entryId: Number(entryId),
+			quantityWithdrawn: Number(quantityWithdrawn),
+			purpose: purpose.trim(),
+			withdrawnBy: Number(withdrawnBy),
+			authorizedBy: Number(authorizedBy)
+		};
+
+		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`
+			},
+			body: JSON.stringify(payload)
+		});
+
+		if (!res.ok) {
+			alert('Failed to withdraw stock.');
+			return;
+		}
+
+		await fetchTabData(selected);
+		showModal = false;
+		isWithdrawForm = false;
+	}
 </script>
 
 <!-- header w/ search bar and filter-->
 <header class="flex justify-between p-7">
-	<h1>Inventory</h1>
+	<h1>Stock Out</h1>
 
 	<div class="flex gap-3">
-		<button class="flex w-fit button px-3">
-			Withdraw Stock
-        </button>
 		<div class="flex w-fit rounded-4xl bg-white px-3">
 			<!-- dropdown for order by, auto includes all col headers -->
 			<select
@@ -955,10 +1045,10 @@
 			Delete
 		</button>
 		<button
-			class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold bg-[#3d843f] text-white hover:bg-[#3b7f3b]"
+			class="w-fit p-2 items-center justify-center gap-2 rounded-lg font-bold bg-[#3d843f] text-white hover:bg-[#3b7f3b]"
 			on:click={openAddModal}
 		>
-			Add
+			Withdraw Stock
 		</button>
 	</div>
 </div>

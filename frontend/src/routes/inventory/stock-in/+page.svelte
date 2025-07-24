@@ -9,7 +9,7 @@
 		| 'StockEntry'
 		| 'StockWithdrawal'
 		| 'ReturnExchange'
-		| 'ReturnExchangelnfo';
+		| 'Users';
 
 	let selected: TabType = 'Product';
 
@@ -20,7 +20,7 @@
 		StockEntry: 'getStockEntries',
 		StockWithdrawal: 'getStockWithdrawals',
 		ReturnExchange: 'getReturnExchanges',
-		ReturnExchangelnfo: 'getReturnExchangeInfo'
+		Users: 'getUsers'
 	};
 
 	const createApiMap: Record<TabType, string> = {
@@ -30,7 +30,7 @@
 		StockEntry: 'createStockEntry',
 		StockWithdrawal: 'createStockWithdrawal',
 		ReturnExchange: 'createReturnExchange',
-		ReturnExchangelnfo: 'createReturnExchangeInfo' // X
+		Users: 'createUsers' // X
 	};
 
 	const updateApiMap: Record<TabType, string> = {
@@ -40,7 +40,7 @@
 		StockEntry: 'updateStockEntry',
 		StockWithdrawal: 'updateStockWithdrawal',
 		ReturnExchange: 'updateReturnExchange',
-		ReturnExchangelnfo: 'updateReturnExchangeInfo'
+		Users: 'updateUsers'
 	};
 
 	const keyMap: Record<TabType, Record<string, string>> = {
@@ -90,7 +90,7 @@
 			'Handled By': 'handledBy',
 			'Approved By': 'approvedBy'
 		},
-		ReturnExchangelnfo: {
+		Users: {
 			'Returned Product ID': 'returnedProductId',
 			'Returned Quantity': 'returnedQuantity',
 			'Exchange Product ID': 'exchangeProductId',
@@ -124,7 +124,7 @@
 			{field: 'Handled By', endpoint: 'getUserById'},
 			{field: 'Approved By', endpoint: 'getUserById'}
 		],
-		ReturnExchangelnfo: [
+		Users: [
 			{field: 'Returned Product ID', endpoint: 'getProductById'},
 			{field: 'Exchange Product ID', endpoint: 'getProductById'},
 			{field: 'Transaction ID', endpoint: 'getReturnExchangeById'}
@@ -138,7 +138,7 @@
 		StockEntry: 'Entry ID',
 		StockWithdrawal: 'Withdrawal ID',
 		ReturnExchange: 'Transaction ID',
-		ReturnExchangelnfo: 'Detail ID'
+		Users: 'Detail ID'
 	};
 
 	const headerMap: Record<TabType, string[]> = {
@@ -169,7 +169,7 @@
 			'Last Edited Date',
 			'Last Edited User'
 		],
-		ReturnExchangelnfo: [
+		Users: [
 			'Detail ID',
 			'Returned Product ID',
 			'Returned Quantity',
@@ -337,8 +337,8 @@
 					'Last Edited User': item.lastEditedUser
 				}));
 			}
-			else if(tab === "ReturnExchangelnfo"){
-				newRows = data.returnExchangeInfo.map((item: any) =>({
+			else if(tab === "Users"){
+				newRows = data.Users.map((item: any) =>({
 					'Detail ID': item.detailId,
 					'Returned Product ID': item.returnedProductId,
 					'Returned Quantity': item.returnedQuantity,
@@ -434,7 +434,7 @@
 	// headerMap.StockEntry.push('Last Updated', 'Edited By');
 	// headerMap.StockWithdrawal.push('Last Updated', 'Edited By');
 	// headerMap.ReturnExchange.push('Last Updated', 'Edited By');
-	// headerMap.ReturnExchangelnfo.push('Last Updated', 'Edited By');
+	// headerMap.Users.push('Last Updated', 'Edited By');
 
 	// edit button in popup
 	let showEditButton = false;
@@ -891,13 +891,10 @@
 
 <!-- header w/ search bar and filter-->
 <header class="flex justify-between p-7">
-	<h1>Inventory</h1>
+	<h1>Stock In</h1>
 
 	<div class="flex gap-3">
-		<div class="flex w-fit rounded-4xl bg-white px-3">
-			<input type="text" placeholder="Search" class="w-55 p-1" style="outline:none" />
-			<img src="../src/icons/search.svg" alt="search" style="width:15px; " />
-		</div>
+		
 		<div class="flex w-fit rounded-4xl bg-white px-3">
 			<!-- dropdown for order by, auto includes all col headers -->
 			<select
@@ -945,10 +942,10 @@
 			Delete
 		</button>
 		<button
-			class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold bg-[#3d843f] text-white hover:bg-[#3b7f3b]"
+			class="w-fit p-2 items-center justify-center gap-2 rounded-lg font-bold bg-[#3d843f] text-white hover:bg-[#3b7f3b]"
 			on:click={openAddModal}
 		>
-			Add
+			Add New Shipment
 		</button>
 	</div>
 </div>
