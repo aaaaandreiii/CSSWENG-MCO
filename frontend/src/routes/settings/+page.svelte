@@ -466,7 +466,7 @@
 
 		{#if isEditMode}
 			<button
-				class="absolute bottom-10 left-70 rounded-full green1 edit-btn"
+				class="fixed bottom-10 left-70 rounded-full green1 edit-btn"
 				onclick={openAddModal}
 			>
 				<img src="../src/icons/add.svg" alt="Add" style="width: 50px;" />
