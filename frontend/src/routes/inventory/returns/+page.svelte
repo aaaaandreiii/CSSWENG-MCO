@@ -1339,19 +1339,6 @@
         </div>
     </div>
 
-
-    <div class="flex justify-evenly gap-4">
-    {#each infos as info}
-        <div
-        class="whitebox flex-col content-center p-6 rounded shadow"
-        style="background-color: {info.color}"
-        >
-        <h1 class="text-2xl font-bold">{info.value}</h1>
-        <p class="text-sm text-gray-700">{info.label}</p>
-        </div>
-    {/each}
-    </div>
-
     <!-- table content -->
     <div class="w-full overflow-x-auto" on:scroll={handleScroll}>
         <table class="w-full table-fixed border-collapse">
