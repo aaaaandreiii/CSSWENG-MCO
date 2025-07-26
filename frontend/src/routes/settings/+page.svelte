@@ -5,7 +5,43 @@
 	let selected = 'all'; // default selected tab = profile
 
 	let hasDropdownChanged = false;
+
+	// frontend 
+	//3 dots - menu
+	let showMenu: boolean = false;
+	let menuRefs: HTMLDivElement[] = [];
+	let showMenus: boolean[] = [];
+
+	function toggleMenu(event: MouseEvent): void {
+		event.stopPropagation();
+		showMenu = !showMenu;
+	}
 	
+	//click out close menu
+	function handleClickOutsideMenu(event: MouseEvent): void {
+		showMenus.forEach((isOpen, idx) => {
+			if (isOpen && menuRefs[idx] && !menuRefs[idx].contains(event.target as Node)) {
+				showMenus[idx] = false;
+			}
+		});
+	}
+	onMount(() => {
+		document.addEventListener('mousedown', handleClickOutsideMenu);
+		return () => document.removeEventListener('mousedown', handleClickOutsideMenu);
+	});
+
+	//dialogue box for success!/updated!/deleted!
+	let dialogMessage = '';
+	let showDialog = false;
+
+	function showAck(message: string) {
+		dialogMessage = message;
+		showDialog = true;
+		setTimeout(() => showDialog = false, 5000); // auto-hide after 3s
+	}
+
+
+	//backend
 	type UserDetails = { 
 		userId: string; 
 		name: string; 
@@ -169,12 +205,14 @@
 			const result = await res.json();
 			if (!res.ok) {
 			addError = result.message || 'Failed to create user.';
+			showAck(addError);
 			return;
 			}
 
 			// 3) Success: close modal, reload list
 			closeAddModal();
 			await fetchUsers();
+			showAck('User created successfully.');
 
 		} catch (err) {
 			console.error(err);
@@ -250,81 +288,105 @@
 			<ul class="flex space-x-4 self-end tab-nav" bind:this={tabNavRef}>
 				<div class="tab-underline" style={underlineStyle}></div>
 				<li>
-<a
-	href="#all"
-	class="px-4 text-lg tab-link {selected === 'all'
-		? 'font-bold text-green-700'
-		: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
-	onclick={() => { if (!isEditMode) { selected = 'all'; openDropdownIndex = null; } }}
-	tabindex={isEditMode ? -1 : 0}
->
-	All
-</a>
-				</li>
-				<li>
-<a
-	href="#admin"
-	class="px-4 text-lg tab-link {selected === 'admin'
-		? 'font-bold text-green-700'
-		: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
-	onclick={() => { if (!isEditMode) { selected = 'admin'; openDropdownIndex = null; } }}
-	tabindex={isEditMode ? -1 : 0}
->
-	Admin
-</a>
-				</li>
-				<li>
-<a
-	href="#staff"
-	class="px-4 text-lg tab-link {selected === 'staff'
-		? 'font-bold text-green-700'
-		: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
-	onclick={() => { if (!isEditMode) { selected = 'staff'; openDropdownIndex = null; } }}
-	tabindex={isEditMode ? -1 : 0}
->
-	Staff
-</a>
-				</li>
-				<li>
-<a
-	href="#auditor"
-	class="px-4 text-lg tab-link {selected === 'auditor'
-		? 'font-bold text-green-700'
-		: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
-	onclick={() => { if (!isEditMode) { selected = 'auditor'; openDropdownIndex = null; } }}
-	tabindex={isEditMode ? -1 : 0}
->
-	Auditor
-</a>
-				</li>
-				<li>
-<a
-	href="#manager"
-	class="px-4 text-lg tab-link {selected === 'manager'
-		? 'font-bold text-green-700'
-		: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
-	onclick={() => { if (!isEditMode) { selected = 'manager'; openDropdownIndex = null; } }}
-	tabindex={isEditMode ? -1 : 0}
->
-	Manager
-</a>
-				</li>
-			</ul>
-<button
-	class="button mb-1.5 w-28 {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none bg-gray-300 text-gray-500' : ''}"
-	onclick={() => { if (!isEditMode) { isEditMode = true; hasDropdownChanged = false; } }}
-	disabled={isEditMode}
->
-	Edit
-</button>
+					<a
+						href="#all"
+						class="px-4 text-lg tab-link {selected === 'all'
+							? 'font-bold text-green-700'
+							: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
+						onclick={() => { if (!isEditMode) { selected = 'all'; openDropdownIndex = null; } }}
+						tabindex={isEditMode ? -1 : 0}
+					>
+						All
+					</a>
+									</li>
+									<li>
+					<a
+						href="#admin"
+						class="px-4 text-lg tab-link {selected === 'admin'
+							? 'font-bold text-green-700'
+							: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
+						onclick={() => { if (!isEditMode) { selected = 'admin'; openDropdownIndex = null; } }}
+						tabindex={isEditMode ? -1 : 0}
+					>
+						Admin
+					</a>
+									</li>
+									<li>
+					<a
+						href="#staff"
+						class="px-4 text-lg tab-link {selected === 'staff'
+							? 'font-bold text-green-700'
+							: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
+						onclick={() => { if (!isEditMode) { selected = 'staff'; openDropdownIndex = null; } }}
+						tabindex={isEditMode ? -1 : 0}
+					>
+						Staff
+					</a>
+									</li>
+									<li>
+					<a
+						href="#auditor"
+						class="px-4 text-lg tab-link {selected === 'auditor'
+							? 'font-bold text-green-700'
+							: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
+						onclick={() => { if (!isEditMode) { selected = 'auditor'; openDropdownIndex = null; } }}
+						tabindex={isEditMode ? -1 : 0}
+					>
+						Auditor
+					</a>
+									</li>
+									<li>
+					<a
+						href="#manager"
+						class="px-4 text-lg tab-link {selected === 'manager'
+							? 'font-bold text-green-700'
+							: 'text-black'} {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none' : ''}"
+						onclick={() => { if (!isEditMode) { selected = 'manager'; openDropdownIndex = null; } }}
+						tabindex={isEditMode ? -1 : 0}
+					>
+						Manager
+					</a>
+									</li>
+								</ul>
+					<button
+						class="button mb-1.5 w-28 {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none bg-gray-300 text-gray-500' : ''}"
+						onclick={() => { if (!isEditMode) { isEditMode = true; hasDropdownChanged = false; } }}
+						disabled={isEditMode}
+					>
+						Edit
+					</button>
 		</nav>
+		
 		<hr class="mb-0 border-gray-300" />
-
-	<!-- permissions section, change roles as needed -->
+		<!-- permissions section, change roles as needed -->
 		<div class="flex flex-wrap gap-5 justify-start">
 			{#if selected === 'all' || selected === 'admin' || selected === 'staff' || selected === 'auditor' || selected === 'manager'}
+
 				{#each filteredDetails as detail, idx}
-					<div class="mt-8 rounded-lg bg-white p-8 basis-1/7 min-w-[250px] flex-shrink-0">
+					<div class="mt-8 rounded-lg bg-white p-8 basis-1/7 min-w-[250px] flex-shrink-0 relative " 
+					bind:this={menuRefs[idx]}
+
+>
+						<!-- 3 dots button menu-->
+						{#if isEditMode}
+							<button
+								class="absolute top-3 right-3 w-6 h-6"
+								onclick={() => showMenus[idx] = !showMenus[idx]}
+								aria-label="Options menu"
+							>
+								<img src="./src/icons/menu-dots.svg" alt="menu" class="w-full h-full" />
+							</button>
+
+							<!-- Dropdown -->
+							{#if showMenus[idx]}
+								<div class="absolute top-10 right-3 bg-white shadow-md rounded-md w-24 z-50 py-1">
+									<button class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">Edit</button>
+									<button class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">Delete</button>
+								</div>
+							{/if}
+						{/if}
+
+						
 						<div class="flex flex-col items-center">
 							<!-- User ID above full name -->
 							<span class="text-xs text-gray-500 mb-2">{detail.userId}</span>
@@ -413,7 +475,8 @@
 				{#if hasDropdownChanged}
 				<button
 					class="px-8 py-3 rounded-lg bg-green-700 text-white font-bold shadow-lg hover:bg-green-800 transition-colors duration-150"
-					onclick={() => { isEditMode = false; openDropdownIndex = null; hasDropdownChanged = false; }}
+					onclick={() => { isEditMode = false; openDropdownIndex = null; hasDropdownChanged = false; showAck('Successfully changed roles!');
+}}
 					type="button"
 				>
 					Save
@@ -537,5 +600,14 @@
 				</div>
 			</div>
 		{/if}
+
+		<!-- dialogue box: success!eror! -->
+		{#if showDialog}
+			<div class="fixed top-4 right-4 z-50 px-4 py-2 bg-green-600 text-white rounded shadow-lg transition-opacity duration-300">
+				{dialogMessage}
+			</div>
+		{/if}
+
+
 	</div>
 </div>
