@@ -44,8 +44,8 @@
 	//backend
 	type UserDetails = { 
 		userId: string; 
-		name: string; 
-		user: string; 
+		name: string; //fullName
+		user: string; //username
 		date: string; 
 		position: string; 
 		profilePic: string
@@ -167,7 +167,10 @@
 			addError = 'All fields are required.';
 			return;
 		}
-
+		if(details.find((u: UserDetails) => u.user.toLowerCase() === newUsername.trim().toLowerCase())){
+			addError = 'Username already exists.';
+			return;
+		}
 		if(newPathName.trim() !== '') {
 			try {
 				new URL(newPathName.trim());
