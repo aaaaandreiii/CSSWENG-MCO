@@ -18,7 +18,6 @@
 
 </script>
 
-<div>
 {#if showSidebar}
 	<aside class = 'sidebar'>
 		<Sidebar />
@@ -32,12 +31,3 @@
 		{@render children()}
 	</div>
 {/if}
-
-	<!-- <div class = "header">
-		<Header />
-	</div> -->
-	
-
-	
-</div>
-

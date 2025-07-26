@@ -9,6 +9,12 @@
 	let loginError = '';
 
 	async function login(){
+
+		if (!username.trim() || !password.trim()) {
+			loginError = 'Please enter username and password.';
+			return;
+		}
+
 		try {
 			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/login`, {
 				method: 'POST',
@@ -20,16 +26,15 @@
 			const data = await res.json();
 			if(res.ok){
 				localStorage.setItem('token', data.token);
-//				alert("Login Successful!"); 
+				loginError = '';
 				window.location.href = '/dashboard';
 			}
 			else {
-				loginError = 'Incorrect username or password.';
+				loginError = data?.message;
 			}
-		} catch (error) {
-			console.error("Error during login:", error);
-			loginError = 'An error occurred. Please try again later.';
-			return;
+		} catch (err) {
+			console.error('Login error:', err);
+			loginError = 'An error occurred. Please try again.';
 		}
 	}
 </script>
@@ -50,7 +55,7 @@
 					on:keydown={(e) => { if (e.key === 'Enter') login(); }}
 				/>
 			</div>
-
+			
 			<div class="flex-scol pt-3">
 				<h1 class="text-lg">Password</h1>
 				<input
