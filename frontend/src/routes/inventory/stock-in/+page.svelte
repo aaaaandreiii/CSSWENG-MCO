@@ -9,7 +9,8 @@
 		| 'StockEntry'
 		| 'StockWithdrawal'
 		| 'ReturnExchange'
-		| 'Users';
+		| 'Users'
+		| 'StockEntryExpanded';
 
 	let selected: TabType = 'Product';
 
@@ -20,7 +21,8 @@
 		StockEntry: 'getStockEntries',
 		StockWithdrawal: 'getStockWithdrawals',
 		ReturnExchange: 'getReturnExchanges',
-		Users: 'getUsers'
+		Users: 'getUsers',
+		StockEntryExpanded: 'getStockEntryExpanded'
 	};
 
 	const createApiMap: Record<TabType, string> = {
@@ -30,7 +32,8 @@
 		StockEntry: 'createStockEntry',
 		StockWithdrawal: 'createStockWithdrawal',
 		ReturnExchange: 'createReturnExchange',
-		Users: 'createUsers' // X
+		Users: 'createUsers', // X
+		StockEntryExpanded: 'getStockEntryExpanded'
 	};
 
 	const updateApiMap: Record<TabType, string> = {
@@ -40,7 +43,8 @@
 		StockEntry: 'updateStockEntry',
 		StockWithdrawal: 'updateStockWithdrawal',
 		ReturnExchange: 'updateReturnExchange',
-		Users: 'updateUsers'
+		Users: 'updateUsers',
+		StockEntryExpanded: 'getStockEntryExpanded'
 	};
 
 	const keyMap: Record<TabType, Record<string, string>> = {
@@ -77,6 +81,17 @@
 			'Received By': 'receivedBy',
 			'Product ID': 'productId'
 		},
+		StockEntryExpanded: {
+			'Entry ID': 'entryId',
+			'Branch Name': 'branchName',
+			'Date Received': 'dateReceived',
+			'Quantity Received': 'quantityReceived',
+			'Delivery Receipt Number': 'deliveryReceiptNumber',
+			'Product Name': 'productName',
+			'Received By': 'receivedBy',
+			'Last Edited By': 'lastEditedBy',
+			'Last Edited Date': 'lastEditedDate'
+		},
 		StockWithdrawal: {
 			'Quantity Withdrawn': 'quantityWithdrawn',
 			'Purpose': 'purpose',
@@ -101,45 +116,53 @@
 		}
 	}
 
-	const idValidationMap: Record<TabType, {field: string; endpoint: string}[]> = {
+	const idValidationMap: Record<TabType, { field: string; endpoint: string }[]> = {
 		Product: [],
 		Orders: [
-			{field: 'Handled By', endpoint: 'getUserById'}
+			{ field: 'Handled By', endpoint: 'getUserById' }
 		],
 		OrderInfo: [
-			{field: 'Order ID', endpoint: 'getOrderById'},
-			{field: 'Product ID', endpoint: 'getProductById'}
+			{ field: 'Order ID', endpoint: 'getOrderById' },
+			{ field: 'Product ID', endpoint: 'getProductById' }
 		],
 		StockEntry: [
-			{field: 'Received By', endpoint: 'getUserById'},
-			{field: 'Product ID', endpoint: 'getProductById'}
+			{ field: 'Received By', endpoint: 'getUserById' },
+			{ field: 'Product ID', endpoint: 'getProductById' }
+		],
+		StockEntryExpanded: [ 
+			{ field: 'Received By', endpoint: 'getUserById' },
+			{ field: 'Last Edited By', endpoint: 'getUserById' },
+			{ field: 'Product Name', endpoint: 'getProductById' } // Optional: Only if needed
 		],
 		StockWithdrawal: [
-			{field: 'Entry ID', endpoint: 'getStockEntryById'},
-			{field: 'Withdrawn By', endpoint: 'getUserById'},
-			{field: 'Authorized By', endpoint: 'getUserById'}
+			{ field: 'Entry ID', endpoint: 'getStockEntryById' },
+			{ field: 'Withdrawn By', endpoint: 'getUserById' },
+			{ field: 'Authorized By', endpoint: 'getUserById' }
 		],
 		ReturnExchange: [
-			{field: 'Order ID', endpoint: 'getOrderById'},
-			{field: 'Handled By', endpoint: 'getUserById'},
-			{field: 'Approved By', endpoint: 'getUserById'}
+			{ field: 'Order ID', endpoint: 'getOrderById' },
+			{ field: 'Handled By', endpoint: 'getUserById' },
+			{ field: 'Approved By', endpoint: 'getUserById' }
 		],
 		Users: [
-			{field: 'Returned Product ID', endpoint: 'getProductById'},
-			{field: 'Exchange Product ID', endpoint: 'getProductById'},
-			{field: 'Transaction ID', endpoint: 'getReturnExchangeById'}
+			{ field: 'Returned Product ID', endpoint: 'getProductById' },
+			{ field: 'Exchange Product ID', endpoint: 'getProductById' },
+			{ field: 'Transaction ID', endpoint: 'getReturnExchangeById' }
 		]
 	};
+
 
 	const primaryKeyMap: Record<TabType, string> = {
 		Product: 'Product ID',
 		Orders: 'Order ID',
 		OrderInfo: 'Order Info ID',
 		StockEntry: 'Entry ID',
+		StockEntryExpanded: 'Entry ID',
 		StockWithdrawal: 'Withdrawal ID',
 		ReturnExchange: 'Transaction ID',
 		Users: 'Detail ID'
 	};
+
 
 	const headerMap: Record<TabType, string[]> = {
 		Product: [
@@ -152,7 +175,7 @@
 			'Retail Price',
 			'Stock On Hand',
 			'Units',
-			'Image', //pathName
+			'Image', // pathName
 			'Safe Stock Count',
 			'Restock Flag',
 			'Last Edited Date',
@@ -169,19 +192,76 @@
 			'Last Edited Date',
 			'Last Edited User'
 		],
+		StockEntryExpanded: [
+			'Entry ID',
+			'Branch Name',
+			'Date Received',
+			'Quantity Received',
+			'Delivery Receipt Number',
+			'Product Name',
+			'Received By',
+			'Last Edited By',
+			'Last Edited Date'
+		],
 		Users: [
-			'Detail ID',
-			'Returned Product ID',
-			'Returned Quantity',
-			'Exchange Product ID',
-			'Exchange Quantity',
-			'Reason',
-			'Transaction ID',
-			'Return Type',
+			'User ID',
+			'Full Name',
+			'User Role',
+			'Username',
+			'Password',
+			'Image', // pathName
+			'Date Added',
 			'Last Edited Date',
-			'Last Edited User'
+			'Last Edited User',
+			'Delete Flag'
+		],
+		Orders: [
+			'Order ID',
+			'Discount',
+			'Customer',
+			'Handled By',
+			'Payment Method',
+			'Payment Status',
+			'Date Ordered',
+			'Last Edited Date',
+			'Last Edited User',
+			'Delete Flag'
+		],
+		OrderInfo: [
+			'Order Info ID',
+			'Quantity',
+			'Order ID',
+			'Product ID',
+			'Unit Price At Purchase',
+			'Last Edited Date',
+			'Last Edited User',
+			'Delete Flag'
+		],
+		StockWithdrawal: [
+			'Withdrawal ID',
+			'Date Withdrawn',
+			'Quantity Withdrawn',
+			'Purpose',
+			'Entry ID',
+			'Withdrawn By',
+			'Authorized By',
+			'Last Edited Date',
+			'Last Edited User',
+			'Delete Flag'
+		],
+		ReturnExchange: [
+			'Transaction ID',
+			'Date Transaction',
+			'Transaction Status',
+			'Order ID',
+			'Handled By',
+			'Approved By',
+			'Last Edited Date',
+			'Last Edited User',
+			'Delete Flag'
 		]
 	};
+
 
 	$: currentHeaders = headerMap[selected];
 
@@ -223,7 +303,10 @@
 	async function fetchTabData(tab: TabType, offset = 0, append = false){
 		if (isLoading) return;
 		isLoading = true;
-		
+
+		console.log('Selected Tab:', tab);
+	// console.log('Raw API response:', data);
+
 		try{
 			const token = localStorage.getItem('token');
 			const endpoint = getApiMap[tab];
@@ -338,21 +421,37 @@
 				}));
 			}
 			else if(tab === "Users"){
-				newRows = data.Users.map((item: any) =>({
-					'Detail ID': item.detailId,
-					'Returned Product ID': item.returnedProductId,
-					'Returned Quantity': item.returnedQuantity,
-					'Exchange Product ID': item.exchangeProductId,
-					'Exchange Quantity': item.exchangeQuantity,
-					'Reason': item.reason,
-					'Transaction ID': item.transactionId,
-					'Return Type': item.returnType,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
+				newRows = data.users.map((item: any) => ({
+					'User ID': item.userId,
+					'Full Name': item.fullName,
+					'User Role': item.userRole,
+					'Username': item.username,
+					'Password': item.password,
+					'Image': item.pathName,
+					'Date Added': new Date(item.dateAdded).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }),
+					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }),
+					'Last Edited User': item.lastEditedUser,
+					'Delete Flag': item.deleteFlag
 				}));
 			}
+			else if(tab === "StockEntryExpanded"){
+				newRows = data.stockEntryExpanded.map((item: any) => ({
+					'Entry ID': item['Entry ID'],
+					'Branch Name': item['Branch Name'],
+					'Date Received': new Date(item['Date Received']).toLocaleDateString('en-PH', {
+						timeZone: 'Asia/Manila'
+					}),
+					'Quantity Received': item['Quantity Received'],
+					'Delivery Receipt Number': item['Delivery Receipt Number'],
+					'Product Name': item['Product Name'],
+					'Received By': item['Received By'],
+					'Last Edited By': item['Last Edited By'],
+					'Last Edited Date': new Date(item['Last Edited Date']).toLocaleString('en-PH', {
+						timeZone: 'Asia/Manila'
+					})
+				}));
+			}
+
 
 			// Check if we have more data
 			hasMoreData = newRows.length === ITEMS_PER_PAGE;
@@ -843,7 +942,7 @@
 
 			for (const idx of selectedRows) {
 				const row = rows[idx];
-				const productId= row["Product ID"] || row.productId || row.id; // might need to change datatype to any to remove error
+				const productId = parseInt(row["Product ID"] || row.productId || row.id);
 
 				if (!productId) {
 					console.warn("No product ID found in row:", row);
