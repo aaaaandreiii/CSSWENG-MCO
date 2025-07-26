@@ -17,7 +17,7 @@
 				{ name: 'Stock Out', link: '/inventory/stock-out' },
 				{ name: 'Orders', link: '/inventory/orders' },
 				{ name: 'Returns', link: '/inventory/returns' },
-				{ name: 'Reports', link: '/inventory/reports' }
+				{ name: 'Activity Logs', link: '/inventory/reports' }
 			]
 		},
 		{ name: 'Analytics', link: '/analytics', icon: '../src/icons/analytics.svg' },

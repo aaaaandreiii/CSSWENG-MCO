@@ -3,15 +3,14 @@
 	import { onMount } from 'svelte';
 
 	const header = [
-		'Withdrawal ID',
-		'Date Withdrawn',
-		'Quantity Withdrawn',
-		'Purpose',
-		'Entry ID',
-		'Withdrawn By',
-		'Authorized By',
-		'Last Edited Date',
-		'Last Edited User'
+		'Audit ID',
+		'Action Type',
+		'Description',
+		'Timestamp',
+		'User ID',
+		'Performed By',
+		'Username',
+		'User Role'
 	];
 
 	let rows: { [key: string]: string }[] = [];
@@ -23,9 +22,26 @@
 	let currentOffset = 0;
 	const ITEMS_PER_PAGE = 100;
 	let filterValue = '';
+	// store default order for reset
+	let originalRows = [...rows];
+
+	let sentinel: HTMLDivElement;
 
 	onMount(() => {
-		fetchData();
+		fetchData(0, false);
+
+		const observer = new IntersectionObserver(([entry]) => {
+		if (entry.isIntersecting && hasMoreData && !isLoading) {
+			fetchData(currentOffset, true);
+		}
+		}, {
+		root: null,            // uses the scrolling container
+		rootMargin: '0px',
+		threshold: 0.1
+		});
+
+		observer.observe(sentinel);
+		return () => observer.disconnect();
 	});
 
 	async function fetchData(offset = 0, append = false) {
@@ -33,23 +49,25 @@
 		isLoading = true;
 		try {
 			const token = localStorage.getItem('token');
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getStockWithdrawals?offset=${offset}&limit=${ITEMS_PER_PAGE}`, {
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getAuditJoinedInformation?offset=${offset}&limit=${ITEMS_PER_PAGE}`, {
 				headers: { Authorization: `Bearer ${token}` }
 			});
 			const data = await res.json();
-			const newRows = data.stockWithdrawals.map((item: any) => ({
-				'Withdrawal ID': item.withdrawalId,
-				'Date Withdrawn': new Date(item.dateWithdrawn).toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' }),
-				'Quantity Withdrawn': item.quantityWithdrawn,
-				'Purpose': item.purpose,
-				'Entry ID': item.entryId,
-				'Withdrawn By': item.withdrawnBy,
-				'Authorized By': item.authorizedBy,
-				'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }),
-				'Last Edited User': item.lastEditedUser
+			const newRows = data.auditJoinedInformation.map((item: any) => ({
+				'Audit ID': item.auditId,
+				'Action Type': item.actionType,
+				'Description': item.description,
+				'Timestamp': new Date(item.timestamp).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }),
+				'User ID': item.userId,
+				'Performed By': item.performedBy,
+				'Username': item.username,
+				'User Role': item.userRole
 			}));
 			hasMoreData = newRows.length === ITEMS_PER_PAGE;
 			rows = append ? [...rows, ...newRows] : newRows;
+			currentOffset = offset + newRows.length;
+
+			if (!append) originalRows = [...rows];	//capture default ordering on first load
 			applyFilter();
 		} catch (err) {
 			console.error(err);
@@ -60,19 +78,35 @@
 
 	function sortBy(column: string) {
 		if (sortColumn === column) {
-			sortDirection = sortDirection === 'asc' ? 'desc' : sortDirection === 'desc' ? '' : 'asc';
-			if (!sortDirection) return;
+			if (sortDirection === 'asc') {
+				sortDirection = 'desc';
+			} else if (sortDirection === 'desc') {
+				// if clicked a 3rd time, it goes back to defualt order
+				sortColumn = '';
+				sortDirection = 'asc';
+				rows = [...originalRows];
+				applyFilter(); 
+				return;
+			}
 		} else {
 			sortColumn = column;
 			sortDirection = 'asc';
 		}
-		filteredRows = [...filteredRows].sort((a, b) => {
-			const aVal = a[column];
-			const bVal = b[column];
+		rows = [...rows].sort((a, b) => {
+			let aVal = a[column];
+			let bVal = b[column];
+
+			//Special case for Image column lol
+			if (column === "Image") {
+				aVal = aVal?.split('/').pop() ?? '';
+				bVal = bVal?.split('/').pop() ?? '';
+			}
+
 			if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
 			if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
 			return 0;
 		});
+		applyFilter(); 
 	}
 
 	function applyFilter() {
@@ -108,6 +142,16 @@
 					<option value={head}>{head}</option>
 				{/each}
 			</select>
+			<select
+				class="w-35 p-1 outline-none"
+				bind:value={sortColumn}
+				on:change={() => sortBy(sortColumn)}
+			>
+				<option value="">All</option>
+				{#each header as head}
+					<option value={head}>{head}</option>
+				{/each}
+			</select>
 		</div>
 	</div>
 </header>
@@ -118,7 +162,23 @@
 		<thead class="border-b border-black bg-white">
 			<tr>
 				{#each header as head}
-					<th class="px-4 py-5 text-center">{head}</th>
+					<th class="px-4 py-5 text-center">
+						<button
+							class="flex w-full items-center justify-center gap-1 font-bold"
+							on:click={() => sortBy(head)}
+						>
+							<span class="w-full break-words whitespace-normal">{head}</span>
+							<span class="inline-block w-4 min-w-[1rem] text-center align-middle"
+								>{sortColumn === head
+									? sortDirection === 'asc'
+										? '▲'
+										: sortDirection === 'desc'
+											? '▼'
+											: ''
+									: ''}</span
+							>
+						</button>
+					</th>
 				{/each}
 			</tr>
 		</thead>
@@ -138,4 +198,5 @@
 			{/if}
 		</tbody>
 	</table>
+	<div bind:this={sentinel}></div>
 </div>
