@@ -7,6 +7,7 @@ import stockWithdrawalController from "./controller/stockWithdrawalController.js
 import ordersController from "./controller/ordersController.js";
 import returnExchangeController from "./controller/returnExchangeController.js";
 import { bootstrapAdminUser } from "./model/userModel.js";
+import stockEntryExpandedController from "./controller/stockEntryExpandedController.js";
 // import * as mysql from "./model/userModel.js";
 import dataAnalysisController from './controller/dataAnalysisController.js';
 // import searchController from './controller/searchController.js';
@@ -30,6 +31,7 @@ app.use("/api", stockWithdrawalController);
 app.use("/api", ordersController);
 app.use("/api", returnExchangeController);
 app.use("/api/dataAnalysisController", dataAnalysisController);
+app.use("/api", stockEntryExpandedController);
 // app.use("/api/search", searchController);
 
 bootstrapAdminUser().catch(console.error);
