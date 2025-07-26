@@ -143,6 +143,22 @@
 	
 	let addError = '';
 
+	// Modal state and form fields for editing user
+	let showEditModal = false;
+	let editUserId = '';
+	let editFullName = '';
+	let editUsername = '';
+	let editUserRole = '';
+	let editPathName = '';
+	let editError = '';
+	let editIndex = -1;
+
+	// Modal state for delete confirmation
+	let showDeleteModal = false;
+	let deleteUserId = '';
+	let deleteUserName = '';
+	let deleteIndex = -1;
+
 	function openAddModal() {
 		showAddModal = true;
 		// newEmail = '';
@@ -157,6 +173,39 @@
 	function closeAddModal() {
 		showAddModal = false;
 		addError = '';
+	}
+
+	function openEditModal(idx: number) {
+		editIndex = idx;
+		const user = details[idx];
+		editUserId = user.userId;
+		editFullName = user.name;
+		editUsername = user.user;
+		editUserRole = user.position.toLowerCase();
+		editPathName = user.profilePic === "../src/icons/user.svg" ? '' : user.profilePic;
+		editError = '';
+		showEditModal = true;
+		showMenus[idx] = false; // Close the menu
+	}
+
+	function closeEditModal() {
+		showEditModal = false;
+		editError = '';
+		editIndex = -1;
+	}
+
+	function openDeleteModal(idx: number) {
+		deleteIndex = idx;
+		const user = details[idx];
+		deleteUserId = user.userId;
+		deleteUserName = user.name;
+		showDeleteModal = true;
+		showMenus[idx] = false; // Close the menu
+	}
+
+	function closeDeleteModal() {
+		showDeleteModal = false;
+		deleteIndex = -1;
 	}
 
 	async function handleAddAccount(event: SubmitEvent) {
@@ -195,6 +244,7 @@
 		};
 
 		try {
+			//TODO: Backend API call to create user
 			const token = localStorage.getItem('token');
 			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/createUser`, {
 			method:  'POST',
@@ -212,8 +262,10 @@
 			return;
 			}
 
-			// 3) Success: close modal, reload list
+			// on success, close the modal
 			closeAddModal();
+			
+			//used to refresh the user list to see the update
 			await fetchUsers();
 			showAck('User created successfully.');
 
@@ -221,10 +273,111 @@
 			console.error(err);
 			addError = 'Network error. Please try again.';
 		}
-		// ...submit logic here (e.g., API call)...
-		// On success:
-		// closeAddModal();
-		// Optionally refresh user list
+	}
+
+	async function handleEditAccount(event: SubmitEvent) {
+		event.preventDefault();
+		editError = '';
+		
+		// Basic validation
+		if (!editFullName.trim() || !editUsername.trim() || !editUserRole.trim()) {
+			editError = 'Full name, username, and user role are required.';
+			return;
+		}
+		
+		// Check if username already exists (excluding current user)
+		const existingUser = details.find((u: UserDetails, idx) => 
+			idx !== editIndex && u.user.toLowerCase() === editUsername.trim().toLowerCase()
+		);
+		if (existingUser) {
+			editError = 'Username already exists.';
+			return;
+		}
+		
+		if (editPathName.trim() !== '') {
+			try {
+				new URL(editPathName.trim());
+			} catch (_) {
+				editError = 'Invalid path name.';
+				return;
+			}
+		}
+		
+		const role = editUserRole.trim().toLowerCase();
+		if (!(role === 'admin' || role === 'manager' || role === 'staff' || role === 'auditor')) {
+			editError = 'Only admin, manager, staff, auditor are valid user roles';
+			return;
+		}
+
+		// Build payload
+		const payload = {
+			userId: editUserId,
+			fullName: editFullName.trim(),
+			userRole: editUserRole.trim(),
+			username: editUsername.trim(),
+			pathName: editPathName.trim() || null
+		};
+
+		try {
+			// TODO for backend: API call to update user
+
+			// const token = localStorage.getItem('token');
+			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/updateUser`, {
+			// 	method: 'PUT',
+			// 	headers: {
+			// 		'Content-Type': 'application/json',
+			// 		Authorization: `Bearer ${token}`
+			// 	},
+			// 	body: JSON.stringify(payload)
+			// });
+
+			// TODO for backend: if response = not ok, return error message
+			// const result = await res.json();
+			// if (!res.ok) {
+			// 	editError = result.message || 'Failed to update user.';
+			// 	return;
+			// }
+
+			// Success: close modal, reload list
+			closeEditModal();
+			await fetchUsers();
+			showAck('User updated successfully.');
+
+		} catch (err) {
+			console.error(err);
+			editError = 'Network error. Please try again.';
+		}
+	}
+
+	async function handleDeleteAccount() {
+		try {
+			// TODO for backend: API call to delete user
+			// const token = localStorage.getItem('token');
+			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteUser`, {
+			// 	method: 'DELETE',
+			// 	headers: {
+			// 		'Content-Type': 'application/json',
+			// 		Authorization: `Bearer ${token}`
+			// 	},
+			// 	body: JSON.stringify({ userId: deleteUserId })
+			// });
+			
+			// TODO for backend: if response = not ok, return error message
+			// const result = await res.json();
+			// if (!res.ok) {
+			// 	showAck(result.message || 'Failed to delete user.');
+			// 	return;
+			// }
+
+			// Success: close modal, reload list
+			closeDeleteModal();
+			await fetchUsers();
+			showAck('User deleted successfully.');
+
+		} catch (err) {
+			console.error(err);
+			showAck('Network error. Please try again.');
+		}
 	}
 
 	// tab animation logic for underline effect
@@ -383,8 +536,18 @@
 							<!-- Dropdown -->
 							{#if showMenus[idx]}
 								<div class="absolute top-10 right-3 bg-white shadow-md rounded-md w-24 z-50 py-1">
-									<button class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">Edit</button>
-									<button class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">Delete</button>
+									<button 
+										class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
+										onclick={() => openEditModal(idx)}
+									>
+										Edit
+									</button>
+									<button 
+										class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
+										onclick={() => openDeleteModal(idx)}
+									>
+										Delete
+									</button>
 								</div>
 							{/if}
 						{/if}
@@ -495,7 +658,7 @@
 			</div>
 		{/if}
 
-		<!-- Add Account Modal -->
+		<!-- add account modal -->
 		{#if showAddModal}
 			<div 
 				class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm" 
@@ -547,7 +710,7 @@
 								{/each}
 							</select>
 						</div>
-						<!-- password toggle -->
+						<!-- show password toggle -->
 						<div class="mb-3">
 							<label for="newPassword" class="block mb-1 text-sm font-medium">Password</label>
 							<input
@@ -567,25 +730,14 @@
 								<label for="toggle-new-password" class="text-sm select-none">Show password</label>
 							</div>
 						</div>
-
 						<div class="mb-3">
-							<label for="newFullName" class="block mb-1 text-sm font-medium">Full Name</label>
-							<input
-								id="newFullName"
-								type="text"
-								class="w-full border rounded px-3 py-2"
-								bind:value={newFullName}
-								required
-							/>
-						</div>
-						<div class="mb-3">
-							<label for="newPathName" class="block mb-1 text-sm font-medium">Profile Picture</label>
+							<label for="newPathName" class="block mb-1 text-sm font-medium">Profile Picture URL</label>
 							<input
 								id="newPathName"
 								type="text"
 								class="w-full border rounded px-3 py-2"
 								bind:value={newPathName}
-								
+								placeholder="Optional - leave empty for default"
 							/>
 						</div>
 						{#if addError}
@@ -611,6 +763,138 @@
 							</button>
 						</div>
 					</form>
+				</div>
+			</div>
+		{/if}
+
+		<!-- edit account modal -->
+		{#if showEditModal}
+			<div 
+				class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm" 
+				style="background-color: rgba(10, 10, 10, 0.5);"
+				onclick={closeEditModal}
+				onkeydown={(e) => { if (e.key === 'Enter') closeEditModal(); }}
+				role="button"
+				tabindex="0"
+				aria-label="Close modal"
+			>
+				<div 
+					class="bg-white rounded-lg shadow-lg p-8 w-96 relative"
+					onclick={(e) => e.stopPropagation()}
+					onkeydown={(e) => { if (e.key === 'Enter') e.stopPropagation(); }}
+					role="dialog"
+					tabindex="0"
+				>
+					<h2 class="text-xl font-bold mb-4">Edit Account</h2>
+					<form onsubmit={handleEditAccount}>
+						<div class="mb-3">
+							<label for="editFullName" class="block mb-1 text-sm font-medium">Full Name</label>
+							<input
+								id="editFullName"
+								type="text"
+								class="w-full border rounded px-3 py-2"
+								bind:value={editFullName}
+								required
+							/>
+						</div>
+						<div class="mb-3">
+							<label for="editUsername" class="block mb-1 text-sm font-medium">Username</label>
+							<input
+								id="editUsername"
+								type="text"
+								class="w-full border rounded px-3 py-2"
+								bind:value={editUsername}
+								required
+							/>
+						</div>
+						<div class="mb-3">
+							<label for="editUserRole" class="block mb-1 text-sm font-medium">User Role</label>
+							<select
+								id="editUserRole"
+								class="w-full border rounded px-10 py-2"
+								bind:value={editUserRole}
+							>
+								{#each dropdownOptions as option}
+								<option value={option}>{option.charAt(0).toUpperCase() + option.slice(1)}</option>
+								{/each}
+							</select>
+						</div>
+						<div class="mb-3">
+							<label for="editPathName" class="block mb-1 text-sm font-medium">Profile Picture URL</label>
+							<input
+								id="editPathName"
+								type="text"
+								class="w-full border rounded px-3 py-2"
+								bind:value={editPathName}
+								placeholder="Optional - leave empty for default"
+							/>
+						</div>
+						{#if editError}
+							<p class="text-red-600 text-sm mb-2">{editError}</p>
+						{/if}
+						<div class="flex justify-end gap-2 mt-4">
+							<button
+								type="button"
+								class="px-4 py-2 rounded bg-gray-400 hover:bg-gray-500 text-white"
+								onclick={closeEditModal}
+							>
+								Cancel
+							</button>
+							<button
+								type="submit"
+								class="px-4 py-2 rounded text-white
+									{editFullName.trim() && editUsername.trim() && editUserRole.trim()
+									? 'bg-green-700 hover:bg-green-800'
+									: 'cursor-not-allowed bg-gray-400'}"
+								disabled={!(editFullName.trim() && editUsername.trim() && editUserRole.trim())}
+							>
+								Update
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		{/if}
+
+		<!-- Delete Confirmation Modal -->
+		{#if showDeleteModal}
+			<div 
+				class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm" 
+				style="background-color: rgba(10, 10, 10, 0.5);"
+				onclick={closeDeleteModal}
+				onkeydown={(e) => { if (e.key === 'Enter') closeDeleteModal(); }}
+				role="button"
+				tabindex="0"
+				aria-label="Close modal"
+			>
+				<div 
+					class="bg-white rounded-lg shadow-lg p-8 w-96 relative"
+					onclick={(e) => e.stopPropagation()}
+					onkeydown={(e) => { if (e.key === 'Enter') e.stopPropagation(); }}
+					role="dialog"
+					tabindex="0"
+				>
+					<h2 class="text-xl font-bold mb-4 text-red-600">Confirm Delete</h2>
+					<p class="mb-6">
+						Are you sure you want to delete the account for <strong>{deleteUserName}</strong>? 
+						This action cannot be undone.
+					</p>
+					<div class="flex justify-end gap-2">
+						<button
+							type="button"
+							class="px-4 py-2 rounded bg-gray-400 hover:bg-gray-500 text-white"
+							onclick={closeDeleteModal}
+						>
+							Cancel
+						</button>
+						<button
+							type="button"
+							class="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white"
+							onclick={handleDeleteAccount}
+						>
+							Delete
+						</button>
+					</div>
 				</div>
 			</div>
 		{/if}
