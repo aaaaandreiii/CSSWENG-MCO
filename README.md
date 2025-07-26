@@ -9,7 +9,7 @@
     - The following are examples of what you could place for each variable:
         1. DB_HOST=localhost
         2. DB_USER=root
-        3. DB_PASSWORD="12345678"
+        3. DB_PASSWORD="123456789"
         4. DB_NAME=mydb
         5. PORT=5000
 4. Go to `CSSWENG-MCO/frontend/` and create a second `.env` file.
@@ -26,7 +26,7 @@
         3. `node app`
 6. Run the frontend
     - Open another terminal/cmd from the root folder and run the commands:
-        1. `cd CSSWENG-MCO/frontend end`
+        1. `cd CSSWENG-MCO/frontend`
         2. `npm i`
         3. `npm run dev`
 7. Go back to your MySQL Workbench and run the `CSSWENG-MCO/public/generateRandomData.sql` file.

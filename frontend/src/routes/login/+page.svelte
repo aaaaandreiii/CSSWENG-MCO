@@ -5,7 +5,16 @@
 	let password = '';
 	let showPassword = false;
 
+	//login error
+	let loginError = '';
+
 	async function login(){
+
+		if (!username.trim() || !password.trim()) {
+			loginError = 'Please enter username and password.';
+			return;
+		}
+
 		try {
 			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/login`, {
 				method: 'POST',
@@ -17,16 +26,15 @@
 			const data = await res.json();
 			if(res.ok){
 				localStorage.setItem('token', data.token);
-				alert("Login Successful!");
+				loginError = '';
 				window.location.href = '/dashboard';
 			}
-			else{
-				alert("Login failed");
+			else {
+				loginError = data?.message;
 			}
-		} catch (error) {
-			console.error("Error during login:", error);
-			alert("An error occurred. Please try again later.");
-			return;
+		} catch (err) {
+			console.error('Login error:', err);
+			loginError = 'An error occurred. Please try again.';
 		}
 	}
 </script>
@@ -47,7 +55,7 @@
 					on:keydown={(e) => { if (e.key === 'Enter') login(); }}
 				/>
 			</div>
-
+			
 			<div class="flex-scol pt-3">
 				<h1 class="text-lg">Password</h1>
 				<input
@@ -67,7 +75,12 @@
 					/>
 					<label for="show-password" class="text-sm select-none">Show password</label>
 				</div>
+
+				{#if loginError}
+					<p class="text-sm text-red-600 mt-2">{loginError}</p>
+				{/if}
 			</div>
+			
 		<h1 class="gray2_txt text-right font-bold">
 			<a href="/forgot_password" class="transition-colors duration-150 hover:text-gray-800">Forgot password</a>
 		</h1>

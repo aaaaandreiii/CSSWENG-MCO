@@ -42,6 +42,7 @@ router.post("/login", async (req, res) => {
         }
 }); //test: curl -X POST http://localhost:5000/api/login   -H "Content-Type: application/json"   -d '{"username":"janedoe","password":"secret123"}'
 //curl -X POST http://localhost:5000/api/login -H "Content-Type: application/json" -d "{\"username\":\"aaa\",\"password\":\"123\"}"
+//curl -X POST http://localhost:5000/api/login -H "Content-Type: application/json" -d "{\"username\":\"admin\",\"password\":\"123456789\"}" 
 
 //log audit
 router.post("/logout", authenJWT, async (req, res) => {
