@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import { PUBLIC_API_BASE_URL } from '$env/static/public';
+	import { goto } from '$app/navigation';
 
 	let selected = 'dashboard';
 	let expandedTab = ''; // Track toggled tab
@@ -45,7 +47,7 @@
 	onMount(async () => {
 		try {
 			const token = localStorage.getItem('token');
-			const res = await fetch('http://localhost:5000/api/getUserProfile', {
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getUserProfile`, {
 				headers: { Authorization: `Bearer ${token}` }
 			});
 			const data = await res.json();
@@ -59,6 +61,23 @@
 
 	function toggleTab(tabName: string) {
 		expandedTab = expandedTab === tabName ? '' : tabName;
+	}
+
+	async function handleLogout(){
+		try{
+			const token = localStorage.getItem('token');
+			//log audit
+			await fetch(`${PUBLIC_API_BASE_URL}/api/logout`, {
+				method: 'POST',
+				headers: { 
+					Authorization: `Bearer ${token}` 
+				}
+			});
+			localStorage.removeItem('token');
+			goto('/login');
+		}catch(err){
+			console.error("Error logging out: ", err);
+		}
 	}
 </script>
 
@@ -119,13 +138,13 @@
 			</a>
 		</li>
 		<li>
-			<a
-				href="/login"
+			<button
 				class="flex justify-start gap-x-2 rounded-lg bg-[#de0101] py-2 px-5 hover:bg-[#a30000] transition-colors duration-150 mx-auto"
+				on:click={handleLogout}
 			>
 				<img src="../src/icons/logout-2.svg" alt="logout" style="width: 23px" />
 				<p class="font-medium text-white text-sm">Log out</p>
-			</a>
+		</button>
 		</li>
 	</ul>
 </nav>

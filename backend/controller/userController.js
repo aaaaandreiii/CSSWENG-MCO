@@ -26,7 +26,7 @@ router.post("/login", async (req, res) => {
         
         //Success
         const token = jwt.sign(
-        { userId: user.userId, role: user.userRole },
+        { userId: user.userId, fullName: user.fullName, role: user.userRole },
         "secretkey", //move to .env l8r
         { expiresIn: "1h" }
         );
@@ -42,6 +42,36 @@ router.post("/login", async (req, res) => {
         }
 }); //test: curl -X POST http://localhost:5000/api/login   -H "Content-Type: application/json"   -d '{"username":"janedoe","password":"secret123"}'
 //curl -X POST http://localhost:5000/api/login -H "Content-Type: application/json" -d "{\"username\":\"aaa\",\"password\":\"123\"}"
+
+//log audit
+router.post("/logout", authenJWT, async (req, res) => {
+    try {
+        const user = req.user;
+        await auditModel.logAudit("logout", `User ${user.fullName} logged out.`, user.userId);
+        console.log("Logout success!");
+        return res.json({ message: "Logout successful!" });
+    }catch(err){
+        console.error("Logout error:", err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+router.post("/logoutExpired", async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        console.log("Received token:", token);
+        const decoded = jwt.decode(token); 
+        console.log("Decoded token:", decoded);
+        if(decoded?.userId && decoded?.fullName){
+            await auditModel.logAudit("logout", `Session expired for user ${decoded.fullName} logged out.`, decoded.userId);
+        }
+        console.log("Expired logout success!");
+        return res.json({ message: "Expired logout successful!" });
+    }catch(err){
+        console.error("Expired logout error:", err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 
 router.post("/createUser", authenJWT, authorizePermission("manage_users"), async(req, res) =>{
     try{
