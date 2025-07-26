@@ -1,4 +1,4 @@
-import db, { processCascade } from "./db.js"
+import db from "./db.js"
 
 // CREATE: Add a new audit log entry
 // export function logAudit(actionType, description, userId) {
@@ -65,4 +65,40 @@ export async function getAuditLogsByUser(userId) {
         console.log("Audit log entry not found or deleted.");
         return null;
     }
+}
+
+// READ: Get expanded audit log information with user details
+export async function getAuditJoinedInformation(offset = 0, limit = 100) {
+	const sql = `
+		SELECT
+            al.auditId,
+            al.actionType,
+            al.description,
+            al.timestamp,
+            al.userId,
+            u.fullName    AS performedBy,
+            u.username,
+            u.userRole
+        FROM
+            AuditLog AS al
+        LEFT JOIN Users AS u
+            ON al.userId = u.userId
+        ORDER BY
+            al.timestamp DESC
+        LIMIT ? OFFSET ?;
+	`;
+
+	try {
+		const [results] = await db.query(sql, [limit, offset]);
+		console.log("Expanded Audit Logs:", results.length);
+
+		if (results.length === 0) {
+			console.warn("⚠️ No expanded audit log entries returned. Check foreign key links or LEFT JOIN for diagnostics.");
+		}
+
+		return results;
+	} catch (err) {
+		console.error("❌ Error in getAuditJoinedInformation():", err);
+		throw err;
+	}
 }
