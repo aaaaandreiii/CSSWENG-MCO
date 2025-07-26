@@ -102,7 +102,7 @@
 	// Dropdown state: track open dropdown by user index
 	let showDropdown = false;
 	let openDropdownIndex: number | null = null;
-	const dropdownOptions = ['admin', 'staff', 'auditor', 'manager'];
+	const dropdownOptions = ['Admin', 'Staff', 'Auditor', 'Manager'];
 
 	function selectPosition(option: string, idx: number) {
 		const newPosition = option.charAt(0).toUpperCase() + option.slice(1);
@@ -702,7 +702,7 @@
 							<label for="newUserRole" class="block mb-1 text-sm font-medium">User Role</label>
 							<select
 								id="newUserRole"
-								class="w-full border rounded px-10 py-2"
+								class="w-full border rounded px-3 py-2"
 								bind:value={newUserRole}
 							>
 								{#each dropdownOptions as option}
@@ -710,38 +710,8 @@
 								{/each}
 							</select>
 						</div>
-						<!-- show password toggle -->
-						<div class="mb-3">
-							<label for="newPassword" class="block mb-1 text-sm font-medium">Password</label>
-							<input
-								id="newPassword"
-								type={showNewPassword ? "text" : "password"}
-								class="w-full border rounded px-3 py-2"
-								bind:value={newPassword}
-								required
-							/>
-							<div class="flex items-center mt-2">
-								<input
-									type="checkbox"
-									id="toggle-new-password"
-									bind:checked={showNewPassword}
-									class="mr-2"
-								/>
-								<label for="toggle-new-password" class="text-sm select-none">Show password</label>
-							</div>
-						</div>
-						<div class="mb-3">
-							<label for="newPathName" class="block mb-1 text-sm font-medium">Profile Picture URL</label>
-							<input
-								id="newPathName"
-								type="text"
-								class="w-full border rounded px-3 py-2"
-								bind:value={newPathName}
-								placeholder="Optional - leave empty for default"
-							/>
-						</div>
 						{#if addError}
-							<p class="text-red-600 text-sm mb-2">{addError}</p>
+							<p class="text-[#de0101] text-sm mb-2">{addError}</p>
 						{/if}
 						<div class="flex justify-end gap-2 mt-4">
 							<button
@@ -811,7 +781,7 @@
 							<label for="editUserRole" class="block mb-1 text-sm font-medium">User Role</label>
 							<select
 								id="editUserRole"
-								class="w-full border rounded px-10 py-2"
+								class="w-full border rounded px-3 py-2"
 								bind:value={editUserRole}
 							>
 								{#each dropdownOptions as option}
@@ -819,7 +789,7 @@
 								{/each}
 							</select>
 						</div>
-						<div class="mb-3">
+						<!-- <div class="mb-3">
 							<label for="editPathName" class="block mb-1 text-sm font-medium">Profile Picture URL</label>
 							<input
 								id="editPathName"
@@ -828,9 +798,9 @@
 								bind:value={editPathName}
 								placeholder="Optional - leave empty for default"
 							/>
-						</div>
+						</div> -->
 						{#if editError}
-							<p class="text-red-600 text-sm mb-2">{editError}</p>
+							<p class="text-[#de0101] text-sm mb-2">{editError}</p>
 						{/if}
 						<div class="flex justify-end gap-2 mt-4">
 							<button
@@ -874,7 +844,7 @@
 					role="dialog"
 					tabindex="0"
 				>
-					<h2 class="text-xl font-bold mb-4 text-red-600">Confirm Delete</h2>
+					<h2 class="text-xl font-bold mb-4 text-[#de0101]">Confirm Delete</h2>
 					<p class="mb-6">
 						Are you sure you want to delete the account for <strong>{deleteUserName}</strong>? 
 						This action cannot be undone.
@@ -889,7 +859,7 @@
 						</button>
 						<button
 							type="button"
-							class="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white"
+							class="px-4 py-2 rounded bg-[#de0101] hover:bg-[#a30000] text-white"
 							onclick={handleDeleteAccount}
 						>
 							Delete
@@ -901,7 +871,7 @@
 
 		<!-- dialogue box: success!eror! -->
 		{#if showDialog}
-			<div class="fixed top-4 right-4 z-50 px-4 py-2 bg-green-600 text-white rounded shadow-lg transition-opacity duration-300">
+			<div class="fixed top-4 right-4 z-50 px-4 py-2 bg-green-700 text-white rounded shadow-lg transition-opacity duration-300">
 				{dialogMessage}
 			</div>
 		{/if}
