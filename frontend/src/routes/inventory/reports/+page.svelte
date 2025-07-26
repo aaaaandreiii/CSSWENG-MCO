@@ -85,6 +85,7 @@
 				sortColumn = '';
 				sortDirection = 'asc';
 				rows = [...originalRows];
+				applyFilter(); 
 				return;
 			}
 		} else {
@@ -105,6 +106,7 @@
 			if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
 			return 0;
 		});
+		applyFilter(); 
 	}
 
 	function applyFilter() {
@@ -140,6 +142,16 @@
 					<option value={head}>{head}</option>
 				{/each}
 			</select>
+			<select
+				class="w-35 p-1 outline-none"
+				bind:value={sortColumn}
+				on:change={() => sortBy(sortColumn)}
+			>
+				<option value="">All</option>
+				{#each header as head}
+					<option value={head}>{head}</option>
+				{/each}
+			</select>
 		</div>
 	</div>
 </header>
@@ -150,7 +162,23 @@
 		<thead class="border-b border-black bg-white">
 			<tr>
 				{#each header as head}
-					<th class="px-4 py-5 text-center">{head}</th>
+					<th class="px-4 py-5 text-center">
+						<button
+							class="flex w-full items-center justify-center gap-1 font-bold"
+							on:click={() => sortBy(head)}
+						>
+							<span class="w-full break-words whitespace-normal">{head}</span>
+							<span class="inline-block w-4 min-w-[1rem] text-center align-middle"
+								>{sortColumn === head
+									? sortDirection === 'asc'
+										? '▲'
+										: sortDirection === 'desc'
+											? '▼'
+											: ''
+									: ''}</span
+							>
+						</button>
+					</th>
 				{/each}
 			</tr>
 		</thead>
