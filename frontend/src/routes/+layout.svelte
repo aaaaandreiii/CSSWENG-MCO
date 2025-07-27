@@ -28,19 +28,25 @@
 		}
 	}
 
+	// new state for expiry modal
+	let showSessionExpired = false;
+
 	async function handleExpiredLogout(token: string){
-		alert("Your session has expired. You will be logged out.")
-		try{
+		// notify server (optional)
+		try {
 			await fetch(`${PUBLIC_API_BASE_URL}/api/logoutExpired`, {
 				method: 'POST',
-				headers: { 
-					Authorization: `Bearer ${token}` 
-				}
+				headers: { Authorization: `Bearer ${token}` }
 			});
-		}catch(err){
+		} catch(err) {
 			console.error("Error notifying expired token: ", err);
 		}
 		localStorage.removeItem('token');
+		// show our custom modal instead of immediate redirect
+		showSessionExpired = true;
+	}
+
+	function redirectToLogin() {
 		goto('/login');
 	}
 
@@ -60,6 +66,21 @@
 		}, 2000);
 	});
 </script>
+
+{#if showSessionExpired}
+  <div class="modal-backdrop">
+    <div class="modal-box">
+      <h2 class="text-xl font-bold mb-4">Session Expired</h2>
+      <p class="mb-6">Your session has expired. Please log in again.</p>
+      <button
+        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+        on:click={redirectToLogin}
+      >
+        Go to Login
+      </button>
+    </div>
+  </div>
+{/if}
 
 {#if showSidebar}
 	<aside class = 'sidebar'>
