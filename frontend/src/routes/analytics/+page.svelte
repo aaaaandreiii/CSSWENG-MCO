@@ -27,6 +27,58 @@
         status:         'low'|'out'|'over'|'ok';
     }> = [];
 
+    // pagination
+// stock status table
+    let page = 1;
+    const itemsPerPage = 50;
+    $: totalPages = Math.ceil(alertItems.length / itemsPerPage);
+    $: paginatedItems = alertItems.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
+    let tableRef: HTMLDivElement | null = null; //go back to top when prev page
+    $:  if (tableRef && typeof page === 'number') {
+        // Scroll only when `page` changes
+        scrollTableToTop();
+    }
+    function scrollTableToTop() {
+        setTimeout(() => {
+            tableRef?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 0);
+    }
+
+
+// overstock table
+    let overPage = 1;
+    $: overTotalPages = Math.ceil(overstockItems.length / itemsPerPage);
+    $: paginatedOverstock = overstockItems.slice((overPage - 1) * itemsPerPage, overPage * itemsPerPage);
+    
+    let tableRefOver: HTMLDivElement | null = null; //go back to top when next page
+    $: if (tableRefOver && typeof overPage === 'number') {
+        scrollOverTableToTop();
+    }
+    function scrollOverTableToTop() {
+        setTimeout(() => {
+            tableRefOver?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 0);
+    }
+
+
+//low stock table
+    let lowPage = 1;
+    $: lowTotalPages = Math.ceil(lowStockAlerts.length / itemsPerPage);
+    $: paginatedLowStock = lowStockAlerts.slice((lowPage - 1) * itemsPerPage, lowPage * itemsPerPage);
+
+    let lowStockTableRef: HTMLDivElement | null = null; //scroll to top
+    $: if (lowStockTableRef && typeof lowPage === 'number') {
+        scrollLowTableToTop();
+    }
+    function scrollLowTableToTop() {
+        setTimeout(() => {
+            lowStockTableRef?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 0);
+    }
+
+
+
     let currentMonetaryValue = 0;
     let totalItemsInStock    = 0;
     let lowStockAlerts:      Array<{productId:number; productName:string; stockOnHand:number}> = [];
@@ -145,6 +197,11 @@
         overstockItems       = payload.overstockItems;
         lowThreshold         = payload.lowThreshold;
         overThreshold        = payload.overThreshold;
+        // page default = 1
+        page = 1;
+        overPage = 1;
+        lowPage = 1; 
+
 
         infos = [
         { value: formatCurrency(currentMonetaryValue),      label:'Stock Value',   color:'#AECABD' },
@@ -595,6 +652,7 @@
       </div>
 
         <div>
+            <div bind:this={tableRef}>
             <section class="p-5 bg-white rounded-lg shadow mb-6">
                 <h2 class="text-lg font-semibold mb-2">Stock Status</h2>
 
@@ -607,61 +665,83 @@
                     </label>
                 </div>
 
-                <table class="min-w-full table-auto border">
-                    <thead>
-                    <tr class="bg-gray-100">
-                        <th class="px-3 py-2 border">Product</th>
-                        <th class="px-3 py-2 border">Cat.</th>
-                        <th class="px-3 py-2 border text-center">On Hand</th>
-                        <th class="px-3 py-2 border text-center">Safe Cnt</th>
-                        <th class="px-3 py-2 border text-center">Days Cover</th>
-                        <th class="px-3 py-2 border text-center">Reorder Qty</th>
-                        <th class="px-3 py-2 border">Supplier</th>
-                        <th class="px-3 py-2 border">Status</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                        {#each alertItems as item}
-                            <tr
-                            class="hover:bg-gray-50 cursor-pointer"
-                            class:critical={item.status==='out'}
-                            class:warning={item.status==='low'}
-                            class:overstock={item.status==='over'}
-                            on:click={() => toggle(item.productId)}
-                            >
-                            <td class="px-3 py-2 border">{item.productName}</td>
-                            <td class="px-3 py-2 border">{item.category}</td>
-                            <td class="px-3 py-2 border text-center">{item.stockOnHand}</td>
-                            <td class="px-3 py-2 border text-center">{item.safeStockCount}</td>
-                            <td class="px-3 py-2 border text-center">{item.daysCover}</td>
-                            <td class="px-3 py-2 border text-center">{item.reorderQty}</td>
-                            <td class="px-3 py-2 border">{item.supplier}</td>
-                            <td class="px-3 py-2 border">
-                                {#if item.status==='out'}<span>🔴 Out</span>
-                                {:else if item.status==='low'}<span>🟠 Low</span>
-                                {:else if item.status==='over'}<span>🔵 Over</span>
-                                {/if}
-                            </td>
-                            </tr>
-
-                            {#if expanded.has(item.productId)}
-                            <tr class="bg-gray-50">
-                                <td colspan="9" class="px-4 py-3">
-                                <StockDetail {item}/>
+                <!-- Stock status table container -->
+                    <table class="min-w-full table-auto border">
+                        <thead>
+                        <tr class="bg-gray-100">
+                            <th class="px-3 py-2 border">Product</th>
+                            <th class="px-3 py-2 border">Cat.</th>
+                            <th class="px-3 py-2 border text-center">On Hand</th>
+                            <th class="px-3 py-2 border text-center">Safe Cnt</th>
+                            <th class="px-3 py-2 border text-center">Days Cover</th>
+                            <th class="px-3 py-2 border text-center">Reorder Qty</th>
+                            <th class="px-3 py-2 border">Supplier</th>
+                            <th class="px-3 py-2 border">Status</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            {#each paginatedItems as item}
+                                <tr
+                                class="hover:bg-gray-50 cursor-pointer"
+                                class:critical={item.status==='out'}
+                                class:warning={item.status==='low'}
+                                class:overstock={item.status==='over'}
+                                on:click={() => toggle(item.productId)}
+                                >
+                                <td class="px-3 py-2 border">{item.productName}</td>
+                                <td class="px-3 py-2 border">{item.category}</td>
+                                <td class="px-3 py-2 border text-center">{item.stockOnHand}</td>
+                                <td class="px-3 py-2 border text-center">{item.safeStockCount}</td>
+                                <td class="px-3 py-2 border text-center">{item.daysCover}</td>
+                                <td class="px-3 py-2 border text-center">{item.reorderQty}</td>
+                                <td class="px-3 py-2 border">{item.supplier}</td>
+                                <td class="px-3 py-2 border">
+                                    {#if item.status==='out'}<span>🔴 Out</span>
+                                    {:else if item.status==='low'}<span>🟠 Low</span>
+                                    {:else if item.status==='over'}<span>🔵 Over</span>
+                                    {/if}
                                 </td>
-                            </tr>
-                            {/if}
-                        {/each}
+                                </tr>
 
-                        {#if alertItems.length === 0}
-                            <tr>
-                            <td colspan="9" class="py-4 text-center text-gray-500">
-                                No stock alerts—everything is OK!
-                            </td>
-                            </tr>
-                        {/if}
-                        </tbody>
-                </table>
+                                {#if expanded.has(item.productId)}
+                                <tr class="bg-gray-50">
+                                    <td colspan="9" class="px-4 py-3">
+                                    <StockDetail {item}/>
+                                    </td>
+                                </tr>
+                                {/if}
+                            {/each}
+
+                            {#if alertItems.length === 0}
+                                <tr>
+                                <td colspan="9" class="py-4 text-center text-gray-500">
+                                    No stock alerts—everything is OK!
+                                </td>
+                                </tr>
+                            {/if}
+                            </tbody>
+                    </table>
+                
+                <!-- prev page -->
+                {#if totalPages > 1}
+                <div class="flex items-center gap-2 justify-end mt-4">
+                    <button on:click={() => page = Math.max(1, page - 1)} disabled={page === 1} class="px-3 py-1 bg-gray-200 rounded">Prev</button>
+                    <span>{page} / {totalPages}</span>
+                    <!-- default page = 1 -->
+                    <input
+                        type="number"
+                        min="1"
+                        max={totalPages}
+                        bind:value={page} 
+                        class="border px-2 py-1 w-16 text-center rounded"
+                        on:change={() => { if (!page || page < 1) page = 1; 
+                            else if (page > totalPages) page = totalPages;
+                        }}
+                    />
+
+                    <button on:click={() => page = Math.min(totalPages, page + 1)} disabled={page === totalPages} class="px-3 py-1 bg-gray-200 rounded">Next</button>
+                </div>
+                {/if}
 
                 <style>
                     .critical  { background-color: #F8D7DA; }
@@ -669,6 +749,7 @@
                     .overstock { background-color: #D1ECF1; }
                 </style>
             </section>
+            </div>
         <!-- </div> -->
         <div>
             <h2>Top 10 Products by Inventory Turnover</h2>
@@ -702,47 +783,11 @@
             </section>
         </div>
         
-        <section class="p-5 bg-white rounded-lg shadow mb-6">
-            <h2 class="text-lg font-semibold mb-2">Low-Stock Alerts</h2>
-            {#if lowStockAlerts.length === 0}
-                <p class="text-gray-500">All good—no low-stock items.</p>
-            {:else}
-                <table class="w-full table-auto border">
-                <thead>
-                    <tr class="bg-gray-100">
-                    <th class="px-4 py-2 border">Product</th>
-                    <th class="px-4 py-2 border">On Hand</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each lowStockAlerts as { productName, stockOnHand }}
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-2 border">{productName}</td>
-                        <td class="px-4 py-2 border text-center">{stockOnHand}</td>
-                    </tr>
-                    {/each}
-                </tbody>
-                </table>
-            {/if}
-            </section>
-
+        <div bind:this={lowStockTableRef}>
             <section class="p-5 bg-white rounded-lg shadow mb-6">
-            <h2 class="text-lg font-semibold mb-2">Out-of-Stock Items</h2>
-            {#if outOfStockItems.length === 0}
-                <p class="text-gray-500">None—everything is in stock.</p>
-            {:else}
-                <ul class="list-disc pl-5">
-                {#each outOfStockItems as { productName }}
-                    <li>{productName}</li>
-                {/each}
-                </ul>
-            {/if}
-            </section>
-
-            <section class="p-5 bg-white rounded-lg shadow mb-6">
-                <h2 class="text-lg font-semibold mb-2">Overstock Items</h2>
-                {#if overstockItems.length === 0}
-                    <p class="text-gray-500">No overstocked SKUs.</p>
+                <h2 class="text-lg font-semibold mb-2">Low-Stock Alerts</h2>
+                {#if lowStockAlerts.length === 0}
+                    <p class="text-gray-500">All good—no low-stock items.</p>
                 {:else}
                     <table class="w-full table-auto border">
                     <thead>
@@ -752,7 +797,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {#each overstockItems as { productName, stockOnHand }}
+                        {#each paginatedLowStock  as { productName, stockOnHand }}
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-2 border">{productName}</td>
                             <td class="px-4 py-2 border text-center">{stockOnHand}</td>
@@ -760,8 +805,99 @@
                         {/each}
                     </tbody>
                     </table>
+                    {#if lowTotalPages > 1}
+                        <div class="flex items-center gap-2 justify-end mt-4">
+                            <button
+                            on:click={() => lowPage = Math.max(1, lowPage - 1)}
+                            disabled={lowPage === 1}
+                            class="px-3 py-1 bg-gray-200 rounded"
+                            >Prev</button>
+
+                            <span>{lowPage} / {lowTotalPages}</span>
+
+                            <input
+                                type="number"
+                                min="1"
+                                max={lowTotalPages}
+                                bind:value={lowPage}
+                                class="border px-2 py-1 w-16 text-center rounded"
+                                on:change={() => {
+                                    if (!lowPage || lowPage < 1) lowPage = 1;
+                                    else if (lowPage > lowTotalPages) lowPage = lowTotalPages;
+                                }}
+
+                            />
+                            <button
+                                on:click={() => lowPage = Math.min(lowTotalPages, lowPage + 1)}
+                                disabled={lowPage === lowTotalPages}
+                                class="px-3 py-1 bg-gray-200 rounded"
+                            >Next</button>
+                        </div>
+                    {/if}
+
                 {/if}
-            </section>
+                </section>
+
+                <section class="p-5 bg-white rounded-lg shadow mb-6">
+                <h2 class="text-lg font-semibold mb-2">Out-of-Stock Items</h2>
+                {#if outOfStockItems.length === 0}
+                    <p class="text-gray-500">None—everything is in stock.</p>
+                {:else}
+                    <ul class="list-disc pl-5">
+                    {#each outOfStockItems as { productName }}
+                        <li>{productName}</li>
+                    {/each}
+                    </ul>
+                {/if}
+                </section>
+            </div>
+
+            <div bind:this={tableRefOver}>
+                <section class="p-5 bg-white rounded-lg shadow mb-6">
+                    <h2 class="text-lg font-semibold mb-2">Overstock Items</h2>
+                    {#if overstockItems.length === 0}
+                        <p class="text-gray-500">No overstocked SKUs.</p>
+                    {:else}
+
+                        <table class="w-full table-auto border">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                <th class="px-4 py-2 border">Product</th>
+                                <th class="px-4 py-2 border">On Hand</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {#each paginatedOverstock as { productName, stockOnHand }}
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-4 py-2 border">{productName}</td>
+                                        <td class="px-4 py-2 border text-center">{stockOnHand}</td>
+                                    </tr>
+                                {/each}
+                            </tbody>
+                        </table>
+                    
+                        <!-- over page next page  -->
+                        {#if overTotalPages > 1}
+                            <div class="flex items-center gap-2 justify-end mt-4">
+                                <button on:click={() => overPage = Math.max(1, overPage - 1)} disabled={overPage === 1} class="px-3 py-1 bg-gray-200 rounded">Prev</button>
+                                <span>{overPage} / {overTotalPages}</span>
+                                <!-- reset to page 1 -->
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max={overTotalPages}
+                                    bind:value={overPage}
+                                    class="border px-2 py-1 w-16 text-center rounded"
+                                    on:change={() => { if (!overPage || overPage < 1) overPage = 1; 
+                                        else if(overPage > overTotalPages) overPage = overTotalPages;
+                                    }}
+                                />
+                                <button on:click={() => overPage = Math.min(overTotalPages, overPage + 1)} disabled={overPage === overTotalPages} class="px-3 py-1 bg-gray-200 rounded">Next</button>
+                            </div>
+                        {/if}
+                    {/if}
+                </section>
+            </div>
         </div>
     </div>
 </div>
