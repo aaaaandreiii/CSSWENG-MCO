@@ -137,7 +137,6 @@
 	let newUsername = '';
 	let newUserRole = '';
 	let newPassword = '';
-	let newPathName = '';
 	
 	// let newEmail = '';
 	
@@ -166,7 +165,6 @@
 		newUsername = '';
 		newUserRole = '';
 		newPassword = '';
-		newPathName = '';
 		addError = '';
 	}
 
@@ -220,14 +218,6 @@
 			addError = 'Username already exists.';
 			return;
 		}
-		if(newPathName.trim() !== '') {
-			try {
-				new URL(newPathName.trim());
-			}catch(_) {
-				addError = 'Invalid path name.';
-				return;
-			}
-		}
 		const role = newUserRole.trim().toLowerCase();
 		if(!(role === 'admin' || role === 'manager' || role === 'staff' || role === 'auditor')){
 			addError = 'Only admin, manager, staff, auditor are valid user role';
@@ -240,7 +230,7 @@
 			userRole:   	newUserRole.trim(),
 			username:   	newUsername.trim(),
 			userPassword: 	newPassword,
-			pathName:   	newPathName.trim() || null
+			pathName:   	null
 		};
 
 		try {
@@ -709,6 +699,16 @@
 								<option value={option}>{option.charAt(0).toUpperCase() + option.slice(1)}</option>
 								{/each}
 							</select>
+						</div>
+						<div class="mb-3">
+							<label for="newPassword" class="block mb-1 text-sm font-medium">Password</label>
+							<input
+								id="newPassword"
+								type="password"
+								class="w-full border rounded px-3 py-2"
+								bind:value={newPassword}
+								required
+							/>
 						</div>
 						{#if addError}
 							<p class="text-[#de0101] text-sm mb-2">{addError}</p>
