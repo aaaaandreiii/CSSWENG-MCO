@@ -29,7 +29,8 @@
 	}
 
 	// new state for expiry modal
-	let showSessionExpired = false;
+	import { writable } from 'svelte/store';
+	const showSessionExpired = writable(false);
 
 	async function handleExpiredLogout(token: string){
 		// notify server (optional)
@@ -43,7 +44,7 @@
 		}
 		localStorage.removeItem('token');
 		// show our custom modal instead of immediate redirect
-		showSessionExpired = true;
+		showSessionExpired.set(true);
 	}
 
 	function redirectToLogin() {
@@ -65,38 +66,25 @@
 			}
 		}, 2000);
 	});
-
-	// TEST FUNCTION - Remove in production
-	function testSessionExpiry() {
-		showSessionExpired = true;
-	}
 </script>
-
-{#if showSessionExpired}
+{#if $showSessionExpired}
   <div class="modal-backdrop">
-    <div class="modal-box">
-      <h2 class="text-xl font-bold mb-4">Session Expired</h2>
-      <p class="mb-6">Your session has expired. Please log in again.</p>
-      <button
-        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-        on:click={redirectToLogin}
-      >
-        Go to Login
-      </button>
-    </div>
+	<div class="modal-box">
+	  <h2 class="text-xl font-bold mb-4">Session Expired</h2>
+	  <p class="mb-6">Your session has expired. Please log in again.</p>
+	  <button
+		class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+		on:click={redirectToLogin}
+	  >
+		Go to Login
+	  </button>
+	</div>
   </div>
 {/if}
 
 {#if showSidebar}
 	<aside class = 'sidebar'>
 		<Sidebar />
-		<!-- TEST BUTTON - Remove in production -->
-		<button 
-			class="fixed bottom-4 left-4 bg-red-500 text-white px-3 py-1 rounded text-xs"
-			on:click={testSessionExpiry}
-		>
-			Test Session Expiry
-		</button>
 	</aside>
 
 	<div class = "main">
