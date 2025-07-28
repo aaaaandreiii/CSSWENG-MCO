@@ -316,3 +316,14 @@ body.login-page {
   background-color: #333;
   border-radius: 50%;
 }
+.green-hover {
+	background-color: #0e7b34; /* darker green than selected-tab */
+	color: white;
+	border-radius: 0 18px 18px 0;
+	box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.1);
+	border-left: none;
+	margin-left: -30px;
+	width: calc(100% + 30px);
+	padding-left: 30px !important;
+	min-width: 205px;
+}
