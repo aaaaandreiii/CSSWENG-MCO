@@ -48,6 +48,7 @@
 	}
 
 	function redirectToLogin() {
+		showSessionExpired.set(false);
 		goto('/login');
 	}
 
@@ -66,6 +67,36 @@
 			}
 		}, 2000);
 	});
+
+	import { dev } from '$app/environment';
+
+	// Testing function to create token with custom expiry (development only)
+	if (dev && browser) {
+		(window as any).setTokenExpiry = (minutesFromNow: number) => {
+			const currentToken = localStorage.getItem('token');
+			if (!currentToken) {
+				console.log('No token found');
+				return;
+			}
+			
+			try {
+				const parts = currentToken.split('.');
+				const payload = JSON.parse(atob(parts[1]));
+				
+				// Set new expiry time
+				payload.exp = Math.floor(Date.now() / 1000) + (minutesFromNow * 60);
+				
+				const newToken = parts[0] + '.' + btoa(JSON.stringify(payload)) + '.' + parts[2];
+				localStorage.setItem('token', newToken);
+				
+				console.log(`Token expiry set to ${minutesFromNow} minutes from now`);
+				console.log(`Expires at: ${new Date(payload.exp * 1000).toLocaleString()}`);
+			} catch(err) {
+				console.error('Error setting token expiry:', err);
+			}
+		};
+	}
+	// to test token expiry, type in dev console: setTokenExpiry(0); to expire immediately when logged in
 </script>
 {#if $showSessionExpired}
   <div class="modal-backdrop">
