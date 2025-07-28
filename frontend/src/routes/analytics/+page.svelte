@@ -757,7 +757,7 @@
                 <!-- prev page -->
                 {#if totalPages > 1}
                 <div class="flex items-center gap-2 justify-end mt-4">
-                    <button on:click={() => onPageChange(Math.max(1, page - 1))} disabled={page === 1} class="px-3 py-1 bg-gray-200 rounded">Prev</button>
+                    <button on:click={() => onPageChange(Math.max(1, page - 1))} disabled={page === 1} class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded transition">Prev</button>
                     <span>{page} / {totalPages}</span>
                     <!-- default page = 1 -->
                     <input
@@ -771,7 +771,7 @@
                         }}
                     />
 
-                    <button on:click={() => onPageChange(Math.min(totalPages, page + 1))} disabled={page === totalPages} class="px-3 py-1 bg-gray-200 rounded">Next</button>
+                    <button on:click={() => onPageChange(Math.min(totalPages, page + 1))} disabled={page === totalPages} class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded transition">Next</button>
                 </div>
                 {/if}
 
@@ -861,7 +861,7 @@
                             <button
                             on:click={() => onLowPageChange(Math.max(1, lowPage - 1))}
                             disabled={lowPage === 1}
-                            class="px-3 py-1 bg-gray-200 rounded"
+                            class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded transition"
                             >Prev</button>
 
                             <span>{lowPage} / {lowTotalPages}</span>
@@ -881,7 +881,7 @@
                             <button
                                 on:click={() => onLowPageChange(Math.min(lowTotalPages, lowPage + 1))}
                                 disabled={lowPage === lowTotalPages}
-                                class="px-3 py-1 bg-gray-200 rounded"
+                                class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded transition"
                             >Next</button>
                         </div>
                     {/if}
@@ -915,7 +915,7 @@
                     <!-- over page next page  -->
                     {#if overTotalPages > 1}
                         <div class="flex items-center gap-2 justify-end mt-4">
-                            <button on:click={() => onOverPageChange(Math.max(1, overPage - 1))} disabled={overPage === 1} class="px-3 py-1 bg-gray-200 rounded">Prev</button>
+                            <button on:click={() => onOverPageChange(Math.max(1, overPage - 1))} disabled={overPage === 1} class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded transition">Prev</button>
                             <span>{overPage} / {overTotalPages}</span>
                             <!-- reset to page 1 -->
                             <input
@@ -928,7 +928,7 @@
                                     else if(overPage > overTotalPages) overPage = overTotalPages;
                                 }}
                             />
-                            <button on:click={() => onOverPageChange(Math.min(overTotalPages, overPage + 1))} disabled={overPage === overTotalPages} class="px-3 py-1 bg-gray-200 rounded">Next</button>
+                            <button on:click={() => onOverPageChange(Math.min(overTotalPages, overPage + 1))} disabled={overPage === overTotalPages} class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded transition">Next</button>
                         </div>
                     {/if}
                 {/if}
