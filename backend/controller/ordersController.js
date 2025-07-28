@@ -4,7 +4,6 @@ import * as orderInfoModel from "../model/orderInfoModel.js";
 import { authenJWT } from "../middleware/authenJWT.js";
 import { authorizePermission } from "../middleware/authoPerms.js";
 
-
 const router = express.Router();
 
 //Merged orders and orderInfo:
@@ -156,5 +155,16 @@ router.delete("/deleteOrderInfo/:id", authenJWT, authorizePermission("edit_order
         res.status(500).json({ message: "Error deleting Order Info" });
     }
 }); //test: curl -X DELETE http://localhost:5000/api/deleteOrderInfo/1 -H "Authorization: Bearer TOKEN_HERE"
+
+// GET /api/getFullOrderDetails
+router.get("/getFullOrderDetails", authenJWT, authorizePermission("edit_order"), async (req, res) => {
+  try {
+    const data = await ordersModel.getFullOrderDetails(); 
+    res.json({ message: "Full order details fetched!", data });
+  } catch (err) {
+    console.error("Error fetching full order details:", err);
+    res.status(500).json({ error: "Failed to fetch order details" });
+  }
+});
 
 export default router;
