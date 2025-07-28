@@ -97,7 +97,11 @@
 					}`}
 					on:click={() => {
 						selected = tab.name;
-						if (tab.subtabs) toggleTab(tab.name);
+						if (tab.name === 'Inventory') {
+							toggleTab(tab.name);
+						} else {
+							expandedTab = '';
+						}
 					}}
 				>
 					<img src={tab.icon} alt={tab.icon} style="width: 30px" />
