@@ -454,11 +454,20 @@
     }
 </script>
 
-<header class="p-7">
+<header class="p-7 fixed gray1 flex justify-between pr-15" style="width: 85%; z-index: 10;">
     <h1>Analytics</h1>
+    <nav class="flex gap-4 text-sm align-end pt-1">
+        <a href="#item-sales" class="hover:underline font-semibold text-black">Item Sales</a>
+        <a href="#stock-status" class="hover:underline font-semibold text-black">Stock Status</a>
+        <a href="#turnover" class="hover:underline font-semibold text-black">Turnover</a>
+        <a href="#out-of-stock" class="hover:underline font-semibold text-black">Out-of-Stock</a>
+        <a href="#low-stock" class="hover:underline font-semibold text-black">Low Stock</a>
+        <a href="#overstock" class="hover:underline font-semibold text-black">Overstock</a>
+    </nav>
 </header>
 
-<div class="flex justify-evenly gap-4 px-7">
+<!-- colorful thing -->
+<div class="flex justify-evenly gap-4 px-7 pt-20">
   {#each infos as info}
     <div
       class="whitebox flex-col content-center p-6 rounded shadow"
@@ -476,7 +485,7 @@
         <div class = "flex-col items-center gap-5">
 
             <!-- title header -->
-            <div class = "flex justify-between items-start">
+            <div class = "flex justify-between items-start scroll-mt-24" id="item-sales">
                 <!-- first part -->
                 <div class="flex items-center gap-5 pb-1 m-2 mb-5">
                     <h1 class="flex text-start text-base font-bold">Item Sales</h1>
@@ -677,9 +686,8 @@
 
         <div>
             <div bind:this={tableRef}>
-            <section class="p-5 bg-white rounded-lg shadow mb-6">
+            <section class="p-5 bg-white rounded-lg shadow mb-6 scroll-mt-24" id="stock-status">
                 <h2 class="text-lg font-semibold mb-2">Stock Status</h2>
-
                 <div class="flex gap-4 mb-4">
                     <label>Low-Stock @ ≤
                     <input type="number" bind:value={lowThreshold} on:change={loadData}/>
@@ -779,7 +787,7 @@
         <div>
             <h2 class = "text-lg font-semibold mb-2">Top 10 Products by Inventory Turnover</h2>
             <!-- <section class="mt-8 overflow-auto"> -->
-            <section class="p-5 bg-white rounded-lg shadow mb-6">
+            <section class="p-5 bg-white rounded-lg shadow mb-6 scroll-mt-24" id="turnover"> 
                 <div  class = "flex pb-10">
                     <div style ="width: 80%; padding-right: 20px;">
                         <h3 class="text-lg font-semibold mb-4">COGS &amp; Turnover by Product</h3>
@@ -808,7 +816,7 @@
                     </div>
 
                     <!-- bullet list -->
-                    <section class="p-5 bg-white rounded-lg shadow mb-6">
+                    <section class="p-5 bg-white rounded-lg shadow mb-6 scroll-mt-24" id="out-of-stock">
                         <h2 class="text-lg font-semibold mb-2">Out-of-Stock Items</h2>
                         {#if outOfStockItems.length === 0}
                             <p class="text-gray-500">None—everything is in stock.</p>
@@ -827,7 +835,7 @@
 
         <!-- first part of div -->
         <div bind:this={lowStockTableRef} bind:this={tableRefOver} class = "flex">
-            <section class="p-5 bg-white rounded-lg shadow mb-6" style="width:50%">
+            <section class="p-5 bg-white rounded-lg shadow mb-6 scroll-mt-24" style="width:50%" id="low-stock">
                 <h2 class="text-lg font-semibold mb-2">Low-Stock Alerts</h2>
                 {#if lowStockAlerts.length === 0}
                     <p class="text-gray-500">All good—no low-stock items.</p>
@@ -881,7 +889,7 @@
                 {/if}
             </section>
 
-            <section class="p-5 bg-white rounded-lg shadow mb-6" style="width:50%" >
+            <section class="p-5 bg-white rounded-lg shadow mb-6 scroll-mt-24" style="width:50%" id="over-status">
                 <h2 class="text-lg font-semibold mb-2">Overstock Items</h2>
                 {#if overstockItems.length === 0}
                     <p class="text-gray-500">No overstocked SKUs.</p>

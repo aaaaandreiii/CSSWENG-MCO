@@ -418,17 +418,17 @@
 	}
 </style>
 
-<div class="flex ">
-	<div class="flex-1 p-7">
-		<!-- header -->
-		<header class="mb-4 flex items-center justify-between">
-			<h1>Settings</h1>
-			<div class="flex w-fit rounded-4xl bg-white px-3">
-				<input type="text" placeholder="Search" class="w-55 p-1" style="outline:none" />
-				<img src="../src/icons/search.svg" alt="search" style="width:15px; " />
-			</div>
-		</header>
+<!-- header -->
+<header class="mb-4 flex items-center justify-between p-7 fixed gray1" style="width: 85%; z-index: 10;">
+	<h1>Settings</h1>
+	<div class="flex w-fit rounded-4xl bg-white px-3">
+		<input type="text" placeholder="Search" class="w-55 p-1" style="outline:none" />
+		<img src="../src/icons/search.svg" alt="search" style="width:15px; " />
+	</div>
+</header>
 
+<div class="flex pt-15">
+	<div class="flex-1 p-7">
 		<!-- settings nav bar -->
 		<nav class="mb-0. flex justify-between">
 			<ul class="flex space-x-4 self-end tab-nav" bind:this={tabNavRef}>

@@ -931,7 +931,7 @@
 </script>
 
 <!-- header w/ search bar and filter-->
-<header class="flex justify-between p-7">
+<header class="flex justify-between p-7 fixed gray1" style="width: 85%; z-index: 10;">
 	<h1>Inventory</h1>
 
 	<div class="flex gap-3">
@@ -956,7 +956,7 @@
 </header>
 
 <!-- navbar + buttons row -->
-<div class="grid grid-cols-2">
+<div class="grid grid-cols-2 pt-20">
 	<!-- navbar -->
 	<div class="flex w-full">
 		{#each Object.keys(headerMap) as tab, idx (tab)}

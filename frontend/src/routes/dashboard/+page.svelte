@@ -28,11 +28,11 @@
 	}
 </script>
 
-<header class="p-7">
+<header class="p-7 fixed gray1" style="width: 100%; z-index: 10;">
 	<h1>Dashboard</h1>
 </header>
 
-<div id="bg_faded">
+<div id="bg_faded" class = "pt-20">
 	<div class="flex justify-evenly">
 		<!-- sales summary -->
 		<div class="flex-col">
