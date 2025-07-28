@@ -135,13 +135,11 @@
 			/>
 			<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
 		</div>
+		
+
+		<div class="w-35 p-1 outline-none flex items-center justify-end">Filter By User</div>
+		<!-- TODO: change this function to filter by user -->
 		<div class="flex w-fit rounded-4xl bg-white px-3">
-			<select class="w-35 p-1 outline-none" bind:value={sortColumn} on:change={() => sortBy(sortColumn)}>
-				<option value="">Filter By User</option>
-				{#each header as head}
-					<option value={head}>{head}</option>
-				{/each}
-			</select>
 			<select
 				class="w-35 p-1 outline-none"
 				bind:value={sortColumn}
