@@ -22,8 +22,12 @@
 	let currentOffset = 0;
 	const ITEMS_PER_PAGE = 100;
 	let filterValue = '';
+	let selectedUser = ''; // For dropdown selection
 	// store default order for reset
 	let originalRows = [...rows];
+
+	// Get unique usernames for dropdown
+	$: uniqueUsernames = [...new Set(rows.map(row => row['Username']))].filter(Boolean).sort();
 
 	let sentinel: HTMLDivElement;
 
@@ -110,14 +114,28 @@
 	}
 
 	function applyFilter() {
-		const val = filterValue.trim().toLowerCase();
-		if (!val) {
-			filteredRows = [...rows];
-			return;
+		const searchVal = filterValue.trim().toLowerCase();
+		
+		let filtered = [...rows];
+		
+		// Apply dropdown filter first
+		if (selectedUser) {
+			filtered = filtered.filter(row => row['Username'] === selectedUser);
 		}
-		filteredRows = rows.filter(row =>
-			Object.values(row).some(cell => String(cell).toLowerCase().includes(val))
-		);
+		
+		// Then apply search filter
+		if (searchVal) {
+			filtered = filtered.filter(row =>
+				String(row['Username']).toLowerCase().includes(searchVal)
+			);
+		}
+		
+		filteredRows = filtered;
+	}
+
+	// Update filter when dropdown selection changes
+	function handleUserSelection() {
+		applyFilter();
 	}
 </script>
 
@@ -127,7 +145,7 @@
 		<div class="flex w-fit rounded-4xl bg-white px-3">
 			<input
 				type="text"
-				placeholder="Search"
+				placeholder="Search by username"
 				class="w-55 p-1"
 				style="outline:none"
 				bind:value={filterValue}
@@ -136,20 +154,14 @@
 			<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
 		</div>
 		<div class="flex w-fit rounded-4xl bg-white px-3">
-			<select class="w-35 p-1 outline-none" bind:value={sortColumn} on:change={() => sortBy(sortColumn)}>
-				<option value="">Filter By User</option>
-				{#each header as head}
-					<option value={head}>{head}</option>
-				{/each}
-			</select>
 			<select
 				class="w-35 p-1 outline-none"
-				bind:value={sortColumn}
-				on:change={() => sortBy(sortColumn)}
+				bind:value={selectedUser}
+				on:change={handleUserSelection}
 			>
-				<option value="">All</option>
-				{#each header as head}
-					<option value={head}>{head}</option>
+				<option value="">All Users</option>
+				{#each uniqueUsernames as username}
+					<option value={username}>{username}</option>
 				{/each}
 			</select>
 		</div>

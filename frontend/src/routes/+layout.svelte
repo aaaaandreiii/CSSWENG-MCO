@@ -9,15 +9,15 @@
 	import { onMount } from 'svelte';
 	let { children } = $props();
 	
-	const showSidebar = $derived($page.route.id !== '/login' && $page.route.id !== '/signup' && $page.route.id !== '/forgot_password');
+	const showSidebar = $derived($page.route.id !== '/login' && $page.route.id !== '/signup' && $page.route.id !== '/forgot_password' && $page.route.id !== '/');
 
-// check if login page for diff bg color
+	// check if login page for diff bg color
 	$effect(() => {
-    if (browser) {
-      const isLoginPage = $page.route.id === '/login' || $page.route.id === '/signup' || $page.route.id === '/forgot_password';
-      document.body.classList.toggle('login-page', isLoginPage);
-    }
-  });
+		if (browser) {
+			const isLoginPage = $page.route.id === '/login' || $page.route.id === '/forgot_password';
+			document.body.classList.toggle('login-page', isLoginPage);
+		}
+	});
 
 	function isTokenExpired(token: string): boolean{
 		try{
@@ -65,6 +65,11 @@
 			}
 		}, 2000);
 	});
+
+	// TEST FUNCTION - Remove in production
+	function testSessionExpiry() {
+		showSessionExpired = true;
+	}
 </script>
 
 {#if showSessionExpired}
@@ -85,6 +90,13 @@
 {#if showSidebar}
 	<aside class = 'sidebar'>
 		<Sidebar />
+		<!-- TEST BUTTON - Remove in production -->
+		<button 
+			class="fixed bottom-4 left-4 bg-red-500 text-white px-3 py-1 rounded text-xs"
+			on:click={testSessionExpiry}
+		>
+			Test Session Expiry
+		</button>
 	</aside>
 
 	<div class = "main">
