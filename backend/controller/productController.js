@@ -50,6 +50,24 @@ router.get("/getProductById/:id", authenJWT, authorizePermission("edit_product")
     }
 }); //test: curl -X GET http://localhost:5000/api/getProductById/1 -H "Authorization: Bearer TOKEN_HERE"
 
+router.get("/getProductJoinedInformation", authenJWT, authorizePermission("edit_stock"), async (req, res) => {
+	const offset = parseInt(req.query.offset) || 0;
+	const limit  = parseInt(req.query.limit)  || 100;
+
+	try {
+		const auditJoinedInformation = await mysql.getAuditJoinedInformation(offset, limit);
+
+		if (auditJoinedInformation && auditJoinedInformation.length > 0) {
+			res.json({ message: "Expanded Product Log Entries found!", auditJoinedInformation });
+		} else {
+			res.status(404).json({ message: "No expanded product log entries found" });
+		}
+	} catch (err) {
+		console.error("Error fetching expanded product log entries:", err);
+		res.status(500).json({ message: "Error fetching expanded product log entries" });
+	}
+});
+
 // GET /api/stockHistory?productId=…
 // returns { dates: [...], stockLevels: [...], sales: [...] } for the last 30 days
 router.get('/stockHistory', async (req, res) => {

@@ -143,6 +143,7 @@
 
 	const headerMap: Record<TabType, string[]> = {
 		Product: [
+			'Image', //pathName-=
 			'Product ID',
 			'Product Name',
 			'Category',
@@ -152,11 +153,13 @@
 			'Retail Price',
 			'Stock On Hand',
 			'Units',
-			'Image', //pathName
 			'Safe Stock Count',
 			'Restock Flag',
+			'Total Stock Received',
+			'Total Sold', 
+			'Total Returned',
 			'Last Edited Date',
-			'Last Edited User'
+			'Last Edited By',
 		]
 	};
 
@@ -820,7 +823,7 @@
 
 			for (const idx of selectedRows) {
 				const row = rows[idx];
-				const productId= row["Product ID"] || row.productId || row.id; // might need to change datatype to any to remove error
+				const productId = parseInt(row["Product ID"] || row.productId || row.id, 10); // might need to change datatype to any to remove error
 
 				if (!productId) {
 					console.warn("No product ID found in row:", row);
