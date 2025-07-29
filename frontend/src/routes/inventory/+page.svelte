@@ -247,10 +247,28 @@
 	const ITEMS_PER_PAGE = 100;
 
 	let ready = false;
-	onMount(()=>{
-		ready = true;
-	});
+	
+	// inf scroll
+	let sentinel: HTMLDivElement;
 
+	onMount(() => {
+		ready = true;
+
+		const observer = new IntersectionObserver(([entry]) => {
+			if (entry.isIntersecting && hasMoreData && !isLoading) {
+				loadMoreData();
+			}
+		}, {
+			root: null,
+			rootMargin: '0px',
+			threshold: 1.0
+		});
+
+		if (sentinel) observer.observe(sentinel);
+
+		return () => observer.disconnect();
+	});
+	
 	$: if (ready && selected) {
 		(async () => {
 			// Reset pagination when tab changes
@@ -928,6 +946,7 @@
 		}
 	}
 
+
 </script>
 
 <!-- header w/ search bar and filter-->
@@ -1084,6 +1103,7 @@
 			{/if}
 		</tbody>
 	</table>
+	<div bind:this={sentinel}></div>
 </div>
 
 <!-- modal popup-->
