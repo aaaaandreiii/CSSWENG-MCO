@@ -184,3 +184,60 @@ export async function cascadeDeleteProduct(productId){
     await processCascade(productCascadeMap, productId)
     return true;
 }
+
+export async function getProductJoinedInformation(offset = 0, limit = 100) {
+	const sql = `
+		SELECT 
+            p.productId,
+            p.productName,
+            p.category,
+            p.descriptions,
+            p.supplier,
+            p.cost,
+            p.retailPrice,
+            p.stockOnHand,
+            p.units,
+            p.pathName,
+            p.safeStockCount,
+            p.restockFlag,
+            p.lastEditedDate,
+            u.fullName AS lastEditedBy,
+            
+            IFNULL(SUM(DISTINCT se.quantityReceived), 0) AS totalStockReceived,
+            IFNULL(SUM(DISTINCT oi.quantity), 0) AS totalSold,
+            IFNULL(SUM(DISTINCT rei.returnedQuantity), 0) AS totalReturned
+
+        FROM 
+            Product p
+        JOIN 
+            Users u ON p.lastEditedUser = u.userId
+
+        LEFT JOIN 
+            StockEntry se ON se.productId = p.productId AND se.deleteFlag = 0
+        LEFT JOIN 
+            OrderInfo oi ON oi.productId = p.productId AND oi.deleteFlag = 0
+        LEFT JOIN 
+            ReturnExchangeInfo rei ON rei.returnedProductId = p.productId AND rei.deleteFlag = 0
+
+        WHERE 
+            p.deleteFlag = 0
+
+        GROUP BY 
+            p.productId;
+        LIMIT ? OFFSET ?;
+	`;
+
+	try {
+		const [results] = await db.query(sql, [limit, offset]);
+		console.log("Expanded Product Logs:", results.length);
+
+		if (results.length === 0) {
+			console.warn("⚠️ No expanded product log entries returned. Check foreign key links or LEFT JOIN for diagnostics.");
+		}
+
+		return results;
+	} catch (err) {
+		console.error("❌ Error in getProductJoinedInformation():", err);
+		throw err;
+	}
+}

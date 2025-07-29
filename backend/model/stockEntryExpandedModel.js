@@ -25,12 +25,12 @@ export async function getStockEntryExpanded() {
 		console.log("Expanded Stock Entries:", results.length);
 
 		if (results.length === 0) {
-			console.warn("⚠️ No expanded stock entries returned. Check foreign key links or LEFT JOIN for diagnostics.");
+			console.warn("No expanded stock entries returned. Check foreign key links or LEFT JOIN for diagnostics.");
 		}
 
 		return results;
 	} catch (err) {
-		console.error("❌ Error in getStockEntryExpanded():", err);
+		console.error("Error in getStockEntryExpanded():", err);
 		throw err;
 	}
 }
