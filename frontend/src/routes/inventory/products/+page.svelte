@@ -167,6 +167,9 @@
 
 	// init selected rows
 	let selectedRows: number[] = [];
+	let searchQuery = '';
+    let isSearching = false;
+    let searchError: string | null = null;
 
 	// modal states
 	let showModal = false;
@@ -866,7 +869,76 @@
 			}
 		}
 	}
+ 	async function handleSearch() {
+        if (!searchQuery.trim()) {
+            // If search is empty, reset to original data
+            currentOffset = 0;
+            hasMoreData = true;
+            rows = [];
+            await fetchTabData(selected);
+            return;
+        }
 
+        isSearching = true;
+        searchError = null;
+        
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(
+                `${PUBLIC_API_BASE_URL}/api/search?table=${selected}&q=${encodeURIComponent(searchQuery)}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Search failed');
+            }
+
+            const data = await response.json();
+            
+            
+            let newRows: { [key: string]: string }[] = [];
+
+            if (selected === "Product") {
+                newRows = data.map((item: any) => ({
+                    'Product ID': item.productId,
+                    'Product Name': item.productName,
+                    'Category': item.category,
+                    'Descriptions': item.descriptions,
+                    'Supplier': item.supplier,
+                    'Cost': item.cost,
+                    'Retail Price': item.retailPrice,
+                    'Stock On Hand': item.stockOnHand,
+                    'Units': item.units,
+                    'Image': item.pathName,
+                    'Safe Stock Count': item.safeStockCount,
+                    'Restock Flag': item.restockFlag,
+                    'Last Edited Date': item.lastEditedDate ? new Date(item.lastEditedDate).toLocaleString('en-PH', {
+                        timeZone: 'Asia/Manila'
+                    }) : '',
+                    'Last Edited User': item.lastEditedUser
+                }));
+            } 
+            
+            
+            rows = newRows;
+            hasMoreData = false; 
+        } catch (err) {
+            searchError = err.message;
+            rows = [];
+        } finally {
+            isSearching = false;
+        }
+    }
+
+    
+    $: if (ready && selected) {
+        searchQuery = '';
+        handleSearch(); 
+    }
 </script>
 
 <!-- header w/ search bar and filter-->
@@ -875,9 +947,26 @@
 
 	<div class="flex gap-3">
 		<div class="flex w-fit rounded-4xl bg-white px-3">
-			<input type="text" placeholder="Search" class="w-55 p-1" style="outline:none" />
-			<img src="../src/icons/search.svg" alt="search" style="width:15px; " />
-		</div>
+    <input 
+        type="text" 
+        placeholder="Search" 
+        class="w-55 p-1" 
+        style="outline:none" 
+        bind:value={searchQuery}
+        on:keydown={(e) => e.key === 'Enter' && handleSearch()}
+    	/>
+    	<button 
+        	on:click={handleSearch}
+        	class="flex items-center"
+        	disabled={isSearching}
+    	>
+        	{#if isSearching}
+            	<span class="loading-spinner"></span>
+        	{:else}
+            	<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
+        	{/if}
+    	</button>
+	</div>
 		<div class="flex w-fit rounded-4xl bg-white px-3">
 			<!-- dropdown for order by, auto includes all col headers -->
 			<select
@@ -1024,7 +1113,35 @@
 		</tbody>
 	</table>
 </div>
-
+<tbody>
+    {#if searchError}
+        <tr>
+            <td colspan={currentHeaders.length + 2} class="py-4 text-center text-red-500">
+                Search error: {searchError}
+            </td>
+        </tr>
+    {:else if isSearching}
+        <tr>
+            <td colspan={currentHeaders.length + 2} class="py-8 text-center">
+                <div class="flex items-center justify-center gap-2">
+                    <div class="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
+                    <span>Searching...</span>
+                </div>
+            </td>
+        </tr>
+    {:else if searchQuery && rows.length === 0}
+        <tr>
+            <td colspan={currentHeaders.length + 2} class="py-4 text-center text-gray-500">
+                No results found for "{searchQuery}"
+            </td>
+        </tr>
+    {:else}
+        <!-- Your existing rows rendering -->
+        {#each rows as row, i}
+            <!-- ... -->
+        {/each}
+    {/if}
+</tbody>
 <!-- modal popup-->
 {#if showModal}
 	<div

@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
+import db from '../model/db.js';                        // your mysql2/promise pool
+const SCHEMA = process.env.DB_NAME || 'mydb';    // e.g. “mydb”
 const router  = express.Router();
-const db      = require('../db');        // your mysql2/promise pool
-const SCHEMA  = process.env.DB_NAME;     // e.g. “mydb”
 const ALLOWED = [                        // whitelist to prevent SQL‑injection
   'Product','Users','StockEntry','StockWithdrawal',
   'Orders','OrderInfo','ReturnExchange','ReturnExchangeInfo','AuditLog'
@@ -47,4 +47,4 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-module.exports = router;
+export default router;
