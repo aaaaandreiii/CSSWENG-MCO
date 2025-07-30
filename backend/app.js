@@ -12,7 +12,7 @@ import auditController from "./controller/auditController.js";
 import stockWithdrawalExpandedController from "./controller/stockWithdrawalExpandedController.js";
 // import * as mysql from "./model/userModel.js";
 import dataAnalysisController from './controller/dataAnalysisController.js';
-// import searchController from './controller/searchController.js';
+import searchController from './controller/searchController.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -36,7 +36,7 @@ app.use("/api/dataAnalysisController", dataAnalysisController);
 app.use("/api", stockEntryExpandedController);
 app.use("/api", stockWithdrawalExpandedController);
 app.use("/api", auditController);
-// app.use("/api/search", searchController);
+app.use("/api/search", searchController);
 
 bootstrapAdminUser().catch(console.error);
 

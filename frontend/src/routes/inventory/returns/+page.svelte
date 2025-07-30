@@ -4,6 +4,7 @@
     import { items } from '$lib/index.js';
     import { onMount, onDestroy } from 'svelte';
     import { browser } from '$app/environment';
+	import { goto } from '$app/navigation';	
     import Chart from 'chart.js/auto';
     import StockDetail from '$lib/StockDetail.svelte';
 
@@ -477,6 +478,13 @@
 	let isLoading = false;
 	let hasMoreData = true;
 	const ITEMS_PER_PAGE = 100;
+
+	let searchQuery = '';
+	function handleSearch() {
+		if (searchQuery.trim()) {
+			goto(`/search?q=${encodeURIComponent(searchQuery)}`);
+		}
+	}
 
 	let ready = false;
 	onMount(()=>{
@@ -1165,23 +1173,6 @@
 <!-- header w/ search bar and filter-->
 <header class="flex justify-between p-7">
 	<h1>Returns & Exchanges</h1>
-
-	<div class="flex gap-3">
-		
-		<div class="flex w-fit rounded-4xl bg-white px-3">
-			<!-- dropdown for order by, auto includes all col headers -->
-			<select
-				class="w-35 p-1 outline-none"
-				bind:value={sortColumn}
-				on:change={() => sortBy(sortColumn)}
-			>
-				<option value="">All</option>
-				{#each currentHeaders as head}
-					<option value={head}>{head}</option>
-				{/each}
-			</select>
-		</div>
-	</div>
 </header>
 
 <!-- return or exchange -->
@@ -1207,9 +1198,31 @@
                         {/if}
                     </div>
                     <div class="search flex px-3">
-                        <input type="text" placeholder="Search" class="w-35 flex items-center justify-between px-2 py-1 text-sm" />
-                        <img src="../src/icons/search.svg" alt="search" style="width:15px; " />
+						<input 
+							type="text" 
+							placeholder="Search" 
+							class="w-35 flex items-center justify-between px-2 py-1 text-sm" 
+							style="outline:none" 
+							bind:value={searchQuery}
+							on:keydown={(e) => e.key === 'Enter' && handleSearch()}
+						/>
+						<button on:click={handleSearch}>
+							<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
+						</button>
                     </div>
+					<div class="search flex px-3 relative">
+						<select
+							class="w-30 flex items-center justify-between order border-gray-300 rounded px-2 py-1 text-sm"
+							bind:value={sortColumn}
+							on:change={() => sortBy(sortColumn)}
+						>
+							<option value="">All</option>
+							{#each currentHeaders as head}
+								<option value={head}>{head}</option>
+							{/each}
+							
+						</select>
+					</div>
                     <!-- orderby dropdown -->
                     <div class="search flex px-3 relative">
                         <button type="button" class="w-30 flex items-center justify-between order border-gray-300 rounded px-2 py-1 text-sm" on:click={() => orderDropdownOpen = !orderDropdownOpen}>

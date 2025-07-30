@@ -1,50 +1,55 @@
-const express = require('express');
-const router  = express.Router();
-const db      = require('../db');        // your mysql2/promise pool
-const SCHEMA  = process.env.DB_NAME;     // e.g. “mydb”
-const ALLOWED = [                        // whitelist to prevent SQL‑injection
+import express from 'express';
+import db from "../model/db.js"; // for mysql2/promise pool
+
+const router = express.Router();
+const SCHEMA  = process.env.DB_NAME;
+const ALLOWED = [ // (ChatGPT suggestion: whitelist to prevent SQL‑injection)
   'Product','Users','StockEntry','StockWithdrawal',
   'Orders','OrderInfo','ReturnExchange','ReturnExchangeInfo','AuditLog'
 ];
 
 router.get('/', async (req, res, next) => {
   try {
-    const { table, q } = req.query;
-    if (!table || !q) {
-      return res.status(400).json({ error: 'Missing table or q parameter' });
-    }
-    if (!ALLOWED.includes(table)) {
-      return res.status(400).json({ error: 'Invalid table name' });
+    const { q } = req.query;
+    if (!q) {
+      return res.status(400).json({ error: 'Missing q parameter' });
     }
 
-    // 2. Fetch the searchable columns for this table
-    const [cols] = await db.query(
-      `SELECT COLUMN_NAME, DATA_TYPE
-       FROM information_schema.columns
-       WHERE table_schema = ? AND table_name = ?`,
-      [SCHEMA, table]
-    );
+    const result = {};
 
-    // 3. Build a WHERE clause that does CAST(col AS CHAR) LIKE '%q%'
-    //    We include most types so numbers/dates get string‑matched too.
-    const patterns = cols
-      .map(c => `CAST(\`${c.COLUMN_NAME}\` AS CHAR) LIKE ?`)
-      .filter((clause, i) => !!cols[i])   // keep all columns
-      .join(' OR ');
+    for (const table of ALLOWED) {
+      //get column list for this table
+      const [cols] = await db.query(
+        `SELECT COLUMN_NAME 
+         FROM information_schema.columns
+         WHERE table_schema = ? AND table_name = ?`,
+        [SCHEMA, table]
+      );
+      if (cols.length === 0) continue;
 
-    const params = cols.map(() => `%${q}%`);
+      //build WHERE clause for substring match instead of exact match
+      const clauses = cols
+        .map(c => `CAST(\`${c.COLUMN_NAME}\` AS CHAR) LIKE ?`)
+        .join(' OR ');
+      const params  = cols.map(() => `%${q.trim()}%`);
 
-    // 4. Run the query
-    const [rows] = await db.query(
-      `SELECT * FROM \`${table}\`
-       WHERE ${patterns}`,
-      params
-    );
+      //run the query
+      const [rows] = await db.query(
+        `SELECT * FROM \`${table}\` WHERE ${clauses}`,
+        params
+      );
+      if (rows.length) {
+        result[table] = rows;
+      }
+    }
 
-    res.json(rows);
+    console.log("Returned Results: ", result.length);
+    console.log(result);
+
+    res.json(result);
   } catch (err) {
     next(err);
   }
 });
 
-module.exports = router;
+export default router;

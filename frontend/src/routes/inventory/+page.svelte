@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { PUBLIC_API_BASE_URL } from '$env/static/public';
-	
+	import { goto } from '$app/navigation';		
 	import {onMount} from 'svelte';
+
 	type TabType =
 		| 'Product'
 		| 'Orders'
@@ -250,6 +251,13 @@
 	
 	// inf scroll
 	let sentinel: HTMLDivElement;
+
+	let searchQuery = '';
+	function handleSearch() {
+		if (searchQuery.trim()) {
+			goto(`/search?q=${encodeURIComponent(searchQuery)}`);
+		}
+	}
 
 	onMount(() => {
 		ready = true;
@@ -955,8 +963,17 @@
 
 	<div class="flex gap-3">
 		<div class="flex w-fit rounded-4xl bg-white px-3">
-			<input type="text" placeholder="Search" class="w-55 p-1" style="outline:none" />
-			<img src="../src/icons/search.svg" alt="search" style="width:15px; " />
+			<input 
+				type="text" 
+				placeholder="Search" 
+				class="w-55 p-1" 
+				style="outline:none" 
+				bind:value={searchQuery}
+				on:keydown={(e) => e.key === 'Enter' && handleSearch()}
+			/>
+			<button on:click={handleSearch}>
+				<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
+			</button>
 		</div>
 		<div class="flex w-fit rounded-4xl bg-white px-3">
 			<!-- dropdown for order by, auto includes all col headers -->

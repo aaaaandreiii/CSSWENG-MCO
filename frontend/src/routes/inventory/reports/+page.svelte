@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { PUBLIC_API_BASE_URL } from '$env/static/public';
+	import { goto } from '$app/navigation';	
 	import { onMount } from 'svelte';
 
 	const header = [
@@ -30,6 +31,13 @@
 	$: uniqueUsernames = [...new Set(rows.map(row => row['Username']))].filter(Boolean).sort();
 
 	let sentinel: HTMLDivElement;
+
+	let searchQuery = '';
+	function handleSearch() {
+		if (searchQuery.trim()) {
+			goto(`/search?q=${encodeURIComponent(searchQuery)}`);
+		}
+	}
 
 	onMount(() => {
 		fetchData(0, false);
@@ -143,17 +151,18 @@
 	<h1>Activity Logs</h1>
 	<div class="flex gap-3">
 		<div class="flex w-fit rounded-4xl bg-white px-3">
-			<input
-				type="text"
-				placeholder="Search by username"
-				class="w-55 p-1"
-				style="outline:none"
-				bind:value={filterValue}
-				on:input={applyFilter}
+			<input 
+				type="text" 
+				placeholder="Search" 
+				class="w-55 p-1" 
+				style="outline:none" 
+				bind:value={searchQuery}
+				on:keydown={(e) => e.key === 'Enter' && handleSearch()}
 			/>
-			<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
+			<button on:click={handleSearch}>
+				<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
+			</button>
 		</div>
-		
 
 		<div class="w-35 p-1 outline-none flex items-center justify-end">Filter By User</div>
 		<!-- TODO: change this function to filter by user -->
