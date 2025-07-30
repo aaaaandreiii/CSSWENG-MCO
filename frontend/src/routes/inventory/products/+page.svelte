@@ -171,6 +171,7 @@
 	let searchQuery = '';
     let isSearching = false;
     let searchError: string | null = null;
+	let originalRows: Record<string,string>[] = []; //{ [key: string]: string }[] = [];
 
 	// modal states
 	let showModal = false;
@@ -188,13 +189,6 @@
 	let isLoading = false;
 	let hasMoreData = true;
 	const ITEMS_PER_PAGE = 100;
-
-	let searchQuery = '';
-	function handleSearch() {
-		if (searchQuery.trim()) {
-			goto(`/search?q=${encodeURIComponent(searchQuery)}`);
-		}
-	}
 
 	let ready = false;
 	onMount(()=>{
@@ -384,7 +378,7 @@
 	}
 
 	// store default order for reset
-	let originalRows = [...rows];
+	originalRows = [...rows];
 
 	// sortby function for col heads
 	function sortBy(column: string) {
@@ -877,76 +871,88 @@
 			}
 		}
 	}
- 	async function handleSearch() {
-        if (!searchQuery.trim()) {
-            // If search is empty, reset to original data
-            currentOffset = 0;
-            hasMoreData = true;
-            rows = [];
-            await fetchTabData(selected);
-            return;
-        }
 
-        isSearching = true;
-        searchError = null;
-        
-        try {
+	//andrei implementation hehe: new tab for querying all tables
+	function openSearchTab() {
+		if (!searchQuery.trim()) return;
+		window.open(`/search?q=${encodeURIComponent(searchQuery)}`, '_blank');
+	}
+
+	//lance implementation: table‑specific search in‑place
+	async function searchInPlace() {
+		//if the box is empty, clear the filter and re‐load full data
+		if (!searchQuery.trim()) {
+			// if empty --> load full data
+			// currentOffset = 0;
+			// rows = [];
+			await fetchTabData(selected);
+			hasMoreData = true;
+			return;
+		}
+
+		isSearching = true;
+		searchError = null;
+
+		try {
             const token = localStorage.getItem('token');
             const response = await fetch(
                 `${PUBLIC_API_BASE_URL}/api/search?table=${selected}&q=${encodeURIComponent(searchQuery)}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+                { headers: { Authorization: `Bearer ${token}` } }
             );
-
-            if (!response.ok) {
-                throw new Error('Search failed');
-            }
+            if (!response.ok) { throw new Error('Search failed'); }
 
             const data = await response.json();
-            
-            
-            let newRows: { [key: string]: string }[] = [];
-
-            if (selected === "Product") {
-                newRows = data.map((item: any) => ({
-                    'Product ID': item.productId,
-                    'Product Name': item.productName,
-                    'Category': item.category,
-                    'Descriptions': item.descriptions,
-                    'Supplier': item.supplier,
-                    'Cost': item.cost,
-                    'Retail Price': item.retailPrice,
-                    'Stock On Hand': item.stockOnHand,
-                    'Units': item.units,
-                    'Image': item.pathName,
-                    'Safe Stock Count': item.safeStockCount,
-                    'Restock Flag': item.restockFlag,
-                    'Last Edited Date': item.lastEditedDate ? new Date(item.lastEditedDate).toLocaleString('en-PH', {
-                        timeZone: 'Asia/Manila'
-                    }) : '',
-                    'Last Edited User': item.lastEditedUser
-                }));
-            } 
-            
-            
-            rows = newRows;
-            hasMoreData = false; 
-        } catch (err) {
-            searchError = err.message;
+			const items = Array.isArray(data) ? data : data.products;
+			rows = items.map(item => ({
+				'Product ID':         item.productId,
+				'Product Name':       item.productName,
+				'Category': item.category,
+				'Descriptions': item.descriptions,
+				'Supplier': item.supplier,
+				'Cost': item.cost,
+				'Retail Price': item.retailPrice,
+				'Stock On Hand': item.stockOnHand,
+				'Units': item.units,
+				'Image': item.pathName,
+				'Safe Stock Count': item.safeStockCount,
+				'Restock Flag': item.restockFlag,
+				'Last Edited Date': item.lastEditedDate ? new Date(item.lastEditedDate).toLocaleString('en-PH', {
+					timeZone: 'Asia/Manila'
+				}) : '',
+				'Last Edited User': item.lastEditedUser
+			}));
+            hasMoreData = false; //disable infinite scroll while in search
+        } catch (err: any) {
+			searchError = err.message;
             rows = [];
         } finally {
             isSearching = false;
         }
-    }
+	}
 
-    
-    $: if (ready && selected) {
-        searchQuery = '';
-        handleSearch(); 
-    }
+	//lmfao kaya pala
+	let debounceTimer: ReturnType<typeof setTimeout>;		//for quick input
+	$: if (ready && selected) {
+		//reset state
+		currentOffset = 0;
+		hasMoreData   = true;
+		rows          = [];
+		originalRows  = [];
+		// searchQuery   = '';
+
+		// initial load
+		fetchTabData(selected);
+
+		// now wire up the keystroke-driven search (debounced)
+		clearTimeout(debounceTimer);
+		debounceTimer = setTimeout(searchInPlace, 200);
+	}
+
+	// debounce “search as you type”
+	$: if (ready && selected && searchQuery !== undefined) {
+		clearTimeout(debounceTimer);
+	    debounceTimer = setTimeout(searchInPlace, 200);
+	}
 </script>
 
 <!-- header w/ search bar and filter-->
@@ -961,20 +967,24 @@
 				class="w-55 p-1" 
 				style="outline:none" 
 				bind:value={searchQuery}
-				on:keydown={(e) => e.key === 'Enter' && handleSearch()}
+				on:input={() => {
+					clearTimeout(debounceTimer);
+					debounceTimer = setTimeout(searchInPlace, 200);
+				}}
+				on:keydown={(e) => e.key === 'Enter' && openSearchTab()}
 				/>
-				<button 
-					on:click={handleSearch}
-					class="flex items-center"
-					disabled={isSearching}
-				>
-					{#if isSearching}
-						<span class="loading-spinner"></span>
-					{:else}
-						<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
-					{/if}
-				</button>
-	</div>
+			<button 
+				on:click={openSearchTab}
+				class="flex items-center"
+				disabled={isSearching}
+			>
+				{#if isSearching}
+					<span class="loading-spinner"></span>
+				{:else}
+					<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
+				{/if}
+			</button>
+		</div>
 		<div class="flex w-fit rounded-4xl bg-white px-3">
 			<!-- dropdown for order by, auto includes all col headers -->
 			<select

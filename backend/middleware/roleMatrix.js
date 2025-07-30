@@ -9,16 +9,19 @@ export const rolePerms = {
     "view_orders"
   ],
   manager: [
-    "manage_users",
+    "view_orders",
+    "view_logs",
+    "edit_product",
     "edit_stock",
+    "edit_order",
     "process_returns",
     "view_orders"
   ],
   staff: [
+    "edit_product",
     "edit_stock",
+    "edit_order",
+    "process_returns",
     "view_orders"
-  ],
-  auditor: [
-    "view_logs"
   ]
 };

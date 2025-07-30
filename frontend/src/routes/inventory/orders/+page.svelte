@@ -3,6 +3,17 @@
 	import { goto } from '$app/navigation';	
   import { onMount } from 'svelte';
 
+  type TabType =
+		| 'Product'
+		| 'Orders'
+		| 'OrderInfo'
+		| 'StockEntry'
+		| 'StockWithdrawal'
+		| 'ReturnExchange'
+		| 'ReturnExchangelnfo';
+
+	let selected: TabType = 'Orders';
+
   // Table columns
   const headerMap = [
     'Order ID',
@@ -25,6 +36,11 @@
     'Return Type'
   ];
 
+	let searchQuery = '';
+  let isSearching = false;
+  let searchError: string | null = null;
+	let originalRows: { [key: string]: string }[] = [];
+
   let collapsedOrders = new Set<string>(); // Track collapsed order IDs
   let selectedOrders = new Set<string>(); // For full-order selection
 
@@ -39,7 +55,6 @@
   // Sorting
   let sortColumn: string = '';
   let sortDirection: 'asc' | 'desc' = 'asc';
-  let originalRows: { [key: string]: string }[] = [];
 
   // Modal states
   let showModal = false;
@@ -57,6 +72,8 @@
   let isAddForm = false;
   let selectedIndividualRows = new Set<string>(); // Track individual row selections using orderInfoId
 
+  let debounceTimer: ReturnType<typeof setTimeout>;
+  
   // API endpoints
   const apiMaps = {
     get: 'getFullOrderDetails',
@@ -93,23 +110,25 @@
     { field: 'Product ID', endpoint: 'getProductById' },
     { field: 'Exchange Product ID', endpoint: 'getProductById' }
   ];
+
+  onMount(() => fetchFullOrderData());
   
   // format date
   function formatDate(dateString: string) {
-	if (!dateString) return 'No Date';
-	try {
-		const date = new Date(dateString);
-		return date.toLocaleDateString('en-US', {
-		weekday: 'short',
-		month: 'short',
-		day: 'numeric',
-		year: 'numeric',
-		hour: '2-digit',
-		minute: '2-digit'
-		});
-	} catch {
-		return 'Invalid Date';
-	}
+    if (!dateString) return 'No Date';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+      });
+    } catch {
+      return 'Invalid Date';
+    }
   }
 
   	function toggleOrderCollapse(orderId: string) {
@@ -157,7 +176,7 @@
         'Handled By': item.handledBy,
         'Payment Method': item.paymentMethod,
         'Payment Status': item.paymentStatus,
-		'Order Info ID': item.orderInfoId,
+		    'Order Info ID': item.orderInfoId,
         'Product ID': item.productId,
         'Product Name': item.productName,
         'Units': item.units,
@@ -203,6 +222,9 @@
       loadMoreData();
     }
   }
+
+  // store default order for reset
+	originalRows = [...rows];
 
   // Sorting function
   function sortBy(column: string) {
@@ -324,7 +346,6 @@ async function handleDeleteSelected() {
 		isEditForm = false;
 	}
   }
-
 
   // Open add modal
   function openAddModal() {
@@ -489,21 +510,104 @@ async function handleDeleteSelected() {
 
     return Object.values(groups);
   }
+  
+	//andrei implementation hehe: new tab for querying all tables
+	function openSearchTab() {
+		if (!searchQuery.trim()) return;
+		window.open(`/search?q=${encodeURIComponent(searchQuery)}`, '_blank');
+	}
 
-  // Initialize
-  onMount(() => {
+	//lance implementation: table‑specific search in‑place
+	async function searchInPlace() {
+		//if the box is empty, clear the filter and re‐load full data
+		if (!searchQuery.trim()) {
+			// if empty --> load full data
+			// currentOffset = 0;
+			// rows = [];
+			await fetchFullOrderData();
+			hasMoreData = true;
+			return;
+		}
+
+		isSearching = true;
+		searchError = null;
+
+		try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(
+                `${PUBLIC_API_BASE_URL}/api/search?table=${selected}&q=${encodeURIComponent(searchQuery)}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (!response.ok) { throw new Error('Search failed'); }
+
+            const data = await response.json();
+			const items = Array.isArray(data) ? data : data.products;
+			rows = items.map(item => ({
+        'Order ID':              item.orderId,
+        'Customer':              item.customer,
+        'Date Ordered':          item.orderDate,
+        'Discount':              item.discount,
+        'Handled By':            item.handledBy,
+        'Payment Method':        item.paymentMethod,
+        'Payment Status':        item.paymentStatus,
+        'Order Info ID':         item.orderInfoId,
+        'Product ID':            item.productId,
+        'Product Name':          item.productName,
+        'Units':                 item.units,
+        'Category':              item.category,
+        'Quantity':              item.quantity,
+        'Unit Price At Purchase': item.unitPriceAtPurchase,
+        'Returned Quantity':     item.returnedQuantity || '',
+        'Exchange Product ID':   item.exchangeProductId || '',
+        'Reason':                item.reason || '',
+        'Return Type':           item.returnType || ''
+			}));
+            hasMoreData = false; //disable infinite scroll while in search
+        } catch (err: any) {
+			searchError = err.message;
+            rows = [];
+        } finally {
+            isSearching = false;
+        }
+	}
+
+  $: if (!searchQuery.trim()) {
+    clearTimeout(debounceTimer);
     fetchFullOrderData();
-  });
+    hasMoreData = true;
+  }
+
 </script>
 
 <header class="flex justify-between p-7">
   <h1>Orders</h1>
 
   <div class="flex gap-3">
-    <div class="flex w-fit rounded-4xl bg-white px-3">
-      <input type="text" placeholder="Search" class="w-55 p-1" style="outline:none" />
-      <img src="../src/icons/search.svg" alt="search" style="width:15px;" />
-    </div>
+		<div class="flex w-fit rounded-4xl bg-white px-3">
+			<input 
+				type="text" 
+				placeholder="Search" 
+				class="w-55 p-1" 
+				style="outline:none" 
+				bind:value={searchQuery}
+				on:input={() => {
+					clearTimeout(debounceTimer);
+					debounceTimer = setTimeout(searchInPlace, 200);
+				}}
+				on:keydown={(e) => e.key === 'Enter' && openSearchTab()}
+				/>
+			<button 
+				on:click={openSearchTab}
+				class="flex items-center"
+				disabled={isSearching}
+			>
+				{#if isSearching}
+					<span class="loading-spinner"></span>
+				{:else}
+					<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
+				{/if}
+			</button>
+		</div>
     <div class="flex w-fit rounded-4xl bg-white px-3">
       <select
         class="w-35 p-1 outline-none"
