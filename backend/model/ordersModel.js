@@ -173,7 +173,7 @@ export async function getFullOrderDetails() {
     SELECT 
       o.orderId,
       o.customer,
-      DATE_FORMAT(o.dateOrdered, '%Y-%m-%d') AS orderDate,
+      o.dateOrdered AS orderDate,
       o.discount,
       o.handledBy,
       o.paymentMethod,
@@ -211,4 +211,34 @@ export async function getFullOrderDetails() {
     ORDER BY o.dateOrdered DESC, o.orderId DESC;
   `);
   return rows;
+}
+
+// Delete entire order and its items
+export async function deleteOrder(orderId) {
+  const [result] = await db.query(
+    'UPDATE Orders SET deleteFlag = 1 WHERE orderId = ?',
+    [orderId]
+  );
+  return result.affectedRows > 0;
+}
+
+export async function deleteOrderItem(orderInfoId) {
+    try {
+        const [result] = await db.query(
+            'DELETE FROM order_info WHERE order_info_id = ?',
+            [orderInfoId]
+        );
+        return result.affectedRows > 0;
+    } catch (err) {
+        console.error('Error deleting order item:', err);
+        return false;
+    }
+}
+
+export async function deleteAllOrderItems(orderId) {
+  const [result] = await db.query(
+    'UPDATE OrderInfo SET deleteFlag = 1 WHERE orderId = ?',
+    [orderId]
+  );
+  return result.affectedRows > 0;
 }
