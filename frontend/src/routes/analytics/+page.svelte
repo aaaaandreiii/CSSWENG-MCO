@@ -454,7 +454,7 @@
     }
 </script>
 
-<header class="p-7 fixed gray1 flex justify-between pr-15" style="width: 85%; z-index: 10;">
+<header class="p-7 fixed gray1 flex justify-between pr-70" style="width: 100%; z-index: 10;">
     <h1>Analytics</h1>
     <nav class="flex gap-4 text-sm align-end pt-1">
         <a href="#item-sales" class="hover:underline font-semibold text-black">Item Sales</a>

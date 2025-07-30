@@ -958,7 +958,7 @@
 </script>
 
 <!-- header w/ search bar and filter-->
-<header class="flex justify-between p-7 fixed gray1" style="width: 85%; z-index: 10;">
+<header class="flex justify-between p-7 fixed gray1 pr-70" style="width: 100%; z-index: 10;">
 	<h1>Inventory</h1>
 
 	<div class="flex gap-3">

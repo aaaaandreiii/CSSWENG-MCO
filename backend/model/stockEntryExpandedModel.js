@@ -34,3 +34,56 @@ export async function getStockEntryExpanded() {
 		throw err;
 	}
 }
+
+export async function createStockEntry(data) {
+	const query = `
+		INSERT INTO StockEntry
+			(productId, quantityReceived, deliveryReceiptNumber,
+			 dateReceived, receivedBy, lastEditedUser, lastEditedDate, branchName, deleteFlag)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+	`;
+
+	const values = [
+		data.productId,
+		data.quantityReceived,
+		data.deliveryReceiptNumber,
+		data.dateReceived,
+		data.receivedBy,
+		data.lastEditedUser,
+		data.lastEditedDate,
+		data.branchName
+	];
+
+	try {
+		const [result] = await db.query(query, values);
+		console.log("[INFO] createStockEntry: Inserted with ID =", result.insertId);
+		console.log("[DEBUG] Data inserted:", values);
+		return result;
+	} catch (err) {
+		console.error("[ERROR] createStockEntry:", err.message);
+		throw err;
+	}
+}
+
+
+export async function deleteStockEntryById(entryId) {
+	try {
+		console.log(`[DEBUG] Deleting entryId = ${entryId}`);
+
+		const [result] = await db.query(
+			`UPDATE StockEntry SET deleteFlag = 1 WHERE entryId = ?`,
+			[entryId]
+		);
+
+		if (result.affectedRows === 0) {
+			console.warn(`[WARN] deleteStockEntryById(): ID ${entryId} not found or already deleted.`);
+			throw new Error("Stock entry not found.");
+		}
+
+		console.log(`[INFO] Stock Entry ID ${entryId} soft deleted.`);
+		return { success: true, entryId };
+	} catch (err) {
+		console.error(`[ERROR] deleteStockEntryById(${entryId}):`, err.message);
+		throw err;
+	}
+}

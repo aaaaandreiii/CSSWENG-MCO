@@ -3,6 +3,7 @@ import express from "express";
 import * as mysql from "../model/productModel.js";
 import { authenJWT } from "../middleware/authenJWT.js";
 import { authorizePermission } from "../middleware/authoPerms.js";
+import * as auditModel from "../model/auditModel.js";
 
 const router = express.Router();
 
@@ -12,8 +13,20 @@ router.post("/createProduct", authenJWT, authorizePermission("edit_product"), as
         const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
         const lastEditedUser = req.user.userId;
         const productId = await mysql.createProduct(productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, pathName, safeStockCount, restockFlag, lastEditedDate, lastEditedUser, 0);
+        await auditModel.logAudit(
+            "add_stock",
+            `Added a product.`,
+            req.user?.userId || null
+        );
         res.json({message: "Product created successfully!", id: productId});
+        
     }catch(err){
+        console.error("❌ Error creating product:", err); 
+         await auditModel.logAudit(
+            "add_stock",
+            `Error occurred while adding a product.`,
+            req.user?.userId || null
+        );
         res.status(500).json({ message: "Error creating Product" });
     }
 }); //test: curl -X POST http://localhost:5000/api/createProduct -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"productName\":\"Ping Pong Ball\",\"category\":\"ball\",\"descriptions\":\"descriptionss\",\"supplier\":\"someone\",\"cost\":100,\"retailPrice\":150,\"stockOnHand\":50,\"units\":\"pcs\"}"
@@ -180,12 +193,22 @@ router.put("/updateProduct/:id", authenJWT, authorizePermission("edit_product"),
         updatedData.lastEditedUser = lastEditedUser;
         const result = await mysql.updateProductById(productId, updatedData);
         if(result){
+            await auditModel.logAudit(
+                "edit_stock",
+                `Updated product with ID ${productId}.`,
+                req.user?.userId || null
+            );
             res.json({ message: "Product updated successfully!", id: productId });
         }
         else{
             res.status(404).json({ message: "Product not found or not updated" });
         }
     }catch(err){
+        await auditModel.logAudit(
+            "edit_stock",
+            `Error occurred while updating product with ID ${req.params.id}.`,
+            req.user?.userId || null
+        );
         res.status(500).json({ message: "Error updating Product" });
     }
 }); //test: curl -X PUT http://localhost:5000/api/updateProduct/1 -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"productName\":\"Updated Ping Pong Pan\",\"category\":\"paddle\",\"descriptions\":\"Updated description\",\"supplier\":\"new supplier\",\"cost\":110,\"retailPrice\":160}"
@@ -194,13 +217,24 @@ router.delete("/deleteProduct/:id", authenJWT, authorizePermission("edit_product
     try{
         const productId = parseInt(req.params.id);
         const deleted = await mysql.cascadeDeleteProduct(productId);
+        
         if(deleted){
+            await auditModel.logAudit(
+                "delete_stock",
+                `Deleted product with ID ${productId}.`,
+                req.user?.userId || null
+            );
             res.json({ message: "Product deleted successfully!", id: productId });
         }
         else{
             res.status(404).json({ message: "Product not found or not deleted" });
         }
     }catch(err){
+        await auditModel.logAudit(
+            "delete_stock",
+            `Error occurred while deleting product with ID ${req.params.id}.`,
+            req.user?.userId || null
+        );
         res.status(500).json({ message: "Error deleting Product" });
     }
 }); //test: curl -X DELETE http://localhost:5000/api/deleteProduct/1 -H "Authorization: Bearer TOKEN_HERE"

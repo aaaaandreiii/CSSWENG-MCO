@@ -578,70 +578,75 @@ async function handleCellEditFormSave() {
 		return true;
 	}
 
-	async function handleDeleteSelectedRows() {
-		if (
-			selectedRows.length > 0 &&
-			confirm(`Are you sure you want to delete ${selectedRows.length} selected row(s)?`)
-		) {
-			const token = localStorage.getItem('token');
-			const failedDeletes: number[] = [];
+async function handleDeleteSelectedRows() {
+	if (
+		selectedRows.length > 0 &&
+		confirm(`Are you sure you want to delete ${selectedRows.length} selected row(s)?`)
+	) {
+		const token = localStorage.getItem("token");
+		const failedDeletes: number[] = [];
 
-			const endpoint = deleteApiMap[selected];
-			const primaryKey = primaryKeyMap[selected];
+		const endpoint = deleteApiMap[selected]; // e.g., deleteStockEntryExpanded
+		const primaryKey = primaryKeyMap[selected]; // e.g., Entry ID
 
-			console.log("Selected tab:", selected);
-			console.log("Delete endpoint:", endpoint);
-			console.log("Selected row indices:", selectedRows);
+		console.log("Selected tab:", selected);
+		console.log("Delete endpoint:", endpoint);
+		console.log("Primary key used:", primaryKey);
+		console.log("Selected row indices:", selectedRows);
 
-			const rowIds = selectedRows.map(idx => {
+		const rowIds = selectedRows
+			.map((idx) => {
 				const row = rows[idx];
 				const id = parseInt(row?.[primaryKey] || row?.id);
 				console.log(`Row index ${idx} → ID ${id}`);
 				return id;
-			}).filter(id => id); // Remove any undefined/null IDs
+			})
+			.filter((id) => !isNaN(id)); // Remove invalid IDs
 
-			console.log("Row IDs to delete:", rowIds);
+		console.log("Row IDs to delete:", rowIds);
 
-			for (const rowId of rowIds) {
-				try {
-					console.log(`Sending DELETE for ID: ${rowId}`);
-					const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
-						method: "DELETE",
-						headers: {
-							"Content-Type": "application/json",
-							Authorization: `Bearer ${token}`
-						}
-					});
-
-					if (!res.ok) {
-						const err = await res.json().catch(() => ({ message: res.statusText }));
-						console.error(`Failed to delete row ${rowId}:`, err.message || "Unknown error");
-						failedDeletes.push(rowId);
-					} else {
-						const json = await res.json();
-						console.log(`Successfully deleted row ${rowId}:`, json.message || json);
+		for (const rowId of rowIds) {
+			try {
+				console.log(`Sending DELETE to /api/${endpoint}/${rowId}`);
+				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
+					method: "DELETE",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${token}`
 					}
-				} catch (err) {
-					console.error(`Network/Fetch error deleting row ${rowId}:`, err);
+				});
+
+				if (!res.ok) {
+					const err = await res.json().catch(() => ({ message: res.statusText }));
+					console.error(`Failed to delete row ${rowId}:`, err.message || "Unknown error");
 					failedDeletes.push(rowId);
+				} else {
+					const result = await res.json();
+					console.log(`Successfully deleted row ${rowId}:`, result.message);
 				}
-			}
-
-			selectedRows = [];
-			currentOffset = 0;
-			hasMoreData = true;
-			rows = [];
-
-			console.log("Refreshing data after deletion...");
-			await fetchTabData(selected);
-
-			if (failedDeletes.length > 0) {
-				alert(`Some deletions failed: ${failedDeletes.join(", ")}`);
-			} else {
-				alert("All selected rows were successfully deleted.");
+			} catch (err) {
+				console.error(`Fetch error while deleting row ${rowId}:`, err);
+				failedDeletes.push(rowId);
 			}
 		}
+
+		// Reset selection and reload data
+		selectedRows = [];
+		currentOffset = 0;
+		hasMoreData = true;
+		rows = [];
+
+		console.log("Reloading table after deletion...");
+		await fetchTabData(selected);
+
+		if (failedDeletes.length > 0) {
+			alert(`Some deletions failed: ${failedDeletes.join(", ")}`);
+		} else {
+			alert("All selected stock entries were successfully deleted.");
+		}
 	}
+}
+
 
 </script>
 

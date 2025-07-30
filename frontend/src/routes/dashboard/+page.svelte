@@ -28,7 +28,7 @@
 	}
 </script>
 
-<header class="p-7 fixed gray1" style="width: 100%; z-index: 10;">
+<header class="p-7 fixed gray1 pr-70" style="width: 100%; z-index: 10;">
 	<h1>Dashboard</h1>
 </header>
 

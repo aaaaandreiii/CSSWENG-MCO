@@ -327,3 +327,17 @@ body.login-page {
 	padding-left: 30px !important;
 	min-width: 205px;
 }
+
+.rotate-90 {
+  transform: rotate(90deg);
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+tr.selected {
+  background-color: #ffeb3b !important;
+}

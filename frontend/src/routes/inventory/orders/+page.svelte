@@ -1,1205 +1,720 @@
 <script lang="ts">
-	import { PUBLIC_API_BASE_URL } from '$env/static/public';
+  import { PUBLIC_API_BASE_URL } from '$env/static/public';
 	import { goto } from '$app/navigation';	
-	import {onMount} from 'svelte';
-	type TabType =
-		| 'Product'
-		| 'Orders'
-		| 'OrderInfo'
-		| 'StockEntry'
-		| 'StockWithdrawal'
-		| 'ReturnExchange'
-		| 'ReturnExchangelnfo';
+  import { onMount } from 'svelte';
 
-	let selected: TabType = 'Product';
+  // Table columns
+  const headerMap = [
+    'Order ID',
+    // 'Customer',
+    'Date Ordered',
+    'Discount',
+    'Handled By',
+    'Payment Method',
+    'Payment Status',
+	  'Order Info ID',
+    'Product ID',
+    'Product Name',
+    'Units',
+    'Category',
+    'Quantity',
+    'Unit Price At Purchase',
+    'Returned Quantity',
+    'Exchange Product ID',
+    'Reason',
+    'Return Type'
+  ];
 
-	const getApiMap: Record<TabType, string> = {
-		Product: 'getProducts',
-		Orders: 'getOrders',
-		OrderInfo: 'getOrderInfo',
-		StockEntry: 'getStockEntries',
-		StockWithdrawal: 'getStockWithdrawals',
-		ReturnExchange: 'getReturnExchanges',
-		ReturnExchangelnfo: 'getReturnExchangeInfo'
-	};
+  let collapsedOrders = new Set<string>(); // Track collapsed order IDs
+  let selectedOrders = new Set<string>(); // For full-order selection
 
-	const createApiMap: Record<TabType, string> = {
-		Product: 'createProduct',
-		Orders: 'createOrder',
-		OrderInfo: 'createOrderInfo', // X
-		StockEntry: 'createStockEntry',
-		StockWithdrawal: 'createStockWithdrawal',
-		ReturnExchange: 'createReturnExchange',
-		ReturnExchangelnfo: 'createReturnExchangeInfo' // X
-	};
+  // Table state
+  let selectedRows: number[] = [];
+  let rows: { [key: string]: string }[] = [];
+  let isLoading = false;
+  let hasMoreData = true;
+  const ITEMS_PER_PAGE = 100;
+  let currentOffset = 0;
 
-	const updateApiMap: Record<TabType, string> = {
-		Product: 'updateProduct',
-		Orders: 'updateOrder',
-		OrderInfo: 'updateOrderInfo',
-		StockEntry: 'updateStockEntry',
-		StockWithdrawal: 'updateStockWithdrawal',
-		ReturnExchange: 'updateReturnExchange',
-		ReturnExchangelnfo: 'updateReturnExchangeInfo'
-	};
+  // Sorting
+  let sortColumn: string = '';
+  let sortDirection: 'asc' | 'desc' = 'asc';
+  let originalRows: { [key: string]: string }[] = [];
 
-	const keyMap: Record<TabType, Record<string, string>> = {
-		Product: {
-			'Product Name': 'productName',
-			'Category': 'category',
-			'Descriptions': 'descriptions',
-			'Supplier': 'supplier',
-			'Cost': 'cost',
-			'Retail Price': 'retailPrice',
-			'Stock On Hand': 'stockOnHand',
-			'Units': 'units',
-			'Image': 'pathName',
-			'Safe Stock Count': 'safeStockCount',
-			'Restock Flag': 'restockFlag'
-		},
-		Orders: {
-			'Discount': 'discount',
-			'Customer': 'customer',
-			'Handled By': 'handledBy',
-			'Payment Method': 'paymentMethod',
-			'Payment Status': 'paymentStatus'
-		},
-		OrderInfo: {
-			'Quantity': 'quantity',
-			'Order ID': 'orderId',
-			'Product ID': 'productId',
-			'Unit Price At Purchase': 'unitPriceAtPurchase'
-		},
-		StockEntry: {
-			'Branch Name': 'branchName',
-			'Quantity Received': 'quantityReceived',
-			'Delivery Receipt Number': 'deliveryReceiptNumber',
-			'Received By': 'receivedBy',
-			'Product ID': 'productId'
-		},
-		StockWithdrawal: {
-			'Quantity Withdrawn': 'quantityWithdrawn',
-			'Purpose': 'purpose',
-			'Entry ID': 'entryId',
-			'Withdrawn By': 'withdrawnBy',
-			'Authorized By': 'authorizedBy'
-		},
-		ReturnExchange: {
-			'Transaction Status': 'transactionStatus',
-			'Order ID': 'orderId',
-			'Handled By': 'handledBy',
-			'Approved By': 'approvedBy'
-		},
-		ReturnExchangelnfo: {
-			'Returned Product ID': 'returnedProductId',
-			'Returned Quantity': 'returnedQuantity',
-			'Exchange Product ID': 'exchangeProductId',
-			'Exchange Quantity': 'exchangeQuantity',
-			'Reason': 'reason',
-			'Transaction ID': 'transactionId',
-			'Return Type': 'returnType'
-		}
-	}
+  // Modal states
+  let showModal = false;
+  let showAddModal = false;
+  let modalContent = '';
+  let modalRowIndex = -1;
+  let modalColumn = '';
 
-	const idValidationMap: Record<TabType, {field: string; endpoint: string}[]> = {
-		Product: [],
-		Orders: [
-			{field: 'Handled By', endpoint: 'getUserById'}
-		],
-		OrderInfo: [
-			{field: 'Order ID', endpoint: 'getOrderById'},
-			{field: 'Product ID', endpoint: 'getProductById'}
-		],
-		StockEntry: [
-			{field: 'Received By', endpoint: 'getUserById'},
-			{field: 'Product ID', endpoint: 'getProductById'}
-		],
-		StockWithdrawal: [
-			{field: 'Entry ID', endpoint: 'getStockEntryById'},
-			{field: 'Withdrawn By', endpoint: 'getUserById'},
-			{field: 'Authorized By', endpoint: 'getUserById'}
-		],
-		ReturnExchange: [
-			{field: 'Order ID', endpoint: 'getOrderById'},
-			{field: 'Handled By', endpoint: 'getUserById'},
-			{field: 'Approved By', endpoint: 'getUserById'}
-		],
-		ReturnExchangelnfo: [
-			{field: 'Returned Product ID', endpoint: 'getProductById'},
-			{field: 'Exchange Product ID', endpoint: 'getProductById'},
-			{field: 'Transaction ID', endpoint: 'getReturnExchangeById'}
-		]
-	};
+  // Form states
+  let editForm: { [key: string]: string } = {};
+  let isEditForm = false;
+  let cellEditForm: { value: string } = { value: '' };
+  let isCellEditForm = false;
+  let addForm: { [key: string]: string | null } = {};
+  let isAddForm = false;
+  let selectedIndividualRows = new Set<string>(); // Track individual row selections using orderInfoId
 
-	const primaryKeyMap: Record<TabType, string> = {
-		Product: 'Product ID',
-		Orders: 'Order ID',
-		OrderInfo: 'Order Info ID',
-		StockEntry: 'Entry ID',
-		StockWithdrawal: 'Withdrawal ID',
-		ReturnExchange: 'Transaction ID',
-		ReturnExchangelnfo: 'Detail ID'
-	};
+  // API endpoints
+  const apiMaps = {
+    get: 'getFullOrderDetails',
+    create: 'createOrder',
+    update: 'updateOrder',
+    delete: 'deleteOrder'
+  };
 
-	const headerMap: Record<TabType, string[]> = {
-		Product: [
-			'Product ID',
-			'Product Name',
-			'Category',
-			'Descriptions',
-			'Supplier',
-			'Cost',
-			'Retail Price',
-			'Stock On Hand',
-			'Units',
-			'Image', //pathName
-			'Safe Stock Count',
-			'Restock Flag',
-			'Last Edited Date',
-			'Last Edited User'
-		],
-		Orders: [
-			'Order ID',
-			'Discount',
-			'Customer',
-			'Handled By',
-			'Payment Method',
-			'Payment Status',
-			'Date Ordered',
-			'Last Edited Date',
-			'Last Edited User'
-		],
-		OrderInfo: [
-			'Order Info ID',
-			'Quantity',
-			'Order ID',
-			'Product ID',
-			'Unit Price At Purchase',
-			'Last Edited Date',
-			'Last Edited User',
-		],
-		ReturnExchangelnfo: [
-			'Detail ID',
-			'Returned Product ID',
-			'Returned Quantity',
-			'Exchange Product ID',
-			'Exchange Quantity',
-			'Reason',
-			'Transaction ID',
-			'Return Type',
-			'Last Edited Date',
-			'Last Edited User'
-		]
-	};
+  // Key mapping for API fields
+  const keyMap = {
+    'Order ID': 'orderId',
+    'Customer': 'customer',
+    'Date Ordered': 'dateOrdered',
+    'Discount': 'discount',
+    'Handled By': 'handledBy',
+    'Payment Method': 'paymentMethod',
+    'Payment Status': 'paymentStatus',
+	'Order Info ID': 'orderInfoId',
+    'Product ID': 'productId',
+    'Product Name': 'productName',
+    'Units': 'units',
+    'Category': 'category',
+    'Quantity': 'quantity',
+    'Unit Price At Purchase': 'unitPriceAtPurchase',
+    'Returned Quantity': 'returnedQuantity',
+    'Exchange Product ID': 'exchangeProductId',
+    'Reason': 'reason',
+    'Return Type': 'returnType'
+  };
 
-	$: currentHeaders = headerMap[selected];
-
-	// init selected rows
-	let selectedRows: number[] = [];
-
-	// modal states
-	let showModal = false;
-	let modalContent = '';
-
-	// sorting states
-	let sortColumn: string = '';
-	let sortDirection: 'asc' | 'desc' = 'asc';
-
-	// table data rows, can fill with dummy data
-	let rows: { [key: string]: string }[] = [];
-
-	// pagination and infinite scroll state
-	let currentOffset = 0;
-	let isLoading = false;
-	let hasMoreData = true;
-	const ITEMS_PER_PAGE = 100;
-
-	let searchQuery = '';
-	function handleSearch() {
-		if (searchQuery.trim()) {
-			goto(`/search?q=${encodeURIComponent(searchQuery)}`);
-		}
-	}
-
-	let ready = false;
-	onMount(()=>{
-		ready = true;
-	});
-
-	$: if (ready && selected) {
-		(async () => {
-			// Reset pagination when tab changes
-			currentOffset = 0;
-			hasMoreData = true;
-			rows = [];
-			await fetchTabData(selected);
-		})();
-	}
-
-	async function fetchTabData(tab: TabType, offset = 0, append = false){
-		if (isLoading) return;
-		isLoading = true;
-		
-		try{
-			const token = localStorage.getItem('token');
-			const endpoint = getApiMap[tab];
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}?offset=${offset}&limit=${ITEMS_PER_PAGE}`, {
-				headers: {
-					Authorization: `Bearer ${token}`
-				}
-			});
-			const data = await res.json();
-        	console.log('Fetched data:', data);
-
-			let newRows: { [key: string]: string }[] = [];
-
-			if(tab === "Product"){
-				newRows = data.products.map((item: any) =>({
-					'Product ID': item.productId,
-					'Product Name': item.productName,
-					'Category': item.category,
-					'Descriptions': item.descriptions,
-					'Supplier': item.supplier,
-					'Cost': item.cost,
-					'Retail Price': item.retailPrice,
-					'Stock On Hand': item.stockOnHand,
-					'Units': item.units,
-					'Image': item.pathName,
-					'Safe Stock Count': item.safeStockCount,
-					'Restock Flag': item.restockFlag,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-        		}));
-			}
-			else if(tab === "Orders"){
-				newRows = data.orders.map((item: any) =>({
-					'Order ID': item.orderId,
-					'Discount': item.discount,
-					'Customer': item.customer,
-					'Handled By': item.handledBy,
-					'Payment Method': item.paymentMethod,
-					'Payment Status': item.paymentStatus,
-					'Date Ordered': new Date(item.dateOrdered).toLocaleDateString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-				}));
-			}
-			else if(tab === "OrderInfo"){
-				newRows = data.orderInfo.map((item: any) =>({
-					'Order Info ID': item.orderInfoId,
-					'Quantity': item.quantity,
-					'Order ID': item.orderId,
-					'Product ID': item.productId,
-					'Unit Price At Purchase': item.unitPriceAtPurchase,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-				}));
-			}
-			else if(tab === "StockEntry"){
-				newRows = data.stockEntries.map((item: any) =>({
-					'Entry ID': item.entryId,
-					'Branch Name': item.branchName,
-					'Date Received': new Date(item.dateReceived).toLocaleDateString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Quantity Received': item.quantityReceived,
-					'Delivery Receipt Number': item.deliveryReceiptNumber,
-					'Received By': item.receivedBy,
-					'Product ID': item.productId,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-				}));
-			}
-			else if(tab === "StockWithdrawal"){
-				newRows = data.stockWithdrawals.map((item: any) =>({
-					'Withdrawal ID': item.withdrawalId,
-					'Date Withdrawn': new Date(item.dateWithdrawn).toLocaleDateString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Quantity Withdrawn': item.quantityWithdrawn,
-					'Purpose': item.purpose,
-					'Entry ID': item.entryId,
-					'Withdrawn By': item.withdrawnBy,
-					'Authorized By': item.authorizedBy,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-				}));
-			}
-			else if(tab === "ReturnExchange"){
-				newRows = data.returnExchanges.map((item: any) =>({
-					'Transaction ID': item.transactionId,
-					'Date Transaction': new Date(item.dateTransaction).toLocaleDateString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Transaction Status': item.transactionStatus,
-					'Order ID': item.orderId,
-					'Handled By': item.handledBy,
-					'Approved By': item.approvedBy,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-				}));
-			}
-			else if(tab === "ReturnExchangelnfo"){
-				newRows = data.returnExchangeInfo.map((item: any) =>({
-					'Detail ID': item.detailId,
-					'Returned Product ID': item.returnedProductId,
-					'Returned Quantity': item.returnedQuantity,
-					'Exchange Product ID': item.exchangeProductId,
-					'Exchange Quantity': item.exchangeQuantity,
-					'Reason': item.reason,
-					'Transaction ID': item.transactionId,
-					'Return Type': item.returnType,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-				}));
-			}
-
-			// Check if we have more data
-			hasMoreData = newRows.length === ITEMS_PER_PAGE;
-
-			if (append) {
-				rows = [...rows, ...newRows];
-			} else {
-				rows = newRows;
-			}
-			
-			if (!append) {
-				originalRows = [...rows];
-			} else {
-				originalRows = [...originalRows, ...newRows];
-			}
-		}catch(err){
-			console.error("Error fetching tab data: ", err);
-		} finally {
-			isLoading = false;
-		}
-	}
-
-	async function loadMoreData() {
-		if (!hasMoreData || isLoading) return;
-		
-		currentOffset += ITEMS_PER_PAGE; //increments the offset by 100 per page, so it doesn't display the same 100 rows per refresh
-		await fetchTabData(selected, currentOffset, true);
-	}
-
-	function handleScroll(event: Event) {
-		const target = event.target as HTMLElement;
-		const { scrollTop, scrollHeight, clientHeight } = target;
-		
-		// Load more when user is near the bottom (within 200px)
-		if (scrollHeight - scrollTop - clientHeight < 200 && hasMoreData && !isLoading) {
-			loadMoreData();
-		}
-	}
-
-	// store default order for reset
-	let originalRows = [...rows];
-
-	// sortby function for col heads
-	function sortBy(column: string) {
-		if (sortColumn === column) {
-			if (sortDirection === 'asc') {
-				sortDirection = 'desc';
-			} else if (sortDirection === 'desc') {
-				// if clicked a 3rd time, it goes back to defualt order
-				sortColumn = '';
-				sortDirection = 'asc';
-				rows = [...originalRows];
-				return;
-			}
-		} else {
-			sortColumn = column;
-			sortDirection = 'asc';
-		}
-		rows = [...rows].sort((a, b) => {
-			let aVal = a[column];
-			let bVal = b[column];
-
-			//Special case for Image column lol
-			if (column === "Image") {
-				aVal = aVal?.split('/').pop() ?? '';
-				bVal = bVal?.split('/').pop() ?? '';
-			}
-
-			if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-			if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
-			return 0;
+  // ID validation fields
+  const idValidationMap = [
+    { field: 'Handled By', endpoint: 'getUserById' },
+    { field: 'Product ID', endpoint: 'getProductById' },
+    { field: 'Exchange Product ID', endpoint: 'getProductById' }
+  ];
+  
+  // format date
+  function formatDate(dateString: string) {
+	if (!dateString) return 'No Date';
+	try {
+		const date = new Date(dateString);
+		return date.toLocaleDateString('en-US', {
+		weekday: 'short',
+		month: 'short',
+		day: 'numeric',
+		year: 'numeric',
+		hour: '2-digit',
+		minute: '2-digit'
 		});
+	} catch {
+		return 'Invalid Date';
+	}
+  }
+
+  	function toggleOrderCollapse(orderId: string) {
+		const idStr = orderId.toString();
+		collapsedOrders.has(idStr) 
+			? collapsedOrders.delete(idStr)
+			: collapsedOrders.add(idStr);
+		collapsedOrders = new Set(collapsedOrders);
 	}
 
-	// constant column headers
-	// headerMap.Product.push('Last Updated', 'Edited By');
-	// headerMap.Orders.push('Last Updated', 'Edited By');
-	// headerMap.OrderInfo.push('Last Updated', 'Edited By');
-	// headerMap.StockEntry.push('Last Updated', 'Edited By');
-	// headerMap.StockWithdrawal.push('Last Updated', 'Edited By');
-	// headerMap.ReturnExchange.push('Last Updated', 'Edited By');
-	// headerMap.ReturnExchangelnfo.push('Last Updated', 'Edited By');
-
-	// edit button in popup
-	let showEditButton = false;
-	let modalRowIndex = -1;
-	let modalColumn = '';
-	function openModal(content: string, rowIndex = -1, column = '') {
-		modalContent = content;
-		showModal = true;
-		showEditButton = false;
-		modalRowIndex = rowIndex;
-		modalColumn = column;
-		if (rowIndex !== -1 && column) {
-			cellEditForm = { value: rows[rowIndex][column] };
-			isCellEditForm = true;
-			isEditForm = false;
-		} else {
-			isCellEditForm = false;
-		}
+	function toggleIndividualRowSelection(orderInfoId: string) {
+		selectedIndividualRows.has(orderInfoId)
+			? selectedIndividualRows.delete(orderInfoId)
+			: selectedIndividualRows.add(orderInfoId);
+		selectedIndividualRows = new Set(selectedIndividualRows);
 	}
 
-	// func to close popup
-	function closeModal() {
-		showModal = false;
-		modalContent = '';
+	function toggleOrderSelection(orderId: string) {
+		const idStr = orderId.toString();
+		selectedOrders.has(idStr)
+			? selectedOrders.delete(idStr)
+			: selectedOrders.add(idStr);
+		selectedOrders = new Set(selectedOrders); // Trigger reactivity
 	}
 
-	// func to handle edit in cell popup
-	function handleEdit(rowIndex: number) {
-		// impl edit func here
-		alert('Edited row: ' + rowIndex);
-	}
+  // Fetch data
+  async function fetchFullOrderData(offset = 0, append = false) {
+    if (isLoading) return;
+    isLoading = true;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(
+        `${PUBLIC_API_BASE_URL}/api/${apiMaps.get}?offset=${offset}&limit=${ITEMS_PER_PAGE}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-	// func to open edit popup for entire row
-	function openEditModal(rowIndex: number) {
-		modalRowIndex = rowIndex;
-		showModal = true;
-		showEditButton = false;
-		modalContent = '';
-		editForm = { ...rows[rowIndex] };
-		isEditForm = true;
-	}
+      const { data } = await res.json();
+      
+      const newRows = data.map((item: any) => ({
+        'Order ID': item.orderId,
+        'Customer': item.customer,
+        'Date Ordered': item.orderDate,
+        'Discount': item.discount,
+        'Handled By': item.handledBy,
+        'Payment Method': item.paymentMethod,
+        'Payment Status': item.paymentStatus,
+		'Order Info ID': item.orderInfoId,
+        'Product ID': item.productId,
+        'Product Name': item.productName,
+        'Units': item.units,
+        'Category': item.category,
+        'Quantity': item.quantity,
+        'Unit Price At Purchase': item.unitPriceAtPurchase,
+        'Returned Quantity': item.returnedQuantity || '',
+        'Exchange Product ID': item.exchangeProductId || '',
+        'Reason': item.reason || '',
+        'Return Type': item.returnType || ''
+      }));
+	  console.log(newRows[0]?.orderInfoId);
 
-	let editForm: { [key: string]: string } = {};
-	let isEditForm = false;
+      hasMoreData = newRows.length === ITEMS_PER_PAGE;
 
-	let cellEditForm: { value: string } = { value: '' };
-	let isCellEditForm = false;
-
-	// func to handle saving the edit form
-	async function handleEditFormSave() {
-		if (modalRowIndex !== -1) {
-			const token = localStorage.getItem('token');
-			const endpoint = updateApiMap[selected];
-			const primaryKey = primaryKeyMap[selected];
-			const rowId = rows[modalRowIndex][primaryKey];
-			const finalForm: {[key: string]: any} = {};
-			const varKey = keyMap[selected];
-
-			const validations = idValidationMap[selected] || [];
-				for(const {field, endpoint: idEndpoint} of validations){
-					const raw = editForm[field];
-					const trim = typeof raw === 'string' ? raw.trim(): raw;
-					if(trim === '' || isNaN(Number(trim))){
-						alert(`${field} must be a number.`);
-						return;
-					}
-					const id = Number(trim);
-					const exists = await validate(idEndpoint, id)
-					if(!exists){
-						alert(`${field} ${id} does not exist in the database.`);
-						return;
-					}
-					const finalKey = varKey[field];
-					if(finalKey) {
-						finalForm[finalKey] = id;
-					}
-				}
-
-			for(const key in editForm){
-				const bKey = varKey[key];
-				if (!bKey || finalForm.hasOwnProperty(bKey)) continue;
-				const raw = editForm[key];
-				const value = typeof raw === 'string'? raw.trim(): raw;
-				if(bKey === 'pathName'){
-					finalForm[bKey] = value === '' ? null: value;
-				}
-				else if(value !== '' && value !== null && value !== undefined){
-					if(['cost', 'retailPrice', 'stockOnHand', 'safeStockCount', 'restockFlag', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)){
-						const num = Number(value);
-						if(isNaN(num) || num < 0){
-							alert(`${bKey} must be a valid number`);
-							return;
-						}
-							finalForm[bKey] = num;
-					}
-					else{
-						finalForm[bKey] = value;
-					}
-				}
-			}
-			try{
-				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
-					method: 'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`
-					},
-					body: JSON.stringify(finalForm)
-				});
-				// const data = await res.json();
-				if(!res.ok){
-					alert("Error updating!");
-					return;
-				}
-				await fetchTabData(selected);
-				
-				// Reset pagination and reload from beginning after edit
-				currentOffset = 0;
-				hasMoreData = true;
-				rows = [];
-				await fetchTabData(selected);
-				
-				// rows[modalRowIndex] = { ...editForm };
-				isEditForm = false;
-				showModal = false;
-			}catch(err){
-				console.error("Error updating: ", err);
-			}
-		}
-	}
-
-	// func to handle canceling the edit form
-	function handleEditFormCancel() {
-		isEditForm = false;
-		isCellEditForm = false;
-		showModal = false;
-	}
-
-	// func to handle saving the cell edit form
-	async function handleCellEditFormSave() {
-		if (modalRowIndex !== -1 && modalColumn) {
-			const token = localStorage.getItem('token');
-			const endpoint = updateApiMap[selected];
-			const primaryKey = primaryKeyMap[selected];
-			const rowId = rows[modalRowIndex][primaryKey]; //primary key: id
-			const rowData = rows[modalRowIndex]; //data before update
-			const varKey = keyMap[selected];
-
-			const updatedRow = {...rowData, [modalColumn]: cellEditForm.value}; 
-			
-			const validations = idValidationMap[selected] || [];
-			const foreignIds = validations.map(v => v.field);
-
-			const convertedRow: Record<string, any> = {}; //convert datatype
-			for(const displayKey in updatedRow){
-				const bKey = varKey[displayKey]; //converts Product Name to productName(match backend)
-				if(bKey){ 
-					let value = updatedRow[displayKey] as string | number;
-					if(foreignIds.includes(bKey)){ //if foreign Id
-						const num = Number(value);
-						value = num;
-					}
-					else if (typeof value === 'string') {
-						value = value.trim();
-					}	
-					convertedRow[bKey] = value;
-				}
-			}
-			if(typeof convertedRow.cost === 'string'){
-				convertedRow.cost = Number(convertedRow.cost);
-			}
-			if(typeof convertedRow.retailPrice === 'string'){
-				convertedRow.retailPrice = Number(convertedRow.retailPrice);
-			}
-			if(typeof convertedRow.stockOnHand === 'string'){
-				convertedRow.stockOnHand = Number(convertedRow.stockOnHand);
-			}
-			if(typeof convertedRow.safeStockCount === 'string'){
-				convertedRow.safeStockCount = Number(convertedRow.safeStockCount);
-			}
-			if(typeof convertedRow.restockFlag === 'string'){
-				convertedRow.restockFlag = Number(convertedRow.restockFlag);
-			}
-			if(typeof convertedRow.discount === 'string'){
-				convertedRow.discount = Number(convertedRow.discount);
-			}
-			if(typeof convertedRow.quantity === 'string'){
-				convertedRow.quantity = Number(convertedRow.quantity);
-			}
-			if(typeof convertedRow.unitPriceAtPurchase === 'string'){
-				convertedRow.unitPriceAtPurchase = Number(convertedRow.unitPriceAtPurchase);
-			}
-			if(typeof convertedRow.quantityReceived === 'string'){
-				convertedRow.quantityReceived = Number(convertedRow.quantityReceived);
-			}
-			if(typeof convertedRow.deliveryReceiptNumber === 'string'){
-				convertedRow.deliveryReceiptNumber = Number(convertedRow.deliveryReceiptNumber);
-			}
-			if(typeof convertedRow.quantityWithdrawn === 'string'){
-				convertedRow.quantityWithdrawn = Number(convertedRow.quantityWithdrawn);
-			}
-			if(typeof convertedRow.returnedQuantity === 'string'){
-				convertedRow.returnedQuantity = Number(convertedRow.returnedQuantity);
-			}
-			if(typeof convertedRow.exchangeQuantity === 'string'){
-				convertedRow.exchangeQuantity = Number(convertedRow.exchangeQuantity);
-			}
-
-			const finalForm: Record<string, any> ={
-				...convertedRow
-			};
-			
-			const field = modalColumn;
-			const raw = cellEditForm.value;
-			const trim = typeof raw === 'string' ? raw.trim(): raw;		
-			const validation = validations.find(v => v.field === field);
-			if(validation){
-				if(trim === '' || isNaN(Number(trim))){
-					alert(`${field} must be a number.`);
-					return;
-				}
-				const id = Number(trim);
-				const exists = await validate(validation.endpoint, id)
-				if(!exists){
-					alert(`${field} ${id} does not exist in the database.`);
-					return;
-				}
-				const finalKey = varKey[field];
-				if(finalKey) {
-					finalForm[finalKey] = id;
-				}
-			}
-			else{
-				const bKey = varKey[field];
-				if(bKey === 'pathName'){
-					finalForm[bKey] = trim === '' ? null: trim;
-				}
-				else if(trim !== '' && trim !== null && trim !== undefined){
-					if(['cost', 'retailPrice', 'stockOnHand', 'safeStockCount', 'restockFlag', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)){
-						const num = Number(trim);
-						if(isNaN(num) || num < 0){
-							alert(`${bKey} must be a valid number`);
-							return;
-						}
-							finalForm[bKey] = num;
-					}
-					else{
-						finalForm[bKey] = trim;
-					}
-				}
-			}
-			// console.log("finalForm", finalForm);
-			// console.log("updatedRow", updatedRow);
-			try{
-				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
-					method: 'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`
-					},
-					body: JSON.stringify(finalForm)
-				});
-				// const data = await res.json();
-				if(!res.ok){
-					alert("Error updating!");
-					return;
-				}
-				await fetchTabData(selected);
-		
-				// Reset pagination and reload from beginning after edit
-				currentOffset = 0;
-				hasMoreData = true;
-				rows = [];
-				await fetchTabData(selected);
-
-				// rows[modalRowIndex][modalColumn] = cellEditForm.value;
-				isCellEditForm = false;
-				showModal = false;
-			}catch(err){
-			console.error("Error updating: ", err);
-			}
-		}
-	}
-
-	let addForm: { [key: string]: string | null } = {};
-	let isAddForm = false;
-
-	function openAddModal() {
-		addForm = {};
-		currentHeaders.forEach((h) => (addForm[h] = ''));
-		isAddForm = true;
-		showModal = true;
-		modalContent = '';
-		isEditForm = false;
-		isCellEditForm = false;
-	}
-
-	function handleAddFormCancel() {
-		isAddForm = false;
-		showModal = false;
-	}
-
-	async function handleAddFormSave() {
-		// Only add if at least one field is filled
-		if (Object.values(addForm).some((v) => v?.trim() !== '')) {
-			const token = localStorage.getItem('token');
-			const endpoint = createApiMap[selected];
-			try{
-				const finalForm: {[key: string]: any} = {};
-				const varKey = keyMap[selected];
-				
-				const validations = idValidationMap[selected] || [];
-				for(const {field, endpoint: idEndpoint} of validations){
-					const raw = addForm[field]?.trim();
-					if(!raw || isNaN(Number(raw))){
-						alert(`${field} must be a number.`);
-						return;
-					}
-					const id = Number(raw);
-					const exists = await validate(idEndpoint, id)
-					if(!exists){
-						alert(`${field} ${id} does not exist in the database.`);
-						return;
-					}
-					const finalKey = varKey[field];
-					if(finalKey) {
-						finalForm[finalKey] = id;
-					}
-				}
-
-				for(const key in addForm){
-					const bKey = varKey[key];
-					if (!bKey || finalForm.hasOwnProperty(bKey)) continue;
-					const value = addForm[key]?.trim();
-					if(bKey === 'pathName'){
-						finalForm[bKey] = value === '' ? null: value;
-					}
-					else if(value !== ''){
-						if(['cost', 'retailPrice', 'stockOnHand', 'safeStockCount', 'restockFlag', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)){
-							const num = Number(value);
-							if(isNaN(num) || num < 0){
-								alert(`${bKey} must be a valid number`);
-								return;
-							}
-								finalForm[bKey] = num;
-						}
-						else{
-							finalForm[bKey] = value;
-						}
-					}
-				}
-				// console.log("Final form to submit:", finalForm);
-
-				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`
-					},
-					body: JSON.stringify(finalForm)
-				});
-				// const data = await res.json();
-				// console.log("data: ", data);
-				if(!res.ok){
-					alert("Error creating!");
-					return;
-				}
-
-				await fetchTabData(selected);
-				
-				// Reset pagination and reload from beginning after add
-				currentOffset = 0;
-				hasMoreData = true;
-				rows = [];
-				await fetchTabData(selected);
-				
-				// rows = [...rows, { ...addForm }];
-				isAddForm = false;
-				showModal = false;
-			}catch(err){
-				console.error("Error creating: ", err);
-			}
-		}
-	}
+      if (append) {
+        rows = [...rows, ...newRows];
+      } else {
+        rows = newRows;
+      }
+      
+      originalRows = append ? [...originalRows, ...newRows] : [...newRows];
+    } catch(err) {
+      console.error("Error fetching order details:", err);
+    } finally {
+      isLoading = false;
+    }
 	
-	//validate if id exists
-	async function validate(endpoint: string, id: number){
-		const token = localStorage.getItem('token');
-		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${id}`, {
-			headers: {
-				Authorization: `Bearer ${token}`
-			}
-		});
-		if(!res.ok) return false;
-		// const data = await res.json();
-		return true;
+  }
+
+  // Load more data for infinite scroll
+  async function loadMoreData() {
+    if (!hasMoreData || isLoading) return;
+    currentOffset += ITEMS_PER_PAGE;
+    await fetchFullOrderData(currentOffset, true);
+  }
+
+  function handleScroll(event: Event) {
+    const target = event.target as HTMLElement;
+    const { scrollTop, scrollHeight, clientHeight } = target;
+    
+    if (scrollHeight - scrollTop - clientHeight < 200 && hasMoreData && !isLoading) {
+      loadMoreData();
+    }
+  }
+
+  // Sorting function
+  function sortBy(column: string) {
+    if (sortColumn === column) {
+      sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortColumn = column;
+      sortDirection = 'asc';
+    }
+    
+     rows = [...rows].sort((a, b) => {
+		const aVal = a[column];
+		const bVal = b[column];
+
+		// Try to parse numbers or dates
+		const aParsed = !isNaN(Number(aVal))
+		? Number(aVal)
+		: Date.parse(aVal) || aVal.toString().toLowerCase();
+		const bParsed = !isNaN(Number(bVal))
+		? Number(bVal)
+		: Date.parse(bVal) || bVal.toString().toLowerCase();
+
+		if (aParsed < bParsed) return sortDirection === 'asc' ? -1 : 1;
+		if (aParsed > bParsed) return sortDirection === 'asc' ? 1 : -1;
+		return 0;
+    });
+  }
+
+  // CRUD Operations
+  async function validate(endpoint: string, id: number) {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.ok;
+  }
+
+  // Delete functionality
+async function handleDeleteSelected() {
+    const itemsToDelete = [...selectedIndividualRows];
+    const ordersToDelete = [...selectedOrders];
+    
+    if (itemsToDelete.length === 0 && ordersToDelete.length === 0) return;
+    
+    const confirmMessage = ordersToDelete.length > 0
+        ? `Delete ${ordersToDelete.length} entire order(s) and ${itemsToDelete.length} item(s)?`
+        : `Delete ${itemsToDelete.length} selected item(s)?`;
+    
+    if (!confirm(confirmMessage)) return;
+
+    const token = localStorage.getItem('token');
+    const failedDeletes: string[] = [];
+
+    // Debug: Log what we're trying to delete
+    console.log('Deleting items:', itemsToDelete);
+    console.log('Deleting orders:', ordersToDelete);
+
+    // Delete entire orders first
+    for (const orderId of ordersToDelete) {
+        try {
+            const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteOrder/${orderId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) {
+                console.error('Failed to delete order', orderId, res.status);
+                failedDeletes.push(`Order ${orderId}`);
+            }
+        } catch (err) {
+            console.error('Error deleting order', orderId, err);
+            failedDeletes.push(`Order ${orderId}`);
+        }
+    }
+
+    // Only delete individual items if we're not deleting their parent orders
+    if (ordersToDelete.length === 0 && itemsToDelete.length > 0) {
+        for (const orderInfoId of itemsToDelete) {
+            try {
+                console.log('Deleting item with orderInfoId:', orderInfoId);
+                const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteOrderItem/${orderInfoId}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                
+                if (!res.ok) {
+                    console.error('Failed to delete item', orderInfoId, res.status);
+                    failedDeletes.push(`Item ${orderInfoId}`);
+                }
+            } catch (err) {
+                console.error('Error deleting item', orderInfoId, err);
+                failedDeletes.push(`Item ${orderInfoId}`);
+            }
+        }
+    }
+
+    // Clear selections and refresh
+    selectedRows = [];
+    selectedIndividualRows.clear(); // Add this line
+    selectedOrders.clear();
+    currentOffset = 0;
+    await fetchFullOrderData();
+
+    if (failedDeletes.length > 0) {
+        alert(`Failed to delete: ${failedDeletes.join(', ')}`);
+    } else {
+        alert('Deletion successful!');
+    }
+}
+
+  // Open edit modal for cell
+  function openModal(value: string, rowIndex: number, column: string) {
+	modalContent = value;
+	showModal = true;
+	modalRowIndex = rowIndex;
+	modalColumn = column;
+	if (rowIndex !== -1 && column) {
+		cellEditForm = { value };
+		isCellEditForm = true;
+		isEditForm = false;
 	}
+  }
 
-	async function handleDeleteSelectedRows() {
-		if (
-			selectedRows.length > 0 &&
-			confirm(`Are you sure you want to delete ${selectedRows.length} selected row(s)?`)
-		) {
-			const token = localStorage.getItem('token');
-			const failedDeletes: number[] = []; 
 
-			for (const idx of selectedRows) {
-				const row = rows[idx];
-				const productId= row["Product ID"] || row.productId || row.id; // might need to change datatype to any to remove error
+  // Open add modal
+  function openAddModal() {
+    addForm = {};
+    headerMap.forEach((h) => (addForm[h] = ''));
+    isAddForm = true;
+    showModal = true;
+    modalContent = '';
+    isEditForm = false;
+    isCellEditForm = false;
+  }
 
-				if (!productId) {
-					console.warn("No product ID found in row:", row);
-					failedDeletes.push(-1);
-					continue;
-				}
+  // Close modal
+  function closeModal() {
+    showModal = false;
+    modalContent = '';
+    isAddForm = false;
+    isEditForm = false;
+    isCellEditForm = false;
+  }
 
-				try {
-					const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteProduct/${productId}`, {
-						method: "DELETE",
-						headers: {
-							"Content-Type": "application/json",
-							Authorization: `Bearer ${token}`
-						}
-					});
+  // Save edited cell
+  async function handleCellEditFormSave() {
+    if (modalRowIndex !== -1 && modalColumn) {
+      const token = localStorage.getItem('token');
+      const rowId = rows[modalRowIndex]['Order ID'];
+      const finalForm: Record<string, any> = {};
+      const field = modalColumn;
+      const raw = cellEditForm.value;
+      const trim = typeof raw === 'string' ? raw.trim() : raw;
 
-					if (!res.ok) {
-						const err = await res.json();
-						console.error(`Failed to delete product ${productId}:`, err.message || err);
-						failedDeletes.push(productId);
-					}
-				} catch (err) {
-					console.error(`Error deleting product ${productId}:`, err);
-					failedDeletes.push(productId);
-				}
-			}
+      // Validate ID fields
+      const validation = idValidationMap.find(v => v.field === field);
+      if (validation) {
+        if (trim === '' || isNaN(Number(trim))) {
+          alert(`${field} must be a number.`);
+          return;
+        }
+        const id = Number(trim);
+        const exists = await validate(validation.endpoint, id);
+        if (!exists) {
+          alert(`${field} ${id} does not exist in the database.`);
+          return;
+        }
+        finalForm[keyMap[field]] = id;
+      } else {
+        finalForm[keyMap[field]] = trim;
+      }
 
-			selectedRows = [];
+      try {
+        const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${apiMaps.update}/${rowId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(finalForm)
+        });
 
-			// Reset pagination and reload from beginning after delete
-			currentOffset = 0;
-			hasMoreData = true;
-			rows = [];
-			await fetchTabData(selected);
+        if (!res.ok) {
+          alert("Error updating!");
+          return;
+        }
 
-			if (failedDeletes.length > 0) {
-				alert(`Some deletions failed: ${failedDeletes.join(", ")}`);
-			} else {
-				alert("Deletion successful.");
-			}
-		}
-	}
+        await fetchFullOrderData();
+        closeModal();
+      } catch(err) {
+        console.error("Error updating: ", err);
+      }
+    }
+  }
 
+  // Save new order
+  async function handleAddFormSave() {
+    if (Object.values(addForm).some(v => v?.trim() !== '')) {
+      const token = localStorage.getItem('token');
+      const finalForm: Record<string, any> = {};
+
+      // Validate ID fields
+      for (const {field, endpoint} of idValidationMap) {
+        const raw = addForm[field]?.trim();
+        if (!raw || isNaN(Number(raw))) {
+          alert(`${field} must be a number.`);
+          return;
+        }
+        const id = Number(raw);
+        const exists = await validate(endpoint, id);
+        if (!exists) {
+          alert(`${field} ${id} does not exist in the database.`);
+          return;
+        }
+        finalForm[keyMap[field]] = id;
+      }
+
+      // Add other fields
+      for (const key in addForm) {
+        const value = addForm[key]?.trim();
+        if (value && value !== '' && !finalForm.hasOwnProperty(keyMap[key])) {
+          finalForm[keyMap[key]] = value;
+        }
+      }
+
+      try {
+        const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${apiMaps.create}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(finalForm)
+        });
+
+        if (!res.ok) {
+          alert("Error creating order!");
+          return;
+        }
+
+        await fetchFullOrderData();
+        closeModal();
+      } catch(err) {
+        console.error("Error creating: ", err);
+      }
+    }
+  }
+
+  // Group rows by Order ID for display
+  function groupRowsByOrderId(flatRows: { [key: string]: string }[]) {
+    const groups: Record<string, any> = {};
+
+    for (const row of flatRows) {
+      const id = row['Order ID'];
+      if (!groups[id]) {
+        groups[id] = {
+          orderId: +id,
+          baseInfo: {
+            'Order ID': id,
+            'Customer': row['Customer'],
+            'Date Ordered': row['Date Ordered'],
+            'Discount': row['Discount'],
+            'Handled By': row['Handled By'],
+            'Payment Method': row['Payment Method'],
+            'Payment Status': row['Payment Status']
+          },
+          lineItems: []
+        };
+      }
+
+      groups[id].lineItems.push({
+		'Order Info ID': row['Order Info ID'],
+        'Product ID': row['Product ID'],
+        'Product Name': row['Product Name'],
+        'Units': row['Units'],
+        'Category': row['Category'],
+        'Quantity': row['Quantity'],
+        'Unit Price At Purchase': row['Unit Price At Purchase'],
+        'Returned Quantity': row['Returned Quantity'],
+        'Exchange Product ID': row['Exchange Product ID'],
+        'Reason': row['Reason'],
+        'Return Type': row['Return Type']
+      });
+    }
+
+    return Object.values(groups);
+  }
+
+  // Initialize
+  onMount(() => {
+    fetchFullOrderData();
+  });
 </script>
 
-<!-- header w/ search bar and filter-->
 <header class="flex justify-between p-7">
-	<h1>Orders</h1>
+  <h1>Orders</h1>
 
-	<div class="flex gap-3">
-		<div class="flex w-fit rounded-4xl bg-white px-3">
-			<input 
-				type="text" 
-				placeholder="Search" 
-				class="w-55 p-1" 
-				style="outline:none" 
-				bind:value={searchQuery}
-				on:keydown={(e) => e.key === 'Enter' && handleSearch()}
-			/>
-			<button on:click={handleSearch}>
-				<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
-			</button>
-		</div>
-		<div class="flex w-fit rounded-4xl bg-white px-3">
-			<!-- dropdown for order by, auto includes all col headers -->
-			<select
-				class="w-35 p-1 outline-none"
-				bind:value={sortColumn}
-				on:change={() => sortBy(sortColumn)}
-			>
-				<option value="">All</option>
-				{#each currentHeaders as head}
-					<option value={head}>{head}</option>
-				{/each}
-			</select>
-		</div>
-	</div>
+  <div class="flex gap-3">
+    <div class="flex w-fit rounded-4xl bg-white px-3">
+      <input type="text" placeholder="Search" class="w-55 p-1" style="outline:none" />
+      <img src="../src/icons/search.svg" alt="search" style="width:15px;" />
+    </div>
+    <div class="flex w-fit rounded-4xl bg-white px-3">
+      <select
+        class="w-35 p-1 outline-none"
+        bind:value={sortColumn}
+        on:change={() => sortBy(sortColumn)}
+      >
+        <option value="">All</option>
+        {#each headerMap as head}
+          <option value={head}>{head}</option>
+        {/each}
+      </select>
+    </div>
+  </div>
 </header>
 
-<!-- navbar + buttons row -->
-<div class="grid grid-cols-2">
-	<!-- navbar -->
-	<div class="flex w-full">
-		{#each Object.keys(headerMap) as tab, idx (tab)}
-			<button
-				class="buttonss flex w-full items-center justify-center text-center transition-all duration-150
-					{selected === tab ? 'selected bg-white font-bold' : 'mr-2 truncate bg-gray-100'}"
-				style={selected === tab ? '' : 'max-width: 12ch; min-width: 0;'}
-				on:click={() => (selected = tab as TabType)}
-				title={tab}
-			>
-				<span class="w-full text-center">
-					{selected === tab ? tab : tab.length > 6 ? tab.slice(0, 6) + '...' : tab}
-				</span>
-			</button>
-		{/each}
-	</div>
-	<!-- buttons for actions -->
-	<div class="ml-auto flex gap-5 p-2.5 pr-10">
-		<button
-			class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold
-				{selectedRows.length === 0
-				? 'cursor-not-allowed bg-gray-400 text-gray-200'
-				: 'red1 text-white hover:bg-red-700'}"
-			disabled={selectedRows.length === 0}
-			on:click={handleDeleteSelectedRows}
-		>
-			Delete
-		</button>
-		<button
-			class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold bg-[#3d843f] text-white hover:bg-[#3b7f3b]"
-			on:click={openAddModal}
-		>
-			Add
-		</button>
-	</div>
+
+<!-- Top bar: Tab + Buttons -->
+<div class="flex items-center justify-between px-4 py-2 bg-white border-b border-black">
+  <!-- Static "Orders" tab styled like a table tab -->
+  <div class="text-sm font-semibold text-gray-800 px-2">
+    Order Details
+  </div>
+
+  <!-- Buttons -->
+  <div class="flex gap-5">
+    <button
+      class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold
+        {(selectedIndividualRows.size === 0 && selectedOrders.size === 0)
+          ? 'cursor-not-allowed bg-gray-400 text-gray-200'
+          : isLoading ? 'bg-gray-500 text-white' 
+          : 'red1 text-white hover:bg-red-700'}"
+      disabled={selectedIndividualRows.size === 0 && selectedOrders.size === 0 || isLoading}
+      on:click={handleDeleteSelected}
+    >
+      {isLoading ? 'Deleting...' : 'Delete'}
+    </button>
+
+    <button
+      class="w-28 py-2 items-center justify-center gap-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
+      on:click={openAddModal}
+    >
+      Add Order
+    </button>
+  </div>
 </div>
 
-<!-- table -->
+
+<!-- Main table -->
 <div class="w-full overflow-x-auto" on:scroll={handleScroll}>
-	<table class="w-full table-fixed border-collapse">
-		<thead class="border-b border-black bg-white">
-			<tr>
-				<th class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center"></th>
-				{#each currentHeaders as head}
-					<th
-						class="px-4 py-5 text-center align-middle break-words whitespace-normal"
-						style="width: calc({head.length}ch + 40px);"
-					>
-						<button
-							class="flex w-full items-center justify-center gap-1 font-bold"
-							on:click={() => sortBy(head)}
-						>
-							<span class="w-full break-words whitespace-normal">{head}</span>
-							<span class="inline-block w-4 min-w-[1rem] text-center align-middle"
-								>{sortColumn === head
-									? sortDirection === 'asc'
-										? '▲'
-										: sortDirection === 'desc'
-											? '▼'
-											: ''
-									: ''}</span
-							>
-						</button>
-					</th>
-				{/each}
-				<th class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center"></th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each rows as row, i}
-				<tr class="border-b border-black {i % 2 === 0 ? 'bg-[#eeeeee]' : 'bg-white'}">
-					<td class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center"
-						><input type="checkbox" bind:group={selectedRows} value={i} /></td
-					>
-					{#each currentHeaders as head}
-						<td
-							class="overflow-hidden px-4 py-5 text-center text-ellipsis whitespace-nowrap"
-							style="width: calc({head.length}ch + 40px);"
-							title={row[head]}
-							on:click={() => openModal(row[head], i, head)}
-						>
-						{#if head === "Image"}
-							{#if row[head]}
-								<img src = {row[head]} alt="" class="mx-auto max-h-16 max-w-[100px] object-contain"/>
-							{:else}
-								<span class="text-gray-400 italic">Null</span>
-							{/if}
-						{:else}
-							{row[head]}
-						{/if}
-						</td>
-					{/each}
-					<td class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center">
-						<button
-							type="button"
-							class="mx-auto flex h-5 w-5 items-center justify-center"
-							aria-label="Edit"
-							on:click={() => openEditModal(i)}
-						>
-							<img src="../src/icons/edit.svg" alt="" class="pointer-events-none h-5 w-5" />
-						</button>
-					</td>
-				</tr>
-			{/each}
-			
-			<!-- Loading indicator -->
-			{#if isLoading}
-				<tr>
-					<td colspan={currentHeaders.length + 2} class="py-8 text-center">
-						<div class="flex items-center justify-center gap-2">
-							<div class="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
-							<span>Loading more data...</span>
-						</div>
-					</td>
-				</tr>
-			{/if}
-			
-			<!-- End of data indicator -->
-			{#if !hasMoreData && rows.length > 0}
-				<tr>
-					<td colspan={currentHeaders.length + 2} class="py-4 text-center text-gray-500">
-						No more data to load
-					</td>
-				</tr>
-			{/if}
-		</tbody>
-	</table>
-</div>
+  <table class="w-full table-fixed border-collapse">
+    <thead class="border-b border-black bg-white">
+      <tr>
+        <th class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center"></th>
+        {#each headerMap as head}
+          <th
+            class="px-4 py-5 text-center align-middle break-words whitespace-normal"
+            style="width: calc({head.length}ch + 40px);"
+          >
+            <button
+              class="flex w-full items-center justify-center gap-1 font-bold"
+              on:click={() => sortBy(head)}
+            >
+              <span class="w-full break-words whitespace-normal">{head}</span>
+              <span class="inline-block w-4 min-w-[1rem] text-center align-middle">
+                {sortColumn === head
+                  ? sortDirection === 'asc'
+                    ? '▲'
+                    : '▼'
+                  : ''}
+              </span>
+            </button>
+          </th>
+        {/each}
+      </tr>
+    </thead>
+    <tbody>
+      {#each groupRowsByOrderId(rows) as groupedOrder, i}
+        <!-- Order summary header row -->
+        <tr class="bg-blue-100 border-t border-black cursor-pointer" 
+			on:click={() => toggleOrderCollapse(groupedOrder.orderId)}>
+			<td colspan={headerMap.length + 1} class="text-left px-4 py-2 font-bold">
+				<div class="flex items-center">
+					<input 
+					type="checkbox" 
+					class="mr-3"
+					checked={selectedOrders.has(groupedOrder.orderId.toString())}
+					on:click|stopPropagation={(e) => {
+						e.stopPropagation();
+						toggleOrderSelection(groupedOrder.orderId);
+					}}
+					/>
+					<span class="transform transition-transform duration-200 {collapsedOrders.has(groupedOrder.orderId.toString()) ? 'rotate-90' : ''}">
+						▶
+					</span>
+					<span class="ml-2">
+						Order #{groupedOrder.orderId} • {groupedOrder.baseInfo['Customer']} • 
+						{formatDate(groupedOrder.baseInfo['Date Ordered'])}
+					</span>
+				</div>
+			</td>
+		</tr>
 
-<!-- modal popup-->
-{#if showModal}
-	<div
-		class="modal-backdrop backdrop-blur-sm"
-		style="background-color: rgba(10, 10, 10, 0.5);"
-		role="button"
-		tabindex="0"
-		aria-label="Close modal"
-		on:click={() => {
-			if (isAddForm) handleAddFormCancel();
-			else handleEditFormCancel();
-		}}
-		on:keydown={(e) => {
-			if (e.key === 'Enter' || e.key === ' ') {
-				if (isAddForm) handleAddFormCancel();
-				else handleEditFormCancel();
-			}
-		}}
-	>
-		<div
-			class="modal-box"
-			role="dialog"
-			aria-modal="true"
-			tabindex="0"
-			on:click|stopPropagation
-			on:keydown={(e) => {
-				if (e.key === 'Enter' || e.key === ' ') e.stopPropagation();
-			}}
-		>
-			{#if isAddForm}
-				<!-- add popup form for new row -->
-				<form on:submit|preventDefault={handleAddFormSave}>
-					{#each currentHeaders.filter(h => h !== primaryKeyMap[selected] && !/^date/i.test(h) && !['Last Edited Date', 'Last Edited User'].includes(h)) as head}
-						<div class="mb-2">
-							<label class="mb-1 block" for={'add-' + head}>{head}</label>
-							<input
-								id={'add-' + head}
-								class="w-full rounded border px-2 py-1"
-								type="text"
-								bind:value={addForm[head]}
-							/>
-						</div>
-					{/each}
-					<div class="mt-4 flex gap-2">
-						<button
-							type="submit"
-							class="rounded px-4 py-2 text-white
-								{Object.values(addForm).some((v) => v?.trim() !== '')
-								? 'bg-green-600 hover:bg-green-700'
-								: 'cursor-not-allowed bg-gray-400'}"
-							disabled={!Object.values(addForm).some((v) => v?.trim() !== '')}
-						>
-							Add
-						</button>
-						<button
-							type="button"
-							class="rounded bg-gray-400 px-4 py-2 text-white hover:bg-gray-500"
-							on:click={handleAddFormCancel}>Cancel</button
-						>
+        <!-- Each line item -->
+		{#if !collapsedOrders.has(groupedOrder.orderId.toString())}
+			{#each groupedOrder.lineItems as item, j}
+			<tr class="{i % 2 === 0 ? 'bg-[#eeeeee]' : 'bg-white'} border-b border-black">
+				<td class="w-[40px] text-center">
+				<input 
+					type="checkbox" 
+					checked={selectedIndividualRows.has(item['Order Info ID'])}
+					on:click|stopPropagation={() => toggleIndividualRowSelection(item['Order Info ID'])}
+				/>
+				</td>
+
+				{#each headerMap as head}
+				<td
+					class="px-4 py-3 text-center text-ellipsis whitespace-nowrap"
+					title={item[head] || groupedOrder.baseInfo[head] || ''}
+					on:click={() => openModal(item[head] || groupedOrder.baseInfo[head] || '', i, head)}
+				>
+					{#if head === 'Date Ordered'}
+					<div>{(item[head] || groupedOrder.baseInfo[head] || '').split('T')[0]}</div>
+					<div class="text-xs text-gray-500">
+						{(item[head] || groupedOrder.baseInfo[head] || '').split('T')[1]?.slice(0,5)}
 					</div>
-				</form>
-			{:else if isEditForm}
-				<!-- edit popup form for entire row -->
-				<form on:submit|preventDefault={handleEditFormSave}>
-					{#each currentHeaders.filter(h => h !== primaryKeyMap[selected] && !/^date/i.test(h) && !['Last Edited Date', 'Last Edited User'].includes(h)) as head}
-						<div class="mb-2">
-							<label class="mb-1 block font-bold" for={'edit-' + head}>{head}</label>
-							<input
-								id={'edit-' + head}
-								class="w-full rounded border px-2 py-1"
-								type="text"
-								bind:value={editForm[head]}
-							/>
-						</div>
-					{/each}
-					<div class="mt-4 flex gap-2">
-						<button
-							type="submit"
-							class="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700">Save</button
-						>
-						<button
-							type="button"
-							class="rounded bg-gray-400 px-4 py-2 text-white hover:bg-gray-500"
-							on:click={handleEditFormCancel}>Cancel</button
-						>
-					</div>
-				</form>
-			{:else if isCellEditForm}
-				<!-- edit popup form for individual cell -->
-				<form on:submit|preventDefault={handleCellEditFormSave}>
-					<div class="mb-2">
-						<label class="mb-1 block font-bold" for={'cell-edit-' + modalColumn}
-							>{modalColumn}</label
-						>
-						<input
-							id={'cell-edit-' + modalColumn}
-							class="w-full rounded border px-2 py-1"
-							type="text"
-							bind:value={cellEditForm.value}
-							readonly={ //primary key, date_, last edited fields
-								modalColumn === primaryKeyMap[selected] ||
-								/^date/i.test(modalColumn) ||
-								modalColumn === 'Last Edited Date' ||
-								modalColumn === 'Last Edited User'
-							}
-						/>
-					</div>
-					<div class="mt-4 flex gap-2">
-						{#if !(
-							modalColumn === primaryKeyMap[selected] ||
-							/^date/i.test(modalColumn) ||
-							modalColumn === 'Last Edited Date' ||
-							modalColumn === 'Last Edited User'
-						)}
-							<button
-								type="submit"
-								class="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700">Save</button
-							>
-						{/if}
-						<button
-							type="button"
-							class="rounded bg-gray-400 px-4 py-2 text-white hover:bg-gray-500"
-							on:click={handleEditFormCancel}>Cancel</button
-						>
-					</div>
-				</form>
-			{:else}
-				<!-- fallback, should not be shown -->
-				<div class="mb-4">{modalContent}</div>
-			{/if}
-		</div>
-	</div>
-{/if}
+					{:else}
+					{item[head] || groupedOrder.baseInfo[head] || '-'}
+					{/if}
+				</td>
+				{/each}
+			</tr>
+			{/each}
+		{/if}
+      {/each}
+    </tbody>
+  </table>
+  {#if rows.length === 0 && isLoading}
+	<div class="text-center p-4 text-gray-500">Loading orders...</div>
+  {/if}
+  {#if isLoading && rows.length > 0}
+	<div class="text-center py-4 text-gray-500">Loading more...</div>
+  {/if}
+
+
+
+  <!-- Add Order Modal -->
+  {#if showModal && isAddForm}
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 w-[500px] max-w-full">
+        <h2 class="text-xl font-bold mb-4">Add New Order</h2>
+        
+        <form on:submit|preventDefault={handleAddFormSave}>
+          {#each ['Customer', 'Discount', 'Handled By', 'Payment Method', 'Payment Status'] as field}
+            <div class="mb-2">
+				<label for={`add-${field}`} class="block">{field}:</label>
+				{#if field === 'Payment Method' || field === 'Payment Status'}
+					<select id={`add-${field}`} bind:value={addForm[field]} class="border w-full p-1" required>
+                  {#if field === 'Payment Method'}
+                    <option value="">Select</option>
+                    <option>cash</option>
+                    <option>credit card</option>
+                    <option>debit card</option>
+                    <option>online payment</option>
+                  {:else}
+                    <option value="">Select</option>
+                    <option>pending</option>
+                    <option>paid</option>
+                    <option>failed</option>
+                  {/if}
+                </select>
+				{:else}
+					<input id={`add-${field}`} bind:value={addForm[field]} class="border w-full p-1" required />
+				{/if}
+			</div>
+          {/each}
+
+          <div class="flex justify-end gap-2 mt-4">
+            <button type="button" on:click={closeModal} class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">
+              Cancel
+            </button>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+              Submit
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Edit Cell Modal -->
+  {#if showModal && isCellEditForm}
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 w-[500px] max-w-full">
+        <h2 class="text-xl font-bold mb-4">Edit {modalColumn}</h2>
+        
+        <form on:submit|preventDefault={handleCellEditFormSave}>
+          <div class="mb-2">
+			<label for="edit-cell-input" class="block">{modalColumn}:</label>
+			<input id="edit-cell-input" bind:value={cellEditForm.value} class="border w-full p-1" required />
+		  </div>
+
+          <div class="flex justify-end gap-2 mt-4">
+            <button type="button" on:click={closeModal} class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">
+              Cancel
+            </button>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+              Save
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  {/if}
+</div>
