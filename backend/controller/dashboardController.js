@@ -19,7 +19,7 @@ router.get('/', async (req, res, next) => {
     topSellingStartDate.setHours(0, 0, 0, 0);
     var salesReportStartDate = new Date();
     salesReportStartDate.setDate(today.getDate() - salesReportDuration);
-    topSellingStartDate.setHours(0, 0, 0, 0);
+    salesReportStartDate.setHours(0, 0, 0, 0);
 
     // 1. load all tables
     const [products]      = await db.query('SELECT productId, productName, cost, stockOnHand, safeStockCount FROM Product');
@@ -57,26 +57,46 @@ router.get('/', async (req, res, next) => {
 
     // 4. top selling products
     const [topSellingProducts] = await db.query(
-      `SELECT Product.productId, Product.productName, sum(OrderInfo.quantity) AS totalQty
-      FROM Product 
-      JOIN OrderInfo ON Product.productId = OrderInfo.productId 
-      JOIN Orders ON OrderInfo.orderId = Orders.orderId
-      WHERE Orders.dateOrdered BETWEEN ? AND ?
-      GROUP BY Product.productId
-      ORDER BY sum(OrderInfo.quantity) DESC
-      LIMIT 10`, 
+      `SELECT 
+        Product.productId, Product.productName, sum(OrderInfo.quantity) AS totalQty
+        FROM Product 
+        JOIN OrderInfo ON Product.productId = OrderInfo.productId 
+        JOIN Orders ON OrderInfo.orderId = Orders.orderId
+        WHERE Orders.dateOrdered BETWEEN ? AND ?
+        GROUP BY Product.productId
+        ORDER BY sum(OrderInfo.quantity) DESC
+        LIMIT 10`, 
       [topSellingStartDate, today]);
 
     // 5. avg sales per month
     const [salesPerMonth] = await db.query(
-      `SELECT sum(OrderInfo.quantity * OrderInfo.quantity) AS sum
+      // `SELECT sum(OrderInfo.quantity * OrderInfo.quantity) AS sum     //BRUH WHAT HAKJSDHAKJSDH why u multiplying it to itself
+      //   FROM OrderInfo
+      //   JOIN Orders ON OrderInfo.orderId = Orders.orderId
+      //   WHERE Orders.dateOrdered BETWEEN ? AND ?
+      //   GROUP BY YEAR(Orders.dateOrdered), MONTH(Orders.dateOrdered)`, 
+      `SELECT 
+        YEAR(Orders.dateOrdered)   AS year,
+        MONTH(Orders.dateOrdered)  AS month,
+        SUM(OrderInfo.quantity)    AS sum
       FROM OrderInfo
-      JOIN Orders ON OrderInfo.orderId = Orders.orderId
+        JOIN Orders ON OrderInfo.orderId = Orders.orderId
       WHERE Orders.dateOrdered BETWEEN ? AND ?
-      GROUP BY YEAR(Orders.dateOrdered), MONTH(Orders.dateOrdered)`, 
+      GROUP BY YEAR(Orders.dateOrdered), MONTH(Orders.dateOrdered)
+      ORDER BY YEAR(Orders.dateOrdered), MONTH(Orders.dateOrdered)`,
       [salesReportStartDate, today]);
+    
+    //compute average
+    const avgSalesPerMonth = _.mean(salesPerMonth.map(r => Number(r.sum)));
 
-    const avgSalesPerMonth = _.mean(salesPerMonth.map(sales => Number(sales.sum)));
+    //6. total sales in the last ___
+    const [salesPerMonthInTheLastTimePeriod] = await db.query(
+      `SELECT sum(OrderInfo.quantity * OrderInfo.quantity) AS sum
+        FROM OrderInfo
+        JOIN Orders ON OrderInfo.orderId = Orders.orderId
+        WHERE Orders.dateOrdered BETWEEN ? AND ?`, 
+      [salesReportStartDate, today]);
+    const totalSalesInTheLastTimePeriod = _.sum(salesPerMonthInTheLastTimePeriod.map(sales => Number(sales.sum)));
 
     //  Final JSON payload
     return res.json({
@@ -86,7 +106,9 @@ router.get('/', async (req, res, next) => {
       outOfStockProducts,
       lowStockProducts,
       topSellingProducts,
-      avgSalesPerMonth
+      salesPerMonth,
+      avgSalesPerMonth,
+      totalSalesInTheLastTimePeriod
     });
 
   } catch (err) {
