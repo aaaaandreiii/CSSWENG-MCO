@@ -28,13 +28,17 @@
     }> = [];
 
     // pagination
+    const statusOrder: Record<string, number> = {
+        out:  0,
+        low:  1,
+        over: 2,
+        ok:   3
+    };
     
 // stock status table
     let didScroll = false;
     let page = 1;
     const itemsPerPage = 50;
-    $: totalPages = Math.ceil(alertItems.length / itemsPerPage);
-    $: paginatedItems = alertItems.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
     let tableRef: HTMLDivElement | null = null; //go back to top when prev page
     $: if (tableRef && typeof page === 'number' && didScroll) {
@@ -110,6 +114,17 @@
     let overstockItems:      Array<{productId:number; productName:string; stockOnHand:number}> = [];
     $: alertItems = statusItems.filter(item => item.status !== 'ok');   // only show items that are not 'ok'
 
+    //spread into new array so that original is not changed
+    $: sortedStatusItems = [...statusItems].sort((a, b) => {
+        const diff = statusOrder[a.status] - statusOrder[b.status];
+        if (diff !== 0) return diff;
+        // tie-breaker: alphabetical
+        return a.productName.localeCompare(b.productName, undefined, { sensitivity: 'base' });
+    });
+
+    //hook pagination up to the sorted array
+    $: totalPages = Math.ceil(sortedStatusItems.length / itemsPerPage);
+    $: paginatedItems = sortedStatusItems.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
     let infos: Array<{value:string; label:string; color:string}> = [];
 
