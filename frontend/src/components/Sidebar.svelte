@@ -165,7 +165,7 @@
 				}}
 			>
 				<div id="pfp" class="profile flex-shrink-0">
-					<img src={$userProfile.profilePic} alt="pfp" style="width:45px; height:45px;" />
+					<img src={$userProfile.profilePic} alt="pfp" class="w-[45px] h-[45px] rounded-full object-cover" />
 				</div>
 				<div class="flex flex-col items-start ml-2 min-w-0" style="width: 0; flex: 0;">
 					<h2 class="text-lg truncate max-w-[180px]">{$userProfile.username}</h2>
