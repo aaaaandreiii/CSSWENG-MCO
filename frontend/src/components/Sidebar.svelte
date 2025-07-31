@@ -24,6 +24,25 @@
 		{ name: 'Settings', link: '/settings', icon: '../src/icons/settings.svg' }
 	];
 
+	$: filteredTabs = tabs
+	.filter(tab => {
+		//remove settings for staff user
+		if ($userProfile.role.toLowerCase() === 'staff') {
+			return tab.name !== 'Settings'; 
+		}
+		return true; 
+	})
+	//remove activity log for staff user
+	.map(tab => {
+		if (tab.name === 'Inventory' && $userProfile.role.toLowerCase() === 'staff') {
+			return {
+				...tab,
+				subtabs: tab.subtabs?.filter(sub => sub.name !== 'Activity Logs')
+			};
+		}
+		return tab;
+	});
+
 	$: {
 		let current = tabs.find(tab => tab.link === $page.url.pathname);
 		for (const tab of tabs) {
@@ -40,9 +59,11 @@
 		}
 	}
 
-	let username = '';
-	let role = '';
-	let profilePic = '../src/icons/user.svg';
+	// let username = '';
+	// let role = '';
+	// let profilePic = '../src/icons/user.svg';
+
+	import {userProfile} from '$lib/stores/user';
 
 	onMount(async () => {
 		try {
@@ -51,9 +72,12 @@
 				headers: { Authorization: `Bearer ${token}` }
 			});
 			const data = await res.json();
-			username = data.user.username;
-			role = data.user.userRole;
-			profilePic = data.user.pathName || '../src/icons/user.svg';
+			userProfile.set({
+				userId: data.user.userId,
+				username: data.user.username,
+				role: data.user.userRole,
+				profilePic: data.user.pathName || '../src/icons/user.svg'
+			});
 		} catch (err) {
 			console.error("Error fetching profile: ", err);
 		}
@@ -86,7 +110,7 @@
 		<img src="../src/images/logo.png" alt="logo" />
 	</a>
 	<ul>
-		{#each tabs as tab}
+		{#each filteredTabs as tab}
 			<li class="flex-row items-center">
 				<a
 					href={tab.link}
@@ -129,11 +153,11 @@
 				}}
 			>
 				<div id="pfp" class="profile flex-shrink-0">
-					<img src={profilePic} alt="pfp" style="width:45px; height:45px;" />
+					<img src={$userProfile.profilePic} alt="pfp" style="width:45px; height:45px;" />
 				</div>
 				<div class="flex flex-col items-start ml-2 min-w-0" style="width: 0; flex: 0;">
-					<h2 class="text-lg truncate max-w-[180px]">{username}</h2>
-					<p class="gray3_txt text-sm truncate max-w-[180px]">{role}</p>
+					<h2 class="text-lg truncate max-w-[180px]">{$userProfile.username}</h2>
+					<p class="gray3_txt text-sm truncate max-w-[180px]">{$userProfile.role}</p>
 				</div>
 			</a>
 		</li>

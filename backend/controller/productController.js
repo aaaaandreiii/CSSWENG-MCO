@@ -3,6 +3,7 @@ import express from "express";
 import * as mysql from "../model/productModel.js";
 import { authenJWT } from "../middleware/authenJWT.js";
 import { authorizePermission } from "../middleware/authoPerms.js";
+import { logAudit } from "../model/auditModel.js";
 
 const router = express.Router();
 
@@ -12,6 +13,7 @@ router.post("/createProduct", authenJWT, authorizePermission("edit_product"), as
         const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
         const lastEditedUser = req.user.userId;
         const productId = await mysql.createProduct(productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, pathName, safeStockCount, restockFlag, lastEditedDate, lastEditedUser, 0);
+        await logAudit("add_product", `Created product ID ${productId})`, req.user.userId);
         res.json({message: "Product created successfully!", id: productId});
     }catch(err){
         res.status(500).json({ message: "Error creating Product" });
@@ -162,6 +164,7 @@ router.put("/updateProduct/:id", authenJWT, authorizePermission("edit_product"),
         updatedData.lastEditedUser = lastEditedUser;
         const result = await mysql.updateProductById(productId, updatedData);
         if(result){
+            await logAudit("edit_product", `Updated product ID ${productId})`, req.user.userId);
             res.json({ message: "Product updated successfully!", id: productId });
         }
         else{
@@ -177,6 +180,7 @@ router.delete("/deleteProduct/:id", authenJWT, authorizePermission("edit_product
         const productId = parseInt(req.params.id);
         const deleted = await mysql.cascadeDeleteProduct(productId);
         if(deleted){
+            await logAudit("delete_product", `Deleted product ID ${productId})`, req.user.userId);
             res.json({ message: "Product deleted successfully!", id: productId });
         }
         else{

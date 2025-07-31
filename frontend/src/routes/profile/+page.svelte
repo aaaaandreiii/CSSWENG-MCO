@@ -1,17 +1,20 @@
 <script lang="ts">
 	import { PUBLIC_API_BASE_URL } from '$env/static/public';
 	import {onMount} from 'svelte';
-	
+	import {userProfile} from '$lib/stores/user';
+
 	type UserDetails = { 
-		// userId: string; 
+		userId: number; 
 		name: string; 
 		user: string; 
 		date: string; 
 		position: string; 
-		profilePic: string
+		password: string;
+		profilePic: string;
 	};
 
 	let details: UserDetails[] = [];
+	let list: UserDetails[] = [];
 	let showPhotoModal = false;
 	let showEditModal = false;
 	let isDragging = false;
@@ -19,10 +22,15 @@
 	let editForm = {
 		name: '',
 		user: '',
-		position: ''
+		position: '',
+		newPassword: '',
+		confirmPassword: '',
+		profilePic: ''
 	};
+	let showNewPassword = false;
+    let showConfirmPassword = false;
 
-	onMount(async() =>{
+	async function fetchProfile(){
 		try{
 			// TODO for backend: ensure getUserProfile API returns correct user data structure
 			const token = localStorage.getItem('token');
@@ -33,17 +41,50 @@
 			});
 			const data = await res.json();
 			details = [{
+				userId: Number(data.user.userId),
 				name: data.user.fullName,
 				user: data.user.username,
 				date: new Date(data.user.dateAdded).toLocaleDateString('en-PH', {
 					timeZone: 'Asia/Manila'
 				}),
 				position: data.user.userRole,
+				password: data.user.userPassword,
 				profilePic: data.user.pathName || "../src/icons/user.svg"
 			}]
 		}catch(err){
 			console.error("Error fetching user data: ", err);
 		}
+	}
+
+	async function fetchUsers(){
+		try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getUsers`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            const data = await res.json();
+            console.log('Fetched data:', data);
+            list = data.users.map((item: any) => ({
+                userId: item.userId,
+                name: item.fullName,
+                user: item.username,
+                date: new Date(item.dateAdded).toLocaleDateString('en-PH', {
+                    timeZone: 'Asia/Manila'
+                }),
+                position: item.userRole,
+                password: item.userPassword,
+                profilePic: item.pathName || "../src/icons/user.svg"
+            }));
+        } catch (err) {
+            console.error('Error fetching user lists:', err);
+        }
+	}
+
+	onMount(async() =>{
+		fetchProfile();
+		fetchUsers();
 	});
 
 	function openPhotoModal() {
@@ -60,7 +101,10 @@
 			editForm = {
 				name: details[0].name,
 				user: details[0].user,
-				position: details[0].position
+				position: details[0].position,
+				newPassword: '',
+				confirmPassword: '',
+				profilePic: details[0].profilePic === "../src/icons/user.svg" ? '' : details[0].profilePic
 			};
 		}
 		showEditModal = true;
@@ -142,15 +186,75 @@
 		reader.readAsDataURL(file);
 	}
 
-	function saveEditProfile() {
+	async function saveEditProfile() {
 		if (details.length > 0) {
 			// TODO for backend: send updated profile data to backend API
-			details = [{
-				...details[0],
-				name: editForm.name,
-				user: editForm.user,
-				position: editForm.position
-			}];
+			if(list && (list.find((u: UserDetails) => u.user.trim().toLowerCase() === editForm.user.trim().toLowerCase() && u.userId !== details[0].userId))){
+				alert("Username already exists.");
+				return;
+			}
+			if(editForm.profilePic.trim() !== ''){
+				try{
+					new URL(editForm.profilePic.trim());
+				}catch(_) {
+					alert("Invalid path name.");
+					return;
+				}
+			}
+			if(!((!editForm.newPassword.trim() && !editForm.confirmPassword.trim()) || (editForm.newPassword.trim() && editForm.confirmPassword))){
+				alert("Please confirm your password.");
+				return;
+			}
+			if(editForm.newPassword !== editForm.confirmPassword){
+				alert("Passwords do not match.");
+				return;
+			}
+			
+			// details = [{
+			// 	...details[0],
+			// 	name: editForm.name,
+			// 	user: editForm.user
+			// }];
+			
+			const payload: any = {
+				userId: details[0].userId,
+				fullName: editForm.name.trim(),
+				userRole: details[0].position.trim(),
+				username: editForm.user.trim(),
+				pathName: editForm.profilePic.trim() || null
+			};
+
+
+			if(editForm.newPassword.trim()){
+				payload.userPassword = editForm.newPassword;
+			}
+
+			try{
+				const token = localStorage.getItem('token');
+				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/updateProfile`, {
+					method:  'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization:   `Bearer ${token}`
+					},
+					body: JSON.stringify(payload)
+				});
+				// const result = await res.json();
+				if(!res.ok){
+					alert("Error updating!");
+					return;
+				}
+				await fetchProfile();
+				//update sidebar info
+				userProfile.set({
+					userId: payload.userId,
+					username: payload.username.trim(),
+					role: payload.userRole.trim(),
+					profilePic: (payload.pathName?.trim() || "../src/icons/user.svg")
+				});
+			}catch(err){
+				console.error("Error updating profile: ", err);
+			}
 		}
 		closeEditModal();
 	}
@@ -256,19 +360,77 @@
 		<h2 class="text-xl font-bold mb-4">Edit Profile</h2>
 		
 		<form on:submit|preventDefault={saveEditProfile}>
-
-			<div class="mb-4"> <!-- Username Field, can change id as needed -->
-				<!-- TODO for backend, update username -->
-				<label for="edit-username" class="block text-sm font-medium mb-2">Username</label>
+			{#if $userProfile.role === 'admin'}
+				<div class="mb-4">
+					<label for="edit-fullName" class="block text-sm font-medium mb-2">Full Name</label>
+					<input 
+						id="edit-fullName"
+						bind:value={editForm.name}
+						type="text" 
+						class="w-full border border-gray-300 rounded-lg px-3 py-2"
+						required
+					/>
+				</div>
+				<div class="mb-4"> <!-- Username Field, can change id as needed -->
+					<!-- TODO for backend, update username -->
+					<label for="edit-username" class="block text-sm font-medium mb-2">Username</label>
+					<input 
+						id="edit-username"
+						bind:value={editForm.user}
+						type="text" 
+						class="w-full border border-gray-300 rounded-lg px-3 py-2"
+						required
+					/>
+				</div>
+				<div class="mb-4">
+					<label for="edit-newPassword" class="block text-sm font-medium mb-2">New Password</label>
+					<input 
+						id="edit-newPassword"
+						bind:value={editForm.newPassword}
+						type={showNewPassword ? "text" : "password"}
+						class="w-full border border-gray-300 rounded-lg px-3 py-2"
+						
+					/>
+					<div class="flex items-center mt-2">
+						<input
+							type="checkbox"
+							id="toggle-new-password"
+							bind:checked={showNewPassword}
+							class="mr-2"
+						/>
+						<label for="toggle-new-password" class="text-sm select-none">Show password</label>
+					</div>
+				</div>
+				<div class="mb-4">
+					<label for="edit-confirmPassword" class="block text-sm font-medium mb-2">Confirm Password</label>
+					<input 
+						id="edit-confirmPassword"
+						bind:value={editForm.confirmPassword}
+						type={showConfirmPassword ? "text" : "password"}
+						class="w-full border border-gray-300 rounded-lg px-3 py-2"
+						
+					/>
+					<div class="flex items-center mt-2">
+						<input
+							type="checkbox"
+							id="toggle-confirm-password"
+							bind:checked={showConfirmPassword}
+							class="mr-2"
+						/>
+						<label for="toggle-confirm-password" class="text-sm select-none">Show password</label>
+					</div>
+				</div>
+			{/if}
+			<div class="mb-4">
+				<label for="edit-profilePic" class="block text-sm font-medium mb-2">Profile Picture URL</label>
 				<input 
-					id="edit-username"
-					bind:value={editForm.user}
+					id="edit-profilePic"
+					bind:value={editForm.profilePic}
 					type="text" 
 					class="w-full border border-gray-300 rounded-lg px-3 py-2"
-					required
+					placeholder="Optional - leave empty for default"
 				/>
 			</div>
-			
 			<div class="flex justify-end gap-2">
 				<button 
 					type="button"

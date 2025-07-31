@@ -75,6 +75,7 @@ export async function bootstrapAdminUser() {
 export async function getUsers() {
     // return new Promise((resolve, reject) =>{
         const sql = 'SELECT * FROM Users WHERE deleteFlag = 0';
+        // const sql = 'SELECT * FROM Users';
     //     db.query(sql, (err, results) =>{
     //         if(err) return reject(err);
     //         console.log("Users: ", results);
@@ -139,31 +140,38 @@ export async function getUserByUsername(username) {
 
 //UPDATE
 export async function updateUserById(userId, updatedObject){
-    const hashedPassword = await argon2.hash(updatedObject.userPassword);
+    // const hashedPassword = await argon2.hash(updatedObject.userPassword);
     // return new Promise((resolve, reject) =>{
-        const sql = `
+        let sql = `
             UPDATE Users
             SET fullName = ?, 
                 userRole = ?, 
                 username = ?, 
-                userPassword = ?,
+                
                 pathName = ?,
                 lastEditedDate = ?,
                 lastEditedUser = ? 
                 
-            WHERE userId = ?
+            
         `;
         const values = [
             updatedObject.fullName,
             updatedObject.userRole, 
             updatedObject.username, 
-            hashedPassword, 
+            // hashedPassword, 
             updatedObject.pathName,
             updatedObject.lastEditedDate,
             updatedObject.lastEditedUser,
             
-            userId
+            // userId
         ];
+        if(updatedObject.userPassword && updatedObject.userPassword.trim()){
+            const hashedPassword = await argon2.hash(updatedObject.userPassword.trim());
+            sql += `, userPassword = ?`;
+            values.push(hashedPassword);
+        }
+        sql += ` WHERE userId = ?`;
+        values.push(userId);
     //     db.query(sql, values, (err, result) =>{
     //         if(err) return reject(err);
     //         if(result.affectedRows > 0){

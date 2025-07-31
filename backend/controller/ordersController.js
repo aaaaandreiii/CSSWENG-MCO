@@ -3,7 +3,7 @@ import * as ordersModel from "../model/ordersModel.js";
 import * as orderInfoModel from "../model/orderInfoModel.js";
 import { authenJWT } from "../middleware/authenJWT.js";
 import { authorizePermission } from "../middleware/authoPerms.js";
-
+import { logAudit } from "../model/auditModel.js";
 
 const router = express.Router();
 
@@ -18,6 +18,7 @@ router.post("/createOrder", authenJWT, authorizePermission("edit_order"), async(
         for(const item of items){
             await orderInfoModel.createOrderInfo(item.quantity, orderId, item.productId, item.unitPriceAtPurchase, lastEditedDate, lastEditedUser, 0);
         }
+        await logAudit("add_order", `Created order ID ${orderId})`, req.user.userId);
         res.json({message: "Orders and Order Info created successfully!", id: orderId});
     }catch(err){
         res.status(500).json({ message: "Error creating Orders and Order Info" });
@@ -96,6 +97,7 @@ router.put("/updateOrder/:id", authenJWT, authorizePermission("edit_order"), asy
         updatedData.lastEditedUser = lastEditedUser;
         const result = await ordersModel.updateOrderById(orderId, updatedData);
         if(result){
+            await logAudit("edit_order", `Updated order ID ${orderId})`, req.user.userId);
             res.json({ message: "Order updated successfully!", id: orderId });
         }
         else{
@@ -116,6 +118,7 @@ router.put("/updateOrderInfo/:id", authenJWT, authorizePermission("edit_order"),
         updatedData.lastEditedUser = lastEditedUser;
         const result = await orderInfoModel.updateOrderInfoById(orderInfoId, updatedData);
         if(result){
+            await logAudit("edit_orderInfo", `Updated order info ID ${orderInfoId})`, req.user.userId);
             res.json({ message: "Order Info updated successfully!", id: orderInfoId });
         }
         else{
@@ -126,12 +129,12 @@ router.put("/updateOrderInfo/:id", authenJWT, authorizePermission("edit_order"),
     }
 }); //test: curl -X PUT http://localhost:5000/api/updateOrderInfo/1 -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"quantity\":3,\"productId\":2}"
 
-
 router.delete("/deleteOrder/:id", authenJWT, authorizePermission("edit_order"), async(req, res) =>{
     try{
         const orderId = parseInt(req.params.id);
         const deleted = await ordersModel.cascadeDeleteOrder(orderId);
         if(deleted){
+            await logAudit("delete_order", `Deleted order ID ${orderId})`, req.user.userId);
             res.json({ message: "Order deleted successfully!", id: orderId });
         }
         else{
@@ -147,6 +150,7 @@ router.delete("/deleteOrderInfo/:id", authenJWT, authorizePermission("edit_order
         const orderInfoId = parseInt(req.params.id);
         const deleted = await orderInfoModel.deleteOrderInfoById(orderInfoId);
         if(deleted){
+            await logAudit("delete_orderInfo", `Deleted order info ID ${orderInfoId})`, req.user.userId);
             res.json({ message: "Order Info deleted successfully!", id: orderInfoId });
         }
         else{

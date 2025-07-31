@@ -1,10 +1,14 @@
 <script lang="ts">
+	import { SystemDrive } from '$env/static/private';
 	import { PUBLIC_API_BASE_URL } from '$env/static/public';
+	import { userProfile } from '$lib/stores/user';
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 
 	let selected = 'all'; // default selected tab = profile
 	let hasDropdownChanged = false;
 	let showNewPassword = false; //create new pass, show pass
+	let showConfirmPassword = false;
 
 	// frontend 
 	//3 dots - menu
@@ -43,14 +47,16 @@
 
 	//backend
 	type UserDetails = { 
-		userId: string; 
+		userId: number; 
 		name: string; //fullName
 		user: string; //username
 		date: string; 
 		position: string; 
-		profilePic: string
+		password: string;
+		profilePic: string;
 	};
 	let details: UserDetails[] = [];
+	// let profile: UserDetails;
 
 	async function fetchUsers() {
 		try {
@@ -61,13 +67,14 @@
 			const data = await res.json();
         	console.log('Fetched data:', data);
 			details = data.users.map((item: any) => ({
-				userId: item.userId,
+				userId: Number(item.userId),
 				name: item.fullName,
 				user: item.username,
 				date: new Date(item.dateAdded).toLocaleDateString('en-PH', {
 					timeZone: 'Asia/Manila'
 				}),
 				position: item.userRole,
+				password: item.userPassword,
 				profilePic: item.pathName || "../src/icons/user.svg"
 			}));
 		} catch (err) {
@@ -75,7 +82,35 @@
 		}
 	}
 
-	onMount(fetchUsers);
+	// async function fetchProfile(){
+	// 	try{
+	// 		const token = localStorage.getItem('token');
+	// 		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getUserProfile`, {
+	// 			headers: {
+	// 				Authorization: `Bearer ${token}`
+	// 			}
+	// 		});
+	// 		const data = await res.json();
+	// 		profile = {
+	// 			userId: Number(data.user.userId),
+	// 			name: data.user.fullName,
+	// 			user: data.user.username,
+	// 			date: new Date(data.user.dateAdded).toLocaleDateString('en-PH', {
+	// 				timeZone: 'Asia/Manila'
+	// 			}),
+	// 			position: data.user.userRole,
+	// 			password: data.user.userPassword,
+	// 			profilePic: data.user.pathName || "../src/icons/user.svg" 
+	// 		}
+	// 	}catch(err){
+	// 		console.error("Error fetching user data: ", err);
+	// 	}
+	// }
+
+	onMount(async() =>{
+		// fetchProfile();
+		fetchUsers();
+	});
 
 	// Computed filtered details based on selected tab
 	$: filteredDetails =
@@ -90,8 +125,6 @@
 				return 'red';
 			case 'staff':
 				return 'green';
-			case 'auditor':
-				return 'yellow';
 			case 'manager':
 				return 'blue';
 			default:
@@ -102,13 +135,14 @@
 	// Dropdown state: track open dropdown by user index
 	let showDropdown = false;
 	let openDropdownIndex: number | null = null;
-	const dropdownOptions = ['Admin', 'Staff', 'Auditor', 'Manager'];
+	const dropdownOptions = ['admin', 'staff', 'manager'];
 
 	function selectPosition(option: string, idx: number) {
 		const newPosition = option.charAt(0).toUpperCase() + option.slice(1);
 		if (details[idx].position !== newPosition) {
 			details[idx].position = newPosition;
 			hasDropdownChanged = true;
+			// editRoleId = details[idx].user
 		}
 		openDropdownIndex = null;
 	}
@@ -137,35 +171,38 @@
 	let newUsername = '';
 	let newUserRole = '';
 	let newPassword = '';
+	let newConfirmPassword = '';
 	let newPathName = '';
-	
-	// let newEmail = '';
 	
 	let addError = '';
 
 	// Modal state and form fields for editing user
 	let showEditModal = false;
-	let editUserId = '';
+	let editUserId: number;
 	let editFullName = '';
 	let editUsername = '';
 	let editUserRole = '';
+	let editPassword = '';
+	let editConfirmPassword = '';
 	let editPathName = '';
 	let editError = '';
 	let editIndex = -1;
 
+	let editRoleId: number;
+
 	// Modal state for delete confirmation
 	let showDeleteModal = false;
-	let deleteUserId = '';
+	let deleteUserId: number;
 	let deleteUserName = '';
 	let deleteIndex = -1;
 
 	function openAddModal() {
 		showAddModal = true;
-		// newEmail = '';
 		newFullName = '';
 		newUsername = '';
 		newUserRole = '';
 		newPassword = '';
+		newConfirmPassword = '';
 		newPathName = '';
 		addError = '';
 	}
@@ -175,13 +212,19 @@
 		addError = '';
 	}
 
-	function openEditModal(idx: number) {
+	function openEditModal(userId: number, idx: number) {
 		editIndex = idx;
-		const user = details[idx];
+		const user = details.find((u) => u.userId === userId);
+		if(!user){
+			console.warn(`User with ID ${userId} not found.`);
+			return;
+		}
 		editUserId = user.userId;
 		editFullName = user.name;
 		editUsername = user.user;
 		editUserRole = user.position.toLowerCase();
+		editPassword = '';
+		editConfirmPassword = '';
 		editPathName = user.profilePic === "../src/icons/user.svg" ? '' : user.profilePic;
 		editError = '';
 		showEditModal = true;
@@ -194,9 +237,56 @@
 		editIndex = -1;
 	}
 
-	function openDeleteModal(idx: number) {
+	function canUpdate(userId: number){
+		const user = details.find((u) => u.userId === userId);
+		if(!user){
+			console.warn(`User with ID ${userId} not found.`);
+			return;
+		}
+		//if you are staff and not yourself
+		if($userProfile.role === 'staff' && user.userId !== $userProfile.userId)
+			return false;
+		//if you are a manager, you cannot update manager, admin, unless yourself
+		if((user.position === 'admin' || (user.position === 'manager' && user.userId !== $userProfile.userId)) && ($userProfile.role === 'manager')) 
+			return false;
+		//if you the only admin left, you cannot change ur role to anything else
+		if(user.position === 'admin' && user.userId === $userProfile.userId && details.filter(u => u.position === 'admin').length === 1)
+			return false;
+		return true;
+	}
+
+	function canDelete(userId: number){
+		const user = details.find((u) => u.userId === userId);
+		if(!user){
+			console.warn(`User with ID ${userId} not found.`);
+			return;
+		}
+		//cannot delete yourself
+		if(user.userId === $userProfile.userId) 
+			return false;
+		//if you are staff
+		if($userProfile.role === 'staff')
+			return false;
+		//cannot delete manager, admin, if you are a manager
+		if((user.position === 'manager' || user.position === 'admin') && ($userProfile.role === 'manager'))
+			return false;
+		//if deleting admin but you are not admin
+		if(user.position === 'admin' && $userProfile.role !== 'admin') 
+			return false;
+		//need at least 1 admin present
+		if(user.position === 'admin' && details.filter(u => u.position === 'admin').length === 1)
+			return false;
+		return true;
+	}
+
+	function openDeleteModal(userId: number, idx: number) {
 		deleteIndex = idx;
-		const user = details[idx];
+		const user = details.find((u) => u.userId === userId);
+		if(!user){
+			console.warn(`User with ID ${userId} not found.`);
+			return;
+		}
+		// const user = details[idx];
 		deleteUserId = user.userId;
 		deleteUserName = user.name;
 		showDeleteModal = true;
@@ -212,54 +302,62 @@
 		event.preventDefault();
 		addError = '';
 		//1. basic validation
-		if (!newFullName.trim() || !newUsername.trim() || !newPassword.trim() || !newUserRole.trim()) {
-			addError = 'All fields are required.';
+		if(!newFullName.trim() || !newUsername.trim() || !newPassword.trim() || !newConfirmPassword.trim() || !newUserRole.trim()){
+			addError = 'Missing Fields.';
 			return;
 		}
-		if(details.find((u: UserDetails) => u.user.toLowerCase() === newUsername.trim().toLowerCase())){
+		if(details.find((u: UserDetails) => u.user.trim().toLowerCase() === newUsername.trim().toLowerCase())){
 			addError = 'Username already exists.';
 			return;
 		}
-		if(newPathName.trim() !== '') {
-			try {
+		if(!((!newPassword.trim() && !newConfirmPassword.trim()) || (newPassword.trim() && newConfirmPassword.trim()))){
+			addError = 'Please confirm your password.';
+			return;
+		}
+		if(newPassword.trim() !== newConfirmPassword.trim()){
+			addError = 'Passwords do not match.';
+			return;
+		}
+		if(newPathName.trim() !== ''){
+			try{
 				new URL(newPathName.trim());
-			}catch(_) {
+			}catch(_){
 				addError = 'Invalid path name.';
 				return;
 			}
 		}
 		const role = newUserRole.trim().toLowerCase();
-		if(!(role === 'admin' || role === 'manager' || role === 'staff' || role === 'auditor')){
-			addError = 'Only admin, manager, staff, auditor are valid user role';
+		if(!(role === 'admin' || role === 'manager' || role === 'staff')){
+			addError = 'Only admin, manager, and staff are valid user role';
 			return;
 		}
 
 		// 2) Build payload
 		const payload = {
-			fullName:   	newFullName.trim(),
-			userRole:   	newUserRole.trim(),
-			username:   	newUsername.trim(),
-			userPassword: 	newPassword,
-			pathName:   	newPathName.trim() || null
+			fullName: newFullName.trim(),
+			userRole: newUserRole.trim(),
+			username: newUsername.trim(),
+			userPassword: newPassword.trim(),
+			pathName: newPathName.trim() || null
 		};
 
-		try {
+		try{
 			//TODO: Backend API call to create user
 			const token = localStorage.getItem('token');
 			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/createUser`, {
-			method:  'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization:   `Bearer ${token}`
-			},
-			body: JSON.stringify(payload)
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`
+				},
+				body: JSON.stringify(payload)
 			});
 
 			const result = await res.json();
 			if (!res.ok) {
-			addError = result.message || 'Failed to create user.';
-			showAck(addError);
-			return;
+				addError = result.message || 'Failed to create user.';
+				showAck(addError);
+				return;
 			}
 
 			// on success, close the modal
@@ -269,7 +367,7 @@
 			await fetchUsers();
 			showAck('User created successfully.');
 
-		} catch (err) {
+		}catch(err){
 			console.error(err);
 			addError = 'Network error. Please try again.';
 		}
@@ -280,101 +378,191 @@
 		editError = '';
 		
 		// Basic validation
-		if (!editFullName.trim() || !editUsername.trim() || !editUserRole.trim()) {
+		if(!editFullName.trim() || !editUsername.trim() || !editUserRole.trim()){
 			editError = 'Full name, username, and user role are required.';
 			return;
 		}
 		
 		// Check if username already exists (excluding current user)
-		const existingUser = details.find((u: UserDetails, idx) => 
-			idx !== editIndex && u.user.toLowerCase() === editUsername.trim().toLowerCase()
-		);
-		if (existingUser) {
+		// const existingUser = details.find((u: UserDetails, idx) => 
+		// 	idx !== editIndex && u.user.toLowerCase() === editUsername.trim().toLowerCase()
+		// );
+		// if(existingUser){
+		// 	editError = 'Username already exists.';
+		// 	return;
+		// }
+
+		if(details && (details.find((u: UserDetails) => u.user.trim().toLowerCase() === editUsername.trim().toLowerCase() && u.userId !== $userProfile.userId))){
 			editError = 'Username already exists.';
 			return;
 		}
-		
-		if (editPathName.trim() !== '') {
-			try {
+			
+		if(!((!editPassword.trim() && !editConfirmPassword.trim()) || (editPassword.trim() && editConfirmPassword.trim()))){
+			editError = 'Please confirm your password.';
+			return;
+		}
+		if(editPassword.trim() !== editConfirmPassword.trim()){
+			editError = 'Passwords do not match.';
+			return;
+		}
+		if(editPathName.trim() !== ''){
+			try{
 				new URL(editPathName.trim());
-			} catch (_) {
+			}catch(_){
 				editError = 'Invalid path name.';
 				return;
 			}
 		}
 		
 		const role = editUserRole.trim().toLowerCase();
-		if (!(role === 'admin' || role === 'manager' || role === 'staff' || role === 'auditor')) {
-			editError = 'Only admin, manager, staff, auditor are valid user roles';
+		if(!(role === 'admin' || role === 'manager' || role === 'staff')){
+			editError = 'Only admin, manager, and staff are valid user roles';
 			return;
 		}
 
 		// Build payload
-		const payload = {
-			userId: editUserId,
+		const payload: any = {
+			userId: Number(editUserId),
 			fullName: editFullName.trim(),
 			userRole: editUserRole.trim(),
 			username: editUsername.trim(),
 			pathName: editPathName.trim() || null
 		};
+		
+		if(editPassword.trim()){
+			payload.userPassword = editPassword;
+		}
 
-		try {
+		try{
 			// TODO for backend: API call to update user
-
-			// const token = localStorage.getItem('token');
-			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/updateUser`, {
-			// 	method: 'PUT',
-			// 	headers: {
-			// 		'Content-Type': 'application/json',
-			// 		Authorization: `Bearer ${token}`
-			// 	},
-			// 	body: JSON.stringify(payload)
-			// });
+			const token = localStorage.getItem('token');
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/updateUser/${payload.userId}`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`
+				},
+				body: JSON.stringify(payload)
+			});
 
 			// TODO for backend: if response = not ok, return error message
-			// const result = await res.json();
-			// if (!res.ok) {
-			// 	editError = result.message || 'Failed to update user.';
-			// 	return;
+			const result = await res.json();
+			if(!res.ok){
+				editError = result.message || 'Failed to update user.';
+				return;
+			}
+			//update sidebar info
+			const currentUser = get(userProfile);
+			if(currentUser?.userId === payload.userId){
+				userProfile.set({
+					userId: payload.userId,
+					username: payload.username.trim(),
+					role: payload.userRole.trim(),
+					profilePic: payload.pathName?.trim() || "../src/icons/user.svg"
+				});
+			}
+			// if(profile.userId === payload.userId){
+			// 	userProfile.set({
+			// 		userId: payload.userId,
+			// 		username: payload.username.trim(),
+			// 		role: payload.userRole.trim(),
+			// 		profilePic: payload.pathName?.trim() || "../src/icons/user.svg"
+			// 	});
 			// }
 
 			// Success: close modal, reload list
 			closeEditModal();
 			await fetchUsers();
+			// await fetchProfile();
 			showAck('User updated successfully.');
 
-		} catch (err) {
+		}catch(err){
 			console.error(err);
 			editError = 'Network error. Please try again.';
 		}
 	}
+	
+	async function saveRoleChanges(userId: number){
+		editError = '';		
+		console.log(userId);
+		const user = details.find((u) => u.userId === userId);
+		if(!user){
+			console.warn(`User with ID ${userId} not found.`);
+			return;
+		}
+
+		// Build payload
+		const payload: any = {
+			userId: Number(user.userId),
+			fullName: user.name.trim(),
+			userRole: user.position.trim(),
+			username: user.user.trim(),
+			pathName: user.profilePic.trim() || null
+		};
+
+		try{
+			const token = localStorage.getItem('token');
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/updateUser/${payload.userId}`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`
+				},
+				body: JSON.stringify(payload)
+			});
+
+			// TODO for backend: if response = not ok, return error message
+			const result = await res.json();
+			if(!res.ok){
+				alert('Failed to update role.');
+				return;
+			}
+			//update sidebar info
+			const currentUser = get(userProfile);
+			if(currentUser?.userId === payload.userId){
+				userProfile.set({
+					userId: payload.userId,
+					username: payload.username.trim(),
+					role: payload.userRole.trim(),
+					profilePic: payload.pathName?.trim() || "../src/icons/user.svg"
+				});
+			}
+
+			isEditMode = false; 
+			openDropdownIndex = null; 
+			hasDropdownChanged = false; 
+			await fetchUsers();
+			showAck('Successfully changed roles!');
+		}catch(err){
+			console.error(err);
+		}	
+	}
 
 	async function handleDeleteAccount() {
-		try {
+		try{
 			// TODO for backend: API call to delete user
-			// const token = localStorage.getItem('token');
-			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteUser`, {
-			// 	method: 'DELETE',
-			// 	headers: {
-			// 		'Content-Type': 'application/json',
-			// 		Authorization: `Bearer ${token}`
-			// 	},
-			// 	body: JSON.stringify({ userId: deleteUserId })
-			// });
+			const token = localStorage.getItem('token');
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteUser/${deleteUserId}`, {
+				method: 'DELETE',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`
+				}
+			});
 			
 			// TODO for backend: if response = not ok, return error message
-			// const result = await res.json();
-			// if (!res.ok) {
-			// 	showAck(result.message || 'Failed to delete user.');
-			// 	return;
-			// }
+			const result = await res.json();
+			if(!res.ok){
+				showAck(result.message || 'Failed to delete user.');
+				return;
+			}
 
 			// Success: close modal, reload list
 			closeDeleteModal();
 			await fetchUsers();
 			showAck('User deleted successfully.');
 
-		} catch (err) {
+		}catch(err){
 			console.error(err);
 			showAck('Network error. Please try again.');
 		}
@@ -479,7 +667,7 @@
 						Staff
 					</a>
 									</li>
-									<li>
+									<!-- <li>
 					<a
 						href="#auditor"
 						class="px-4 text-lg tab-link {selected === 'auditor'
@@ -490,7 +678,7 @@
 					>
 						Auditor
 					</a>
-									</li>
+									</li> -->
 									<li>
 					<a
 						href="#manager"
@@ -504,19 +692,21 @@
 					</a>
 									</li>
 								</ul>
-					<button
-						class="button mb-1.5 w-28 {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none bg-gray-300 text-gray-500' : ''}"
-						onclick={() => { if (!isEditMode) { isEditMode = true; hasDropdownChanged = false; } }}
-						disabled={isEditMode}
-					>
-						Edit
-					</button>
+					{#if $userProfile.role === 'admin'}
+						<button
+							class="button mb-1.5 w-28 {isEditMode ? 'cursor-not-allowed opacity-60 pointer-events-none bg-gray-300 text-gray-500' : ''}"
+							onclick={() => { if (!isEditMode) { isEditMode = true; hasDropdownChanged = false; } }}
+							disabled={isEditMode}
+						>
+							Edit
+						</button>
+					{/if}
 		</nav>
 		
 		<hr class="mb-0 border-gray-300" />
 		<!-- permissions section, change roles as needed -->
 		<div class="flex flex-wrap gap-5 justify-start">
-			{#if selected === 'all' || selected === 'admin' || selected === 'staff' || selected === 'auditor' || selected === 'manager'}
+			{#if selected === 'all' || selected === 'admin' || selected === 'staff' || selected === 'manager'}
 
 				{#each filteredDetails as detail, idx}
 					<div class="mt-8 rounded-lg bg-white p-8 basis-1/7 min-w-[250px] flex-shrink-0 relative " 
@@ -524,7 +714,7 @@
 
 >
 						<!-- 3 dots button menu-->
-						{#if isEditMode}
+						{#if isEditMode && (canUpdate(detail.userId) || canDelete(detail.userId))}
 							<button
 								class="absolute top-3 right-3 w-6 h-6"
 								onclick={() => showMenus[idx] = !showMenus[idx]}
@@ -536,18 +726,38 @@
 							<!-- Dropdown -->
 							{#if showMenus[idx]}
 								<div class="absolute top-10 right-3 bg-white shadow-md rounded-md w-24 z-50 py-1">
-									<button 
-										class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
-										onclick={() => openEditModal(idx)}
-									>
-										Edit
-									</button>
-									<button 
-										class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
-										onclick={() => openDeleteModal(idx)}
-									>
-										Delete
-									</button>
+									{#if canUpdate(detail.userId)}
+										<button 
+											class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
+											onclick={() => openEditModal(detail.userId, idx)}
+										>
+											Edit
+										</button>
+									{:else}
+										<button 
+											disabled 
+											class="block w-full text-left px-4 py-2 text-gray-400 cursor-not-allowed text-sm"
+											title="You cannot edit this user"
+										>
+											Edit
+										</button>
+									{/if}
+									{#if canDelete(detail.userId)}
+										<button 
+											class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
+											onclick={() => openDeleteModal(detail.userId, idx)}
+										>
+											Delete
+										</button>
+									{:else}
+										<button 
+											disabled 
+											class="block w-full text-left px-4 py-2 text-gray-400 cursor-not-allowed text-sm"
+											title="You cannot delete this user"
+										>
+											Delete
+										</button>
+									{/if}
 								</div>
 							{/if}
 						{/if}
@@ -579,7 +789,7 @@
 										class="flex w-full items-center justify-center gap-1 rounded-full px-3 py-1 
 										focus:outline-none"
 										onclick={() => {
-											if (isEditMode) {
+											if (isEditMode && canUpdate(detail.userId)) {
 												openDropdownIndex === idx
 													? (openDropdownIndex = null)
 													: (openDropdownIndex = idx);
@@ -587,11 +797,11 @@
 										}}
 										aria-label="Show dropdown"
 										style="background: none; border: none;"
-										disabled={!isEditMode}
+										disabled={!(isEditMode && canUpdate(detail.userId))}
 										tabindex={isEditMode ? 0 : -1}
 									>
 										<p class="mb-0 select-none">{detail.position}</p>
-										{#if isEditMode}
+										{#if isEditMode && canUpdate(detail.userId)}
 											<img
 												src="../src/icons/down-black.svg"
 												alt="dropdown arrow"
@@ -631,20 +841,22 @@
 		</div>
 
 		{#if isEditMode}
-			<button
-				class="fixed bottom-10 left-70 rounded-full green1 edit-btn"
-				onclick={openAddModal}
-			>
-				<img src="../src/icons/add.svg" alt="Add" style="width: 50px;" />
-			</button>
+			{#if $userProfile.role === 'admin'}
+				<button
+					class="fixed bottom-10 left-70 rounded-full green1 edit-btn"
+					onclick={openAddModal}
+				>
+					<img src="../src/icons/add.svg" alt="Add" style="width: 50px;" />
+				</button>
+			{/if}
 			<div class="fixed right-10 bottom-10 flex gap-4 z-50">
 				{#if hasDropdownChanged}
 				<button
 					class="px-8 py-3 rounded-lg bg-green-700 text-white font-bold shadow-lg hover:bg-green-800 transition-colors duration-150"
-					onclick={() => { isEditMode = false; openDropdownIndex = null; hasDropdownChanged = false; showAck('Successfully changed roles!');
-}}
+					onclick={() => saveRoleChanges}
 					type="button"
 				>
+				<!-- onclick={() => { isEditMode = false; openDropdownIndex = null; hasDropdownChanged = false; showAck('Successfully changed roles!');}} -->
 					Save
 				</button>
 				{/if}
@@ -710,6 +922,54 @@
 								{/each}
 							</select>
 						</div>
+						<div class="mb-3">
+							<label for="newPassword" class="block mb-1 text-sm font-medium">Password</label>
+							<input
+								id="newPassword"
+								type={showNewPassword ? "text" : "password"}
+								class="w-full border rounded px-3 py-2"
+								bind:value={newPassword}
+								required
+							/>
+							<div class="flex items-center mt-2">
+								<input
+									type="checkbox"
+									id="toggle-new-password"
+									bind:checked={showNewPassword}
+									class="mr-2"
+								/>
+								<label for="toggle-new-password" class="text-sm select-none">Show password</label>
+							</div>
+						</div>
+						<div class="mb-3">
+							<label for="newConfirmPassword" class="block mb-1 text-sm font-medium">Confirm Password</label>
+							<input
+								id="newConfirmPassword"
+								type={showConfirmPassword ? "text" : "password"}
+								class="w-full border rounded px-3 py-2"
+								bind:value={newConfirmPassword}
+								required
+							/>
+							<div class="flex items-center mt-2">
+								<input
+									type="checkbox"
+									id="toggle-confirm-password"
+									bind:checked={showConfirmPassword}
+									class="mr-2"
+								/>
+								<label for="toggle-confirm-password" class="text-sm select-none">Show password</label>
+							</div>
+						</div>
+						<div class="mb-3">
+							<label for="newPathName" class="block mb-1 text-sm font-medium">Profile Picture URL</label>
+							<input
+								id="newPathName"
+								type="newPathName"
+								class="w-full border rounded px-3 py-2"
+								bind:value={newPathName}
+								
+							/>
+						</div>
 						{#if addError}
 							<p class="text-[#de0101] text-sm mb-2">{addError}</p>
 						{/if}
@@ -724,10 +984,10 @@
 							<button
 								type="submit"
 								class="px-4 py-2 rounded text-white
-									{newFullName.trim() && newUsername.trim() && newUserRole.trim() && newPassword.trim()
+									{newFullName.trim() && newUsername.trim() && newUserRole.trim() && newPassword.trim() && newConfirmPassword
 									? 'bg-green-700 hover:bg-green-800'
 									: 'cursor-not-allowed bg-gray-400'}"
-								disabled={!(newFullName.trim() && newUsername.trim() && newUserRole.trim() && newPassword.trim())}
+								disabled={!(newFullName.trim() && newUsername.trim() && newUserRole.trim() && newPassword.trim() && newConfirmPassword)}
 							>
 								Create
 							</button>
@@ -777,19 +1037,59 @@
 								required
 							/>
 						</div>
+						<!-- {#if $userProfile.role === 'admin'} -->
+							<div class="mb-3">
+								<label for="editUserRole" class="block mb-1 text-sm font-medium">User Role</label>
+								<select
+									id="editUserRole"
+									class="w-full border rounded px-3 py-2"
+									bind:value={editUserRole}
+								>
+									{#each dropdownOptions as option}
+									<option value={option}>{option.charAt(0).toUpperCase() + option.slice(1)}</option>
+									{/each}
+								</select>
+							</div>
+							<div class="mb-3">
+								<label for="editPassword" class="block mb-1 text-sm font-medium">Password</label>
+								<input
+									id="editPassword"
+									type={showNewPassword ? "text" : "password"}
+									class="w-full border rounded px-3 py-2"
+									bind:value={editPassword}
+									placeholder="Leave empty if not changing"
+								/>
+								<div class="flex items-center mt-2">
+									<input
+										type="checkbox"
+										id="toggle-new-password"
+										bind:checked={showNewPassword}
+										class="mr-2"
+									/>
+									<label for="toggle-new-password" class="text-sm select-none">Show password</label>
+								</div>
+							</div>
+							<div class="mb-3">
+								<label for="editConfirmPassword" class="block mb-1 text-sm font-medium">Confirm Password</label>
+								<input
+									id="editConfirmPassword"
+									type={showConfirmPassword ? "text" : "password"}
+									class="w-full border rounded px-3 py-2"
+									bind:value={editConfirmPassword}
+									placeholder="Confirm your password if wish to change"
+								/>
+								<div class="flex items-center mt-2">
+									<input
+										type="checkbox"
+										id="toggle-confirm-password"
+										bind:checked={showConfirmPassword}
+										class="mr-2"
+									/>
+									<label for="toggle-confirm-password" class="text-sm select-none">Show password</label>
+								</div>
+							</div>
+						<!-- {/if} -->
 						<div class="mb-3">
-							<label for="editUserRole" class="block mb-1 text-sm font-medium">User Role</label>
-							<select
-								id="editUserRole"
-								class="w-full border rounded px-3 py-2"
-								bind:value={editUserRole}
-							>
-								{#each dropdownOptions as option}
-								<option value={option}>{option.charAt(0).toUpperCase() + option.slice(1)}</option>
-								{/each}
-							</select>
-						</div>
-						<!-- <div class="mb-3">
 							<label for="editPathName" class="block mb-1 text-sm font-medium">Profile Picture URL</label>
 							<input
 								id="editPathName"
@@ -798,7 +1098,7 @@
 								bind:value={editPathName}
 								placeholder="Optional - leave empty for default"
 							/>
-						</div> -->
+						</div>
 						{#if editError}
 							<p class="text-[#de0101] text-sm mb-2">{editError}</p>
 						{/if}
@@ -813,10 +1113,10 @@
 							<button
 								type="submit"
 								class="px-4 py-2 rounded text-white
-									{editFullName.trim() && editUsername.trim() && editUserRole.trim()
+									{editFullName.trim() && editUsername.trim() && editUserRole.trim() && ((editPassword.trim() && editConfirmPassword) || (!editPassword.trim() && !editConfirmPassword))
 									? 'bg-green-700 hover:bg-green-800'
 									: 'cursor-not-allowed bg-gray-400'}"
-								disabled={!(editFullName.trim() && editUsername.trim() && editUserRole.trim())}
+								disabled={!(editFullName.trim() && editUsername.trim() && editUserRole.trim() && ((editPassword.trim() && editConfirmPassword) || (!editPassword.trim() && !editConfirmPassword)))}
 							>
 								Update
 							</button>

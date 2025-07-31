@@ -13,7 +13,7 @@ router.post("/createStockWithdrawal", authenJWT, authorizePermission("edit_stock
         const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
         const lastEditedUser = req.user.userId;
         const withdrawalId = await mysql.createStockWithdrawal(dateWithdrawn, quantityWithdrawn, purpose, entryId, withdrawnBy, authorizedBy, lastEditedDate, lastEditedUser, 0);
-        await logAudit("add_stock", `Created withdrawal ID ${withdrawalId} for entry ${entryId} (Qty: ${quantityWithdrawn})`, req.user.userId);
+        await logAudit("add_stockWithdrawal", `Created withdrawal ID ${withdrawalId} for entry ${entryId} (Qty: ${quantityWithdrawn})`, req.user.userId);
         res.json({message: "Stock Withdrawal created successfully!", id: withdrawalId});
     }catch(err){
         res.status(500).json({ message: "Error creating Stock Withdrawal" });
@@ -61,7 +61,7 @@ router.put("/updateStockWithdrawal/:id", authenJWT, authorizePermission("edit_st
         updatedData.lastEditedUser = lastEditedUser;
         const result = await mysql.updateStockWithdrawalById(withdrawalId, updatedData);
         if(result){
-            await logAudit("edit_stock", `Updated withdrawal ID ${withdrawalId}`, req.user.userId);
+            await logAudit("edit_stockWithdrawal", `Updated withdrawal ID ${withdrawalId}`, req.user.userId);
             res.json({ message: "Stock Withdrawal updated successfully!", id: withdrawalId });
         }
         else{
@@ -77,7 +77,7 @@ router.delete("/deleteStockWithdrawal/:id", authenJWT, authorizePermission("edit
         const withdrawalId = parseInt(req.params.id);
         const deleted = await mysql.deleteStockWithdrawalById(withdrawalId);
         if(deleted){
-            await logAudit("delete_stock", `Deleted withdrawal ID ${withdrawalId}`, req.user.userId);
+            await logAudit("delete_stockWithdrawal", `Deleted withdrawal ID ${withdrawalId}`, req.user.userId);
             res.json({ message: "Stock Withdrawal deleted successfully!", id: withdrawalId });
         }
         else{

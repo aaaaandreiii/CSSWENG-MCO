@@ -3,6 +3,7 @@ import * as returnExchangeModel from "../model/returnExchangeModel.js";
 import * as returnExchangeInfoModel from "../model/returnExchangeInfoModel.js";
 import { authenJWT } from "../middleware/authenJWT.js";
 import { authorizePermission } from "../middleware/authoPerms.js";
+import { logAudit } from "../model/auditModel.js"
 
 const router = express.Router();
 
@@ -18,6 +19,7 @@ router.post("/createReturnExchange", authenJWT, authorizePermission("process_ret
             const exchangeQuantity = transaction.exchangeQuantity ?? null;
             await returnExchangeInfoModel.createReturnExchangeInfo(transaction.returnedProductId, transaction.returnedQuantity, exchangeProductId, exchangeQuantity, transaction.reason, transactionId, transaction.returnType, lastEditedDate, lastEditedUser, 0);
         }
+        await logAudit("add_returnExchange", `Created transaction ID ${transactionId} for order ${orderId})`, req.user.userId);
         res.json({message: "Return Exchange and Return Exchange Info created successfully!", id: transactionId});
     }catch(err){
         console.error("Return Exchange Error:", err);
@@ -97,6 +99,7 @@ router.put("/updateReturnExchange/:id", authenJWT, authorizePermission("process_
         updatedData.lastEditedUser = lastEditedUser;
         const result = await returnExchangeModel.updateReturnExchangeById(transactionId, updatedData);
         if(result){
+            await logAudit("edit_returnExchange", `Updated transaction ID ${transactionId})`, req.user.userId);
             res.json({ message: "Return Exchange updated successfully!", id: transactionId });
         }
         else{
@@ -117,6 +120,7 @@ router.put("/updateReturnExchangeInfo/:id", authenJWT, authorizePermission("proc
         updatedData.lastEditedUser = lastEditedUser;
         const result = await returnExchangeInfoModel.updateReturnExchangeInfoById(detailId, updatedData);
         if(result){
+            await logAudit("edit_returnExchangeInfo", `Updated detail ID ${detailId})`, req.user.userId);
             res.json({ message: "Return Exchange Info updated successfully!", id: detailId });
         }
         else{
@@ -132,6 +136,7 @@ router.delete("/deleteReturnExchange/:id", authenJWT, authorizePermission("proce
         const transactionId = parseInt(req.params.id);
         const deleted = await returnExchangeModel.cascadeDeleteReturnExchange(transactionId);
         if(deleted){
+            await logAudit("delete_returnExchange", `Deleted transaction ID ${transactionId})`, req.user.userId);
             res.json({ message: "Return Exchange deleted successfully!", id: transactionId });
         }
         else{
@@ -147,6 +152,7 @@ router.delete("/deleteReturnExchangeInfo/:id", authenJWT, authorizePermission("p
         const detailId = parseInt(req.params.id);
         const deleted = await returnExchangeInfoModel.deleteReturnExchangeInfo(detailId);
         if(deleted){
+            await logAudit("delete_returnExchangeInfo", `Deleted detail ID ${detailId})`, req.user.userId);
             res.json({ message: "Return Exchange Info deleted successfully!", id: detailId });
         }
         else{

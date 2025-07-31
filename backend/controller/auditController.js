@@ -5,7 +5,7 @@ import { authorizePermission } from "../middleware/authoPerms.js";
 
 const router = express.Router();
 
-router.get("/getAuditJoinedInformation", authenJWT, authorizePermission("edit_stock"), async (req, res) => {
+router.get("/getAuditJoinedInformation", authenJWT, authorizePermission("view_logs"), async (req, res) => {
 	const offset = parseInt(req.query.offset) || 0;
 	const limit  = parseInt(req.query.limit)  || 100;
 

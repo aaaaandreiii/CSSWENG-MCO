@@ -52,7 +52,7 @@ DROP TABLE IF EXISTS `mydb`.`Users` ;
 CREATE TABLE IF NOT EXISTS `mydb`.`Users` (
   `userId` INT NOT NULL AUTO_INCREMENT,
   `fullName` VARCHAR(45) NOT NULL,
-  `userRole` ENUM('admin', 'staff', 'auditor', 'manager') NOT NULL,
+  `userRole` ENUM('admin', 'staff', 'manager') NOT NULL,
   `username` VARCHAR(45) NOT NULL,
   `userPassword` VARCHAR(255) NOT NULL,
   `pathName` VARCHAR(255) DEFAULT NULL,
@@ -327,7 +327,7 @@ DROP TABLE IF EXISTS `mydb`.`AuditLog` ;
 
 CREATE TABLE IF NOT EXISTS `mydb`.`AuditLog` (
   `auditId` INT NOT NULL AUTO_INCREMENT,
-  `actionType` ENUM('login', 'logout', 'add_stock', 'edit_stock', 'delete_stock') NOT NULL,
+  `actionType` ENUM('login', 'logout', 'add_user', 'edit_user', 'delete_user', 'add_product', 'edit_product', 'delete_product', 'add_stockEntry', 'edit_stockEntry', 'delete_stockEntry', 'add_stockWithdrawal', 'edit_stockWithdrawal', 'delete_stockWithdrawal', 'add_order', 'edit_order', 'edit_orderInfo', 'delete_order', 'delete_orderInfo', 'add_returnExchange', 'edit_returnExchange', 'edit_returnExchangeInfo', 'delete_returnExchange', 'delete_returnExchangeInfo') NOT NULL,
   `description` TEXT NOT NULL,
   `userId` INT NOT NULL,
   `timestamp` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

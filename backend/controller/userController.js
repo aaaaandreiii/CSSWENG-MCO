@@ -26,12 +26,12 @@ router.post("/login", async (req, res) => {
         
         //Success
         const token = jwt.sign(
-        { userId: user.userId, fullName: user.fullName, role: user.userRole },
+        { userId: user.userId, username: user.username, role: user.userRole },
         "secretkey", //move to .env l8r
         { expiresIn: "1h" }
         );
 
-        await auditModel.logAudit("login", `User ${user.fullName} logged in.`, user.userId);
+        await auditModel.logAudit("login", `User ${user.username} logged in.`, user.userId);
 
         console.log("Login success! Sending token...");
         return res.json({ message: "Login successful", token });
@@ -48,7 +48,7 @@ router.post("/login", async (req, res) => {
 router.post("/logout", authenJWT, async (req, res) => {
     try {
         const user = req.user;
-        await auditModel.logAudit("logout", `User ${user.fullName} logged out.`, user.userId);
+        await auditModel.logAudit("logout", `User ${user.username} logged out.`, user.userId);
         console.log("Logout success!");
         return res.json({ message: "Logout successful!" });
     }catch(err){
@@ -63,8 +63,8 @@ router.post("/logoutExpired", async (req, res) => {
         console.log("Received token:", token);
         const decoded = jwt.decode(token); 
         console.log("Decoded token:", decoded);
-        if(decoded?.userId && decoded?.fullName){
-            await auditModel.logAudit("logout", `Session expired for user ${decoded.fullName} logged out.`, decoded.userId);
+        if(decoded?.userId && decoded?.username){
+            await auditModel.logAudit("logout", `Session expired for user ${decoded.username} logged out.`, decoded.userId);
         }
         console.log("Expired logout success!");
         return res.json({ message: "Expired logout successful!" });
@@ -77,10 +77,12 @@ router.post("/logoutExpired", async (req, res) => {
 router.post("/createUser", authenJWT, authorizePermission("manage_users"), async(req, res) =>{
     try{
         const {fullName, userRole, username, userPassword, pathName} = req.body;
+        const user = req.user;
         const dateAdded = new Date().toISOString().split("T")[0];
         const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
         const lastEditedUser = req.user.userId;
         const userId = await mysql.createUser(fullName, userRole, username, userPassword, pathName, dateAdded, lastEditedDate, lastEditedUser, 0);
+        await auditModel.logAudit("add_user", `User ${user.username} created user ${userId}.`, user.userId);
         res.json({message: "User created successfully!", id: userId});
     }catch(err){
         console.error(err);
@@ -88,7 +90,7 @@ router.post("/createUser", authenJWT, authorizePermission("manage_users"), async
     }
 }); //test: curl -X POST http://localhost:5000/api/createUser -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"fullName\":\"Jane Doe\",\"userRole\":\"admin\",\"username\":\"janedoe\",\"userPassword\":\"secret123\"}"
 
-router.get("/getUsers", authenJWT, authorizePermission("manage_users"), async(req, res) =>{
+router.get("/getUsers", authenJWT, authorizePermission("view_users"), async(req, res) =>{
     try{
         const users = await mysql.getUsers();
         if(users){
@@ -154,6 +156,7 @@ router.get("/getUserByUsername/:username", authenJWT, authorizePermission("manag
 router.put("/updateUser/:id", authenJWT, authorizePermission("manage_users"), async(req, res) =>{
     try{
         const userId = parseInt(req.params.id);
+        const user = req.user;
         const updatedData = req.body;
         const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
         const lastEditedUser = req.user.userId;
@@ -161,6 +164,7 @@ router.put("/updateUser/:id", authenJWT, authorizePermission("manage_users"), as
         updatedData.lastEditedUser = lastEditedUser;
         const result = await mysql.updateUserById(userId, updatedData);
         if(result){
+            await auditModel.logAudit("edit_user", `User ${user.username} updated user ${userId}.`, user.userId);
             res.json({ message: "User updated successfully!", id: userId });
         }
         else{
@@ -171,11 +175,35 @@ router.put("/updateUser/:id", authenJWT, authorizePermission("manage_users"), as
     }
 }); //test: curl -X PUT http://localhost:5000/api/updateUser/1 -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"fullName\":\"Janet D.\",\"userRole\":\"manager\",\"username\":\"janetdoe\",\"userPassword\":\"secure456\"}"
 
+router.put("/updateProfile", authenJWT, async(req, res) =>{
+    try{
+        const user = req.user;
+        const userId = req.user.userId;
+        const updatedData = req.body;
+        const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedUser = req.user.userId;
+        updatedData.lastEditedDate = lastEditedDate;
+        updatedData.lastEditedUser = lastEditedUser;
+        const result = await mysql.updateUserById(userId, updatedData);
+        if(result){
+            await auditModel.logAudit("edit_user", `User ${user.username} updated profile.`, user.userId);
+            res.json({ message: "Profile updated successfully!", id: userId });
+        }
+        else{
+            res.status(404).json({ message: "Profile not found or not updated" });
+        }
+    }catch(err){
+        res.status(500).json({ message: "Error updating Profile" });
+    }
+});
+
 router.delete("/deleteUser/:id", authenJWT, authorizePermission("manage_users"), async(req, res) =>{
     try{
         const userId = parseInt(req.params.id);
+        const user = req.user;
         const deleted = await mysql.cascadeDeleteUser(userId);
         if(deleted){
+            await auditModel.logAudit("delete_user", `User ${user.username} deleted user ${userId}.`, user.userId);
             res.json({ message: "User deleted successfully!", id: userId });
         }
         else{
