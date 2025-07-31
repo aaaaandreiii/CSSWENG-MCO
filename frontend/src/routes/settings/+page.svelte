@@ -15,6 +15,17 @@
 		| 'ReturnExchangelnfo'
 		| 'AuditLog';
 
+	const getApiMap: Record<TabType, string> = {
+		Product: 'getProducts',
+		Orders: 'getOrders',
+		OrderInfo: 'getOrderInfo',
+		StockEntry: 'getStockEntries',
+		StockWithdrawal: 'getStockWithdrawals',
+		ReturnExchange: 'getReturnExchanges',
+		ReturnExchangelnfo: 'getReturnExchangeInfo',
+		AuditLog: 'getAuditJoinedInformation'
+	};
+	
 	let selectedTabType: TabType = 'AuditLog';
 
 	// init selected rows
@@ -179,10 +190,12 @@
 	let openDropdownIndex: number | null = null;
 	const dropdownOptions = ['admin', 'staff', 'manager'];
 
-	function selectPosition(option: string, idx: number) {
+	function selectPosition(option: string, filteredIdx: number) {
+		const detail = filteredDetails[filteredIdx];
+		const realIdx = details.findIndex(d => d.userId === detail.userId);
 		const newPosition = option.charAt(0).toUpperCase() + option.slice(1);
-		if (details[idx].position !== newPosition) {
-			details[idx].position = newPosition;
+		if (details[realIdx].position !== newPosition) {
+			details[realIdx].position = newPosition;
 			hasDropdownChanged = true;
 			// editRoleId = details[idx].user
 		}
@@ -254,23 +267,25 @@
 		addError = '';
 	}
 
-	function openEditModal(userId: number, idx: number) {
-		editIndex = idx;
-		const user = details.find((u) => u.userId === userId);
-		if(!user){
-			console.warn(`User with ID ${userId} not found.`);
+	function openEditModal(filteredIdx: number) {
+		//fix for "fake index" when editing
+		const detail = filteredDetails[filteredIdx];
+		const realIdx = details.findIndex(d => d.userId === detail.userId);
+		if (realIdx === -1) {
+			console.error("Could not find user in details[]");
 			return;
 		}
-		editUserId = user.userId;
-		editFullName = user.name;
-		editUsername = user.user;
-		editUserRole = user.position.toLowerCase();
+		editIndex      = realIdx;
+		editUserId     = detail.userId;
+		editFullName   = detail.name;
+		editUsername   = detail.user;
+		editUserRole   = detail.position.toLowerCase();
 		editPassword = '';
 		editConfirmPassword = '';
-		editPathName = user.profilePic === "../src/icons/user.svg" ? '' : user.profilePic;
-		editError = '';
-		showEditModal = true;
-		showMenus[idx] = false; // Close the menu
+		editPathName   = detail.profilePic === "../src/icons/user.svg" ? "" : detail.profilePic;
+		editError      = "";
+		showEditModal  = true;
+		showMenus[filteredIdx] = false; // closes the card‐menu
 	}
 
 	function closeEditModal() {
