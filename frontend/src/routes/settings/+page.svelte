@@ -440,15 +440,10 @@
 		}
 		
 		// Check if username already exists (excluding current user)
-		// const existingUser = details.find((u: UserDetails, idx) => 
-		// 	idx !== editIndex && u.user.toLowerCase() === editUsername.trim().toLowerCase()
-		// );
-		// if(existingUser){
-		// 	editError = 'Username already exists.';
-		// 	return;
-		// }
-
-		if(details && (details.find((u: UserDetails) => u.user.trim().toLowerCase() === editUsername.trim().toLowerCase() && u.userId !== $userProfile.userId))){
+		const existingUser = details.find((u: UserDetails, idx) => 
+			idx !== editIndex && u.user.toLowerCase() === editUsername.trim().toLowerCase()
+		);
+		if(existingUser){
 			editError = 'Username already exists.';
 			return;
 		}
