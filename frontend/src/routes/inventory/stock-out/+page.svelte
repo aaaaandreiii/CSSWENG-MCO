@@ -668,19 +668,6 @@ async function handleDeleteSelectedRows() {
 				<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
 			</button>
 		</div>
-		<div class="flex w-fit rounded-4xl bg-white px-3">
-			<!-- dropdown for order by, auto includes all col headers -->
-			<select
-				class="w-35 p-1 outline-none"
-				bind:value={sortColumn}
-				on:change={() => sortBy(sortColumn)}
-			>
-				<option value="">All</option>
-				{#each currentHeaders as head}
-					<option value={head}>{head}</option>
-				{/each}
-			</select>
-		</div>
 	</div>
 </header>
 

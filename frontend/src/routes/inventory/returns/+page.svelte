@@ -8,6 +8,14 @@
     import Chart from 'chart.js/auto';
     import StockDetail from '$lib/StockDetail.svelte';
 
+	//search
+	let isSearching = false;
+	let searchError: string | null = null;
+	let originalRows: Record<string,string>[] = [];
+
+	let chartEl:    HTMLCanvasElement;
+    let chart:      Chart | null = null;
+	
     // ——— State ———
     let filterStart = '';
     let filterEnd   = '';
@@ -38,9 +46,6 @@
 
 
     let infos: Array<{value:string; label:string; color:string}> = [];
-
-    let chartEl:    HTMLCanvasElement;
-    let chart:      Chart | null = null;
 
     // ——— Sales carousel state (static) ———
     let dropdownOpenSales  = false;
@@ -480,11 +485,6 @@
 	const ITEMS_PER_PAGE = 100;
 
 	let searchQuery = '';
-	function handleSearch() {
-		if (searchQuery.trim()) {
-			goto(`/search?q=${encodeURIComponent(searchQuery)}`);
-		}
-	}
 
 	let ready = false;
 	onMount(()=>{
@@ -674,7 +674,7 @@
 	}
 
 	// store default order for reset
-	let originalRows = [...rows];
+	originalRows = [...rows];
 
 	// sortby function for col heads
 	function sortBy(column: string) {
@@ -707,15 +707,6 @@
 			return 0;
 		});
 	}
-
-	// constant column headers
-	// headerMap.Product.push('Last Updated', 'Edited By');
-	// headerMap.Orders.push('Last Updated', 'Edited By');
-	// headerMap.OrderInfo.push('Last Updated', 'Edited By');
-	// headerMap.StockEntry.push('Last Updated', 'Edited By');
-	// headerMap.Users.push('Last Updated', 'Edited By');
-	// headerMap.ReturnExchange.push('Last Updated', 'Edited By');
-	// headerMap.ReturnExchangelnfo.push('Last Updated', 'Edited By');
 
 	// edit button in popup
 	let showEditButton = false;
@@ -1168,6 +1159,87 @@
 		}
 	}
 
+	//andrei implementation hehe: new tab for querying all tables
+	function openSearchTab() {
+		if (!searchQuery.trim()) return;
+		window.open(`/search?q=${encodeURIComponent(searchQuery)}`, '_blank');
+	}
+
+	//lance implementation: table‑specific search in‑place
+	async function searchInPlace() {
+		//if the box is empty, clear the filter and re‐load full data
+		if (!searchQuery.trim()) {
+			// if empty --> load full data
+			// currentOffset = 0;
+			// rows = [];
+			await fetchTabData(selected);
+			hasMoreData = true;
+			return;
+		}
+
+		isSearching = true;
+		searchError = null;
+
+		try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(
+                `${PUBLIC_API_BASE_URL}/api/search?table=${selected}&q=${encodeURIComponent(searchQuery)}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (!response.ok) { throw new Error('Search failed'); }
+
+            const data = await response.json();
+			const items = Array.isArray(data) ? data : data.products;
+			rows = items.map(item => ({
+				'Product ID':         item.productId,
+				'Product Name':       item.productName,
+				'Category': item.category,
+				'Descriptions': item.descriptions,
+				'Supplier': item.supplier,
+				'Cost': item.cost,
+				'Retail Price': item.retailPrice,
+				'Stock On Hand': item.stockOnHand,
+				'Units': item.units,
+				'Image': item.pathName,
+				'Safe Stock Count': item.safeStockCount,
+				'Restock Flag': item.restockFlag,
+				'Last Edited Date': item.lastEditedDate ? new Date(item.lastEditedDate).toLocaleString('en-PH', {
+					timeZone: 'Asia/Manila'
+				}) : '',
+				'Last Edited User': item.lastEditedUser
+			}));
+            hasMoreData = false; //disable infinite scroll while in search
+        } catch (err: any) {
+			searchError = err.message;
+            rows = [];
+        } finally {
+            isSearching = false;
+        }
+	}
+
+	//lmfao kaya pala
+	let debounceTimer: ReturnType<typeof setTimeout>;		//for quick input
+	$: if (ready && selected) {
+		//reset state
+		currentOffset = 0;
+		hasMoreData   = true;
+		rows          = [];
+		originalRows  = [];
+		// searchQuery   = '';
+
+		// initial load
+		fetchTabData(selected);
+
+		// now wire up the keystroke-driven search (debounced)
+		clearTimeout(debounceTimer);
+		debounceTimer = setTimeout(searchInPlace, 200);
+	}
+
+	// debounce “search as you type”
+	$: if (ready && selected && searchQuery !== undefined) {
+		clearTimeout(debounceTimer);
+	    debounceTimer = setTimeout(searchInPlace, 200);
+	}
 </script>
 
 <!-- header w/ search bar and filter-->
@@ -1197,19 +1269,31 @@
                         </div>
                         {/if}
                     </div>
-                    <div class="search flex px-3">
+					<div class="search flex px-3">
 						<input 
 							type="text" 
 							placeholder="Search" 
 							class="w-35 flex items-center justify-between px-2 py-1 text-sm" 
 							style="outline:none" 
 							bind:value={searchQuery}
-							on:keydown={(e) => e.key === 'Enter' && handleSearch()}
-						/>
-						<button on:click={handleSearch}>
-							<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
+							on:input={() => {
+								clearTimeout(debounceTimer);
+								debounceTimer = setTimeout(searchInPlace, 200);
+							}}
+							on:keydown={(e) => e.key === 'Enter' && openSearchTab()}
+							/>
+						<button 
+							on:click={openSearchTab}
+							class="flex items-center"
+							disabled={isSearching}
+						>
+							{#if isSearching}
+								<span class="loading-spinner"></span>
+							{:else}
+								<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
+							{/if}
 						</button>
-                    </div>
+					</div>
 					<div class="search flex px-3 relative">
 						<select
 							class="w-30 flex items-center justify-between order border-gray-300 rounded px-2 py-1 text-sm"
@@ -1441,6 +1525,20 @@
                     </tr>
                 {/if}
             </tbody>
+			{#if searchError}
+  <tr><td colspan={currentHeaders.length+2} class="text-red-500 text-center">
+    Search error: {searchError}
+  </td></tr>
+{:else if isSearching}
+  <tr><td colspan={currentHeaders.length+2} class="text-center py-4">
+    <span class="loading-spinner"></span> Searching…
+  </td></tr>
+{:else if searchQuery && rows.length === 0}
+  <tr><td colspan={currentHeaders.length+2} class="text-gray-500 text-center">
+    No results found for "{searchQuery}"
+  </td></tr>
+{/if}
+
         </table>
     </div>
 </div>
