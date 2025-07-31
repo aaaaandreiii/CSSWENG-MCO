@@ -1294,19 +1294,6 @@
 							{/if}
 						</button>
 					</div>
-					<div class="search flex px-3 relative">
-						<select
-							class="w-30 flex items-center justify-between order border-gray-300 rounded px-2 py-1 text-sm"
-							bind:value={sortColumn}
-							on:change={() => sortBy(sortColumn)}
-						>
-							<option value="">All</option>
-							{#each currentHeaders as head}
-								<option value={head}>{head}</option>
-							{/each}
-							
-						</select>
-					</div>
                     <!-- orderby dropdown -->
                     <div class="search flex px-3 relative">
                         <button type="button" class="w-30 flex items-center justify-between order border-gray-300 rounded px-2 py-1 text-sm" on:click={() => orderDropdownOpen = !orderDropdownOpen}>
