@@ -181,7 +181,7 @@
 	let sortColumn: string = '';
 	let sortDirection: 'asc' | 'desc' = 'asc';
 
-	// table data rows, can fill with dummy data
+	// table data rows
 	let rows: { [key: string]: string }[] = [];
 
 	// pagination and infinite scroll state

@@ -2,7 +2,32 @@
 	import { PUBLIC_API_BASE_URL } from '$env/static/public';
 	import { onMount } from 'svelte';
 
-	let selected = 'all'; // default selected tab = profile
+	type TabType =
+		| 'Product'
+		| 'Orders'
+		| 'OrderInfo'
+		| 'StockEntry'
+		| 'StockWithdrawal'
+		| 'ReturnExchange'
+		| 'ReturnExchangelnfo'
+		| 'AuditLog';
+
+	let selectedTabType: TabType = 'AuditLog';
+
+	// init selected rows
+	let selectedRows: number[] = [];
+	let searchQuery = '';
+	let isSearching = false;
+    let searchError: string | null = null;
+	let originalRows: Record<string,string>[] = []; //{ [key: string]: string }[] = [];
+
+	// pagination and infinite scroll state
+	let currentOffset = 0;
+	let isLoading = false;
+	let hasMoreData = true;
+	const ITEMS_PER_PAGE = 100;
+
+	let selected = 'all';
 	let hasDropdownChanged = false;
 	let showNewPassword = false; //create new pass, show pass
 
@@ -11,6 +36,9 @@
 	let showMenu: boolean = false;
 	let menuRefs: HTMLDivElement[] = [];
 	let showMenus: boolean[] = [];
+
+	// table data rows
+	let rows: { [key: string]: string }[] = [];
 
 	function toggleMenu(event: MouseEvent): void {
 		event.stopPropagation();
@@ -25,7 +53,9 @@
 			}
 		});
 	}
+	let ready = false;
 	onMount(() => {
+		ready = true;
 		document.addEventListener('mousedown', handleClickOutsideMenu);
 		return () => document.removeEventListener('mousedown', handleClickOutsideMenu);
 	});
@@ -78,10 +108,22 @@
 	onMount(fetchUsers);
 
 	// Computed filtered details based on selected tab
-	$: filteredDetails =
-		selected === 'all'
-			? details
-			: details.filter((d) => d.position.toLowerCase() === selected.toLowerCase());
+	$: filteredDetails = details
+		// 1) first, only show the right role:
+		.filter(d =>
+			selected === 'all' ||
+			d.position.toLowerCase() === selected.toLowerCase()
+		)
+		// 2) then, if there's a searchQuery, only show cards whose name/user/role matches it:
+		.filter(d => {
+			const q = searchQuery.trim().toLowerCase();
+			if (!q) return true;
+			return (
+			d.name.toLowerCase().includes(q) ||
+			d.user.toLowerCase().includes(q) ||
+			d.position.toLowerCase().includes(q)
+			);
+		});
 
 	// Function to map position to color id
 	function getColorId(position: string) {
@@ -393,10 +435,139 @@
 		setTimeout(updateUnderline, 0);
 	}
 
+	async function fetchTabData(tab: TabType, offset = 0, append = false){
+		if (isLoading) return;
+		isLoading = true;
+		
+		try{
+			const token = localStorage.getItem('token');
+			const endpoint = getApiMap[tab];
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}?offset=${offset}&limit=${ITEMS_PER_PAGE}`, {
+				headers: {
+					Authorization: `Bearer ${token}`
+				}
+			});
+			const data = await res.json();
+        	console.log('Fetched data:', data);
+
+			let newRows: { [key: string]: string }[] = [];
+
+			if(tab === "AuditLog"){
+				newRows = data.auditJoinedInformation.map((item: any) =>({
+					'Audit ID': item.auditId,
+					'Action Type': item.actionType,
+					'Description': item.descriptions,
+					'User ID': item.userId,
+					'Timestamp': item.timestamp
+        		}));
+			}
+			
+			// Check if we have more data
+			hasMoreData = newRows.length === ITEMS_PER_PAGE;
+
+			if (append) {
+				rows = [...rows, ...newRows];
+			} else {
+				rows = newRows;
+			}
+			
+			if (!append) {
+				originalRows = [...rows];
+			} else {
+				originalRows = [...originalRows, ...newRows];
+			}
+		}catch(err){
+			console.error("Error fetching tab data: ", err);
+		} finally {
+			isLoading = false;
+		}
+	}
+	
 	onMount(() => {
 		updateUnderline();
 	});
 
+	//andrei implementation hehe: new tab for querying all tables
+	function openSearchTab() {
+		if (!searchQuery.trim()) return;
+		window.open(`/search?q=${encodeURIComponent(searchQuery)}`, '_blank');
+	}
+
+	//lance implementation: table‑specific search in‑place
+	async function searchInPlace() {
+		//if the box is empty, clear the filter and re‐load full data
+		if (!searchQuery.trim()) {
+			// if empty --> load full data
+			// currentOffset = 0;
+			// rows = [];
+			await fetchTabData(selectedTabType);
+			hasMoreData = true;
+			return;
+		}
+
+		isSearching = true;
+		searchError = null;
+
+		try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(
+                `${PUBLIC_API_BASE_URL}/api/search?table=${selectedTabType}&q=${encodeURIComponent(searchQuery)}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (!response.ok) { throw new Error('Search failed'); }
+
+            const data = await response.json();
+			const items = Array.isArray(data) ? data : data.products;
+			rows = items.map(item => ({
+				'Product ID':         item.productId,
+				'Product Name':       item.productName,
+				'Category': item.category,
+				'Descriptions': item.descriptions,
+				'Supplier': item.supplier,
+				'Cost': item.cost,
+				'Retail Price': item.retailPrice,
+				'Stock On Hand': item.stockOnHand,
+				'Units': item.units,
+				'Image': item.pathName,
+				'Safe Stock Count': item.safeStockCount,
+				'Restock Flag': item.restockFlag,
+				'Last Edited Date': item.lastEditedDate ? new Date(item.lastEditedDate).toLocaleString('en-PH', {
+					timeZone: 'Asia/Manila'
+				}) : '',
+				'Last Edited User': item.lastEditedUser
+			}));
+            hasMoreData = false; //disable infinite scroll while in search
+        } catch (err: any) {
+			searchError = err.message;
+            rows = [];
+        } finally {
+            isSearching = false;
+        }
+	}
+
+	//lmfao kaya pala
+	let debounceTimer: ReturnType<typeof setTimeout>;		//for quick input
+	$: if (ready && selectedTabType) {
+		//reset state
+		currentOffset = 0;
+		hasMoreData   = true;
+		rows          = [];
+		originalRows  = [];
+		// searchQuery   = '';
+
+		// initial load
+		fetchTabData(selectedTabType);
+
+		// now wire up the keystroke-driven search (debounced)
+		clearTimeout(debounceTimer);
+		debounceTimer = setTimeout(searchInPlace, 200);
+	}
+
+	// debounce “search as you type”
+	$: if (ready && selectedTabType && searchQuery !== undefined) {
+		clearTimeout(debounceTimer);
+	    debounceTimer = setTimeout(searchInPlace, 200);
+	}
 </script>
 
 <style>
@@ -422,9 +593,30 @@
 <header class="mb-4 flex items-center justify-between p-7 fixed gray1" style="width: 85%; z-index: 10;">
 	<h1>Settings</h1>
 	<div class="flex w-fit rounded-4xl bg-white px-3">
-		<input type="text" placeholder="Search" class="w-55 p-1" style="outline:none" />
-		<img src="../src/icons/search.svg" alt="search" style="width:15px; " />
-	</div>
+			<input 
+				type="text" 
+				placeholder="Search" 
+				class="w-55 p-1" 
+				style="outline:none" 
+				bind:value={searchQuery}
+				oninput={() => {
+					clearTimeout(debounceTimer);
+					debounceTimer = setTimeout(searchInPlace, 200);
+				}}
+				onkeydown={(e) => e.key === 'Enter' && openSearchTab()}
+				/>
+			<button 
+				onclick={openSearchTab}
+				class="flex items-center"
+				disabled={isSearching}
+			>
+				{#if isSearching}
+					<span class="loading-spinner"></span>
+				{:else}
+					<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
+				{/if}
+			</button>
+		</div>
 </header>
 
 <div class="flex pt-15">
