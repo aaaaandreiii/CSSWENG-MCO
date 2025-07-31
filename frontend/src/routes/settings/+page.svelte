@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { SystemDrive } from '$env/static/private';
 	import { PUBLIC_API_BASE_URL } from '$env/static/public';
 	import { userProfile } from '$lib/stores/user';
 	import { onMount } from 'svelte';
@@ -197,7 +196,7 @@
 		if (details[realIdx].position !== newPosition) {
 			details[realIdx].position = newPosition;
 			hasDropdownChanged = true;
-			// editRoleId = details[idx].user
+			editRoleId = Number(details[realIdx].userId)
 		}
 		openDropdownIndex = null;
 	}
@@ -539,22 +538,20 @@
 		}
 	}
 	
-	async function saveRoleChanges(userId: number){
-		editError = '';		
-		console.log(userId);
-		const user = details.find((u) => u.userId === userId);
-		if(!user){
-			console.warn(`User with ID ${userId} not found.`);
+	async function saveRoleChanges(){	
+		console.log(editRoleId);
+		const idx = details.findIndex(d => d.userId === editRoleId);
+		if(!idx){
+			console.warn("User not found.");
 			return;
 		}
-
 		// Build payload
-		const payload: any = {
-			userId: Number(user.userId),
-			fullName: user.name.trim(),
-			userRole: user.position.trim(),
-			username: user.user.trim(),
-			pathName: user.profilePic.trim() || null
+		const payload = {
+			userId: Number(details[idx].userId),
+			fullName: details[idx].name.trim(),
+			userRole: details[idx].position.trim(),
+			username: details[idx].user.trim(),
+			pathName: details[idx].profilePic.trim() || null
 		};
 
 		try{
@@ -936,7 +933,7 @@
 									{#if canUpdate(detail.userId)}
 										<button 
 											class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
-											onclick={() => openEditModal(detail.userId, idx)}
+											onclick={() => openEditModal(idx)}
 										>
 											Edit
 										</button>
@@ -1060,7 +1057,7 @@
 				{#if hasDropdownChanged}
 				<button
 					class="px-8 py-3 rounded-lg bg-green-700 text-white font-bold shadow-lg hover:bg-green-800 transition-colors duration-150"
-					onclick={() => saveRoleChanges}
+					onclick={saveRoleChanges}
 					type="button"
 				>
 				<!-- onclick={() => { isEditMode = false; openDropdownIndex = null; hasDropdownChanged = false; showAck('Successfully changed roles!');}} -->
