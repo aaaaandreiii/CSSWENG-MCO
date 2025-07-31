@@ -105,7 +105,7 @@
 	  <p class="mb-6">Your session has expired. Please log in again.</p>
 	  <button
 		class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-		on:click={redirectToLogin}
+		onclick={redirectToLogin}
 	  >
 		Go to Login
 	  </button>
