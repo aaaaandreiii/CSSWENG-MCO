@@ -1,38 +1,151 @@
 <script lang="ts">
-	let stocks = [
-		{ amount: '50K', label: 'Total stocks' },
-		{ amount: '10', label: 'Total sold' },
-		{ amount: '79k', label: 'Total Pending' }
-	];
+	import { tick, onMount } from 'svelte';
+	import { browser } from '$app/environment';
+	import { PUBLIC_API_BASE_URL } from '$env/static/public';
+	import Chart from 'chart.js/auto';
 
-	let products = [
-		{ label: 'red', mssg: 'Out of stock', amount: '14', capital: '12782.14', color: '#DE0101' },
-		{ label: 'yellow', mssg: 'Low stock', amount: '5', capital: '10000.00', color: '#FFDE59' }
-	];
+	// --- DATA STATE ---
+	let stocks = [], products = [], items = [], avgSalesPerMonth = 0, totalSalesInTheLastTimePeriod = 0;
+	let salesPerMonth: { year: number; month: number; sum: number }[] = [];
 
-	import { items } from '$lib/index.js';
-
-	let selectedButton = '12months'; // Track which button is selected
-
-	function handleClick(buttonId: string) {
-		selectedButton = buttonId;
-	}
-
-	let showDropdown = false;
-	const dropdownOptions = ['10 days', '1 month', '1 year'];
+	//charting for sales per month graph
+	let chartCanvas: HTMLCanvasElement;
+  	let monthlySalesChart: Chart;
+	
+	// --- DROPDOWN (Top-selling period) ---
 	let selectedDropdown = '10 days';
+	const dropdownOptions = ['10 days', '1 month', '1 year'];
+	let showDropdown = false;
 
-	function selectDropdown(option: string) {
+	async function selectDropdown(option: string) {
 		selectedDropdown = option;
 		showDropdown = false;
+		await tick();
+   		await fetchDashboard();
+		// fetchDashboard().then(() => {
+		// 	if (salesPerMonth.length) initChart();
+		// });
+		if (salesPerMonth.length) initChart();
+	}
+	const dropdownDurationMap = {
+		'10 days': 10,
+		'1 month': 30,
+		'1 year': 365
+	};
+	$: topSellingDuration = dropdownDurationMap[selectedDropdown];
+
+	// --- BUTTONS (Sales-report period) ---
+	let selectedButton = '12months';
+	const buttonOptions = ['12months', '6months', '30days'];
+	const buttonDurationMap = {
+		'12months': 365,
+		'6months': 182,
+		'30days': 30
+	};
+	$: salesReportDuration = buttonDurationMap[selectedButton];
+
+	// --- AUTH & URL ---
+	let token: string | null = null;
+	if (browser) {
+		token = localStorage.getItem('token');
+	}
+
+  // --- FETCHING ---
+  async function fetchDashboard() {
+    const res = await fetch(
+      `${PUBLIC_API_BASE_URL}/api/dashboard?topSellingDuration=${topSellingDuration}`
+      + `&salesReportDuration=${salesReportDuration}`,
+      { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+    );
+
+    if (!res.ok) {
+      console.error('Dashboard load error:', await res.text());
+      return;
+    }
+    const data = await res.json();
+
+    stocks = [
+      { amount: data.totalStocks,  label: 'Total stocks'  },
+      { amount: data.totalSold,    label: 'Total sold'    },
+      { amount: data.totalPending, label: 'Total pending' }
+    ];
+
+    products = [
+      {
+        label: 'out-of-stock',
+        mssg:  'Out of stock',
+        amount: String(data.outOfStockProducts.amount),
+        capital: data.outOfStockProducts.capital.toFixed(2),
+        color: '#DE0101'
+      },
+      {
+        label: 'low-stock',
+        mssg:  'Low stock',
+        amount: String(data.lowStockProducts.amount),
+        capital: data.lowStockProducts.capital.toFixed(2),
+        color: '#FFDE59'
+      }
+    ];
+
+    items = data.topSellingProducts.map(p => ({
+      name: p.productName,
+      link: `/products/${p.productId}`,
+      qty:  p.totalQty
+    }));
+
+	salesPerMonth = data.salesPerMonth;
+    avgSalesPerMonth = data.avgSalesPerMonth;
+	totalSalesInTheLastTimePeriod = data.totalSalesInTheLastTimePeriod;
+  }
+
+	function initChart() {
+		//destroy old chart so we don’t double‐draw
+		if (monthlySalesChart) monthlySalesChart.destroy();
+
+		const labels = salesPerMonth.map(
+		r => `${r.year}-${String(r.month).padStart(2,'0')}`
+		);
+		const values = salesPerMonth.map(r => r.sum);
+
+		monthlySalesChart = new Chart(chartCanvas, {
+		type: 'bar',
+		data: {
+			labels,
+			datasets: [{
+			label: 'Sales per Month',
+			data: values,
+			// @UI, please add styling here for the chart
+			}]
+		},
+		options: {
+			scales: {
+			y: { beginAtZero: true }
+			}
+		}
+		});
+	}
+
+	onMount(async () => {
+		await fetchDashboard();
+		if (salesPerMonth.length) initChart();
+	});
+
+	async function handleClick(buttonId: string) {
+		selectedButton = buttonId;
+		//fixes bug where user has to click on the duration button twice before the correct chart is displayed
+		// only fire when the user presses one of the three buttons
+		// wait for salesReportDuration = buttonDurationMap[selectedButton] to actually update
+		await tick();
+		await fetchDashboard();
+		if (salesPerMonth.length) initChart();
 	}
 </script>
 
-<header class="p-7">
+<header class="p-7 fixed gray1 pr-70" style="width: 100%; z-index: 10;">
 	<h1>Dashboard</h1>
 </header>
 
-<div id="bg_faded">
+<div id="bg_faded" class = "pt-20">
 	<div class="flex justify-evenly">
 		<!-- sales summary -->
 		<div class="flex-col">
@@ -165,11 +278,18 @@
 			</div>
 		</div>
 		<div>
-			<p class="text-sm">Avg per month</p>
-			<h1 class="header">P 12,123</h1>
+			<br>
+			<p class="text-sm">Total Sales in the last {selectedButton}: </p>
+			<h1 class="header">₱ {totalSalesInTheLastTimePeriod.toFixed(2)}</h1>
+			<br>
+			<p class="text-sm">Average Sales per Month</p>
+			<h1 class="header">₱ {avgSalesPerMonth.toFixed(2)}</h1>
 		</div>
 		<div>
-			<!-- graph -->
+			<div class="p-7">
+				<h2 class="text-base font-bold">Sales per Month</h2>
+				<canvas bind:this={chartCanvas}></canvas>
+			</div>
 		</div>
 	</div>
 </div>

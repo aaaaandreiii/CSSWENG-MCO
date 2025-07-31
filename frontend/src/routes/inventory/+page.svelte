@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { PUBLIC_API_BASE_URL } from '$env/static/public';
-	
+	import { goto } from '$app/navigation';		
 	import {onMount} from 'svelte';
+
 	type TabType =
 		| 'Product'
 		| 'Orders'
@@ -247,10 +248,35 @@
 	const ITEMS_PER_PAGE = 100;
 
 	let ready = false;
-	onMount(()=>{
-		ready = true;
-	});
+	
+	// inf scroll
+	let sentinel: HTMLDivElement;
 
+	let searchQuery = '';
+	function handleSearch() {
+		if (searchQuery.trim()) {
+			goto(`/search?q=${encodeURIComponent(searchQuery)}`);
+		}
+	}
+
+	onMount(() => {
+		ready = true;
+
+		const observer = new IntersectionObserver(([entry]) => {
+			if (entry.isIntersecting && hasMoreData && !isLoading) {
+				loadMoreData();
+			}
+		}, {
+			root: null,
+			rootMargin: '0px',
+			threshold: 1.0
+		});
+
+		if (sentinel) observer.observe(sentinel);
+
+		return () => observer.disconnect();
+	});
+	
 	$: if (ready && selected) {
 		(async () => {
 			// Reset pagination when tab changes
@@ -928,16 +954,26 @@
 		}
 	}
 
+
 </script>
 
 <!-- header w/ search bar and filter-->
-<header class="flex justify-between p-7">
+<header class="flex justify-between p-7 fixed gray1 pr-70" style="width: 100%; z-index: 10;">
 	<h1>Inventory</h1>
 
 	<div class="flex gap-3">
 		<div class="flex w-fit rounded-4xl bg-white px-3">
-			<input type="text" placeholder="Search" class="w-55 p-1" style="outline:none" />
-			<img src="../src/icons/search.svg" alt="search" style="width:15px; " />
+			<input 
+				type="text" 
+				placeholder="Search" 
+				class="w-55 p-1" 
+				style="outline:none" 
+				bind:value={searchQuery}
+				on:keydown={(e) => e.key === 'Enter' && handleSearch()}
+			/>
+			<button on:click={handleSearch}>
+				<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
+			</button>
 		</div>
 		<div class="flex w-fit rounded-4xl bg-white px-3">
 			<!-- dropdown for order by, auto includes all col headers -->
@@ -956,7 +992,7 @@
 </header>
 
 <!-- navbar + buttons row -->
-<div class="grid grid-cols-2">
+<div class="grid grid-cols-2 pt-20">
 	<!-- navbar -->
 	<div class="flex w-full">
 		{#each Object.keys(headerMap) as tab, idx (tab)}
@@ -1084,6 +1120,7 @@
 			{/if}
 		</tbody>
 	</table>
+	<div bind:this={sentinel}></div>
 </div>
 
 <!-- modal popup-->

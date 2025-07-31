@@ -161,4 +161,69 @@ router.delete("/deleteOrderInfo/:id", authenJWT, authorizePermission("edit_order
     }
 }); //test: curl -X DELETE http://localhost:5000/api/deleteOrderInfo/1 -H "Authorization: Bearer TOKEN_HERE"
 
+// GET /api/getFullOrderDetails
+router.get("/getFullOrderDetails", authenJWT, authorizePermission("edit_order"), async (req, res) => {
+  try {
+    const data = await ordersModel.getFullOrderDetails(); 
+    res.json({ message: "Full order details fetched!", data });
+  } catch (err) {
+    console.error("Error fetching full order details:", err);
+    res.status(500).json({ error: "Failed to fetch order details" });
+  }
+});
+
+// DELETE /api/deleteOrder/:orderId
+router.delete(
+  "/deleteOrder/:orderId",
+  authenJWT,
+  authorizePermission("edit_order"),
+  async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      
+      if (!orderId || isNaN(orderId)) {
+        return res.status(400).json({ error: "Invalid order ID" });
+      }
+
+      const success = await ordersModel.deleteOrder(orderId);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      res.json({ message: "Order deleted successfully" });
+    } catch (err) {
+      console.error("Error deleting order:", err);
+      res.status(500).json({ error: "Failed to delete order" });
+    }
+  }
+);
+
+// DELETE /api/deleteOrderItem/:orderInfoId
+router.delete(
+  "/deleteOrderItem/:orderInfoId",
+  authenJWT,
+  authorizePermission("edit_order"),
+  async (req, res) => {
+    try {
+      const { orderInfoId } = req.params;
+      
+      if (!orderInfoId || isNaN(orderInfoId)) {
+        return res.status(400).json({ error: "Invalid order item ID" });
+      }
+
+      const success = await orderInfoModel.deleteOrderInfoById(parseInt(orderInfoId));
+      
+      if (!success) {
+        return res.status(404).json({ error: "Order item not found" });
+      }
+
+      res.json({ message: "Order item deleted successfully" });
+    } catch (err) {
+      console.error("Error deleting order item:", err);
+      res.status(500).json({ error: "Failed to delete order item" });
+    }
+  }
+);
+
 export default router;

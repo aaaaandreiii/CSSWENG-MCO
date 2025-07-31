@@ -1,86 +1,29 @@
 <script lang="ts">
 	import { PUBLIC_API_BASE_URL } from '$env/static/public';
-	
+	import { goto } from '$app/navigation';		
 	import {onMount} from 'svelte';
+
 	type TabType =
-		| 'Product'
-		| 'Orders'
-		| 'OrderInfo'
-		| 'StockEntry'
-		| 'StockWithdrawal'
-		| 'ReturnExchange'
-		| 'Users'
 		| 'StockEntryExpanded';
 
-	let selected: TabType = 'Product';
+	let selected: TabType = 'StockEntryExpanded';
 
 	const getApiMap: Record<TabType, string> = {
-		Product: 'getProducts',
-		Orders: 'getOrders',
-		OrderInfo: 'getOrderInfo',
-		StockEntry: 'getStockEntries',
-		StockWithdrawal: 'getStockWithdrawals',
-		ReturnExchange: 'getReturnExchanges',
-		Users: 'getUsers',
 		StockEntryExpanded: 'getStockEntryExpanded'
 	};
 
 	const createApiMap: Record<TabType, string> = {
-		Product: 'createProduct',
-		Orders: 'createOrder',
-		OrderInfo: 'createOrderInfo', // X
-		StockEntry: 'createStockEntry',
-		StockWithdrawal: 'createStockWithdrawal',
-		ReturnExchange: 'createReturnExchange',
-		Users: 'createUsers', // X
-		StockEntryExpanded: 'getStockEntryExpanded'
+		StockEntryExpanded: 'createStockEntryExpanded'
 	};
 
 	const updateApiMap: Record<TabType, string> = {
-		Product: 'updateProduct',
-		Orders: 'updateOrder',
-		OrderInfo: 'updateOrderInfo',
-		StockEntry: 'updateStockEntry',
-		StockWithdrawal: 'updateStockWithdrawal',
-		ReturnExchange: 'updateReturnExchange',
-		Users: 'updateUsers',
 		StockEntryExpanded: 'getStockEntryExpanded'
+	};
+	const deleteApiMap: Record<TabType, string> = {
+		StockEntryExpanded: "deleteStockEntryExpanded"
 	};
 
 	const keyMap: Record<TabType, Record<string, string>> = {
-		Product: {
-			'Product Name': 'productName',
-			'Category': 'category',
-			'Descriptions': 'descriptions',
-			'Supplier': 'supplier',
-			'Cost': 'cost',
-			'Retail Price': 'retailPrice',
-			'Stock On Hand': 'stockOnHand',
-			'Units': 'units',
-			'Image': 'pathName',
-			'Safe Stock Count': 'safeStockCount',
-			'Restock Flag': 'restockFlag'
-		},
-		Orders: {
-			'Discount': 'discount',
-			'Customer': 'customer',
-			'Handled By': 'handledBy',
-			'Payment Method': 'paymentMethod',
-			'Payment Status': 'paymentStatus'
-		},
-		OrderInfo: {
-			'Quantity': 'quantity',
-			'Order ID': 'orderId',
-			'Product ID': 'productId',
-			'Unit Price At Purchase': 'unitPriceAtPurchase'
-		},
-		StockEntry: {
-			'Branch Name': 'branchName',
-			'Quantity Received': 'quantityReceived',
-			'Delivery Receipt Number': 'deliveryReceiptNumber',
-			'Received By': 'receivedBy',
-			'Product ID': 'productId'
-		},
 		StockEntryExpanded: {
 			'Entry ID': 'entryId',
 			'Branch Name': 'branchName',
@@ -91,107 +34,24 @@
 			'Received By': 'receivedBy',
 			'Last Edited By': 'lastEditedBy',
 			'Last Edited Date': 'lastEditedDate'
-		},
-		StockWithdrawal: {
-			'Quantity Withdrawn': 'quantityWithdrawn',
-			'Purpose': 'purpose',
-			'Entry ID': 'entryId',
-			'Withdrawn By': 'withdrawnBy',
-			'Authorized By': 'authorizedBy'
-		},
-		ReturnExchange: {
-			'Transaction Status': 'transactionStatus',
-			'Order ID': 'orderId',
-			'Handled By': 'handledBy',
-			'Approved By': 'approvedBy'
-		},
-		Users: {
-			'Returned Product ID': 'returnedProductId',
-			'Returned Quantity': 'returnedQuantity',
-			'Exchange Product ID': 'exchangeProductId',
-			'Exchange Quantity': 'exchangeQuantity',
-			'Reason': 'reason',
-			'Transaction ID': 'transactionId',
-			'Return Type': 'returnType'
 		}
 	}
 
 	const idValidationMap: Record<TabType, { field: string; endpoint: string }[]> = {
-		Product: [],
-		Orders: [
-			{ field: 'Handled By', endpoint: 'getUserById' }
-		],
-		OrderInfo: [
-			{ field: 'Order ID', endpoint: 'getOrderById' },
-			{ field: 'Product ID', endpoint: 'getProductById' }
-		],
-		StockEntry: [
-			{ field: 'Received By', endpoint: 'getUserById' },
-			{ field: 'Product ID', endpoint: 'getProductById' }
-		],
 		StockEntryExpanded: [ 
 			{ field: 'Received By', endpoint: 'getUserById' },
 			{ field: 'Last Edited By', endpoint: 'getUserById' },
 			{ field: 'Product Name', endpoint: 'getProductById' } // Optional: Only if needed
 		],
-		StockWithdrawal: [
-			{ field: 'Entry ID', endpoint: 'getStockEntryById' },
-			{ field: 'Withdrawn By', endpoint: 'getUserById' },
-			{ field: 'Authorized By', endpoint: 'getUserById' }
-		],
-		ReturnExchange: [
-			{ field: 'Order ID', endpoint: 'getOrderById' },
-			{ field: 'Handled By', endpoint: 'getUserById' },
-			{ field: 'Approved By', endpoint: 'getUserById' }
-		],
-		Users: [
-			{ field: 'Returned Product ID', endpoint: 'getProductById' },
-			{ field: 'Exchange Product ID', endpoint: 'getProductById' },
-			{ field: 'Transaction ID', endpoint: 'getReturnExchangeById' }
-		]
 	};
 
 
 	const primaryKeyMap: Record<TabType, string> = {
-		Product: 'Product ID',
-		Orders: 'Order ID',
-		OrderInfo: 'Order Info ID',
-		StockEntry: 'Entry ID',
-		StockEntryExpanded: 'Entry ID',
-		StockWithdrawal: 'Withdrawal ID',
-		ReturnExchange: 'Transaction ID',
-		Users: 'Detail ID'
+		StockEntryExpanded: 'Entry ID'
 	};
 
 
 	const headerMap: Record<TabType, string[]> = {
-		Product: [
-			'Product ID',
-			'Product Name',
-			'Category',
-			'Descriptions',
-			'Supplier',
-			'Cost',
-			'Retail Price',
-			'Stock On Hand',
-			'Units',
-			'Image', // pathName
-			'Safe Stock Count',
-			'Restock Flag',
-			'Last Edited Date',
-			'Last Edited User'
-		],
-		StockEntry: [
-			'Entry ID',
-			'Branch Name',
-			'Date Received',
-			'Quantity Received',
-			'Delivery Receipt Number',
-			'Received By',
-			'Product ID',
-			'Last Edited Date',
-			'Last Edited User'
-		],
 		StockEntryExpanded: [
 			'Entry ID',
 			'Branch Name',
@@ -202,63 +62,6 @@
 			'Received By',
 			'Last Edited By',
 			'Last Edited Date'
-		],
-		Users: [
-			'User ID',
-			'Full Name',
-			'User Role',
-			'Username',
-			'Password',
-			'Image', // pathName
-			'Date Added',
-			'Last Edited Date',
-			'Last Edited User',
-			'Delete Flag'
-		],
-		Orders: [
-			'Order ID',
-			'Discount',
-			'Customer',
-			'Handled By',
-			'Payment Method',
-			'Payment Status',
-			'Date Ordered',
-			'Last Edited Date',
-			'Last Edited User',
-			'Delete Flag'
-		],
-		OrderInfo: [
-			'Order Info ID',
-			'Quantity',
-			'Order ID',
-			'Product ID',
-			'Unit Price At Purchase',
-			'Last Edited Date',
-			'Last Edited User',
-			'Delete Flag'
-		],
-		StockWithdrawal: [
-			'Withdrawal ID',
-			'Date Withdrawn',
-			'Quantity Withdrawn',
-			'Purpose',
-			'Entry ID',
-			'Withdrawn By',
-			'Authorized By',
-			'Last Edited Date',
-			'Last Edited User',
-			'Delete Flag'
-		],
-		ReturnExchange: [
-			'Transaction ID',
-			'Date Transaction',
-			'Transaction Status',
-			'Order ID',
-			'Handled By',
-			'Approved By',
-			'Last Edited Date',
-			'Last Edited User',
-			'Delete Flag'
 		]
 	};
 
@@ -284,6 +87,13 @@
 	let isLoading = false;
 	let hasMoreData = true;
 	const ITEMS_PER_PAGE = 100;
+
+	let searchQuery = '';
+	function handleSearch() {
+		if (searchQuery.trim()) {
+			goto(`/search?q=${encodeURIComponent(searchQuery)}`);
+		}
+	}
 
 	let ready = false;
 	onMount(()=>{
@@ -320,121 +130,7 @@
 
 			let newRows: { [key: string]: string }[] = [];
 
-			if(tab === "Product"){
-				newRows = data.products.map((item: any) =>({
-					'Product ID': item.productId,
-					'Product Name': item.productName,
-					'Category': item.category,
-					'Descriptions': item.descriptions,
-					'Supplier': item.supplier,
-					'Cost': item.cost,
-					'Retail Price': item.retailPrice,
-					'Stock On Hand': item.stockOnHand,
-					'Units': item.units,
-					'Image': item.pathName,
-					'Safe Stock Count': item.safeStockCount,
-					'Restock Flag': item.restockFlag,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-        		}));
-			}
-			else if(tab === "Orders"){
-				newRows = data.orders.map((item: any) =>({
-					'Order ID': item.orderId,
-					'Discount': item.discount,
-					'Customer': item.customer,
-					'Handled By': item.handledBy,
-					'Payment Method': item.paymentMethod,
-					'Payment Status': item.paymentStatus,
-					'Date Ordered': new Date(item.dateOrdered).toLocaleDateString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-				}));
-			}
-			else if(tab === "OrderInfo"){
-				newRows = data.orderInfo.map((item: any) =>({
-					'Order Info ID': item.orderInfoId,
-					'Quantity': item.quantity,
-					'Order ID': item.orderId,
-					'Product ID': item.productId,
-					'Unit Price At Purchase': item.unitPriceAtPurchase,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-				}));
-			}
-			else if(tab === "StockEntry"){
-				newRows = data.stockEntries.map((item: any) =>({
-					'Entry ID': item.entryId,
-					'Branch Name': item.branchName,
-					'Date Received': new Date(item.dateReceived).toLocaleDateString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Quantity Received': item.quantityReceived,
-					'Delivery Receipt Number': item.deliveryReceiptNumber,
-					'Received By': item.receivedBy,
-					'Product ID': item.productId,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-				}));
-			}
-			else if(tab === "StockWithdrawal"){
-				newRows = data.stockWithdrawals.map((item: any) =>({
-					'Withdrawal ID': item.withdrawalId,
-					'Date Withdrawn': new Date(item.dateWithdrawn).toLocaleDateString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Quantity Withdrawn': item.quantityWithdrawn,
-					'Purpose': item.purpose,
-					'Entry ID': item.entryId,
-					'Withdrawn By': item.withdrawnBy,
-					'Authorized By': item.authorizedBy,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-				}));
-			}
-			else if(tab === "ReturnExchange"){
-				newRows = data.returnExchanges.map((item: any) =>({
-					'Transaction ID': item.transactionId,
-					'Date Transaction': new Date(item.dateTransaction).toLocaleDateString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Transaction Status': item.transactionStatus,
-					'Order ID': item.orderId,
-					'Handled By': item.handledBy,
-					'Approved By': item.approvedBy,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-				}));
-			}
-			else if(tab === "Users"){
-				newRows = data.users.map((item: any) => ({
-					'User ID': item.userId,
-					'Full Name': item.fullName,
-					'User Role': item.userRole,
-					'Username': item.username,
-					'Password': item.password,
-					'Image': item.pathName,
-					'Date Added': new Date(item.dateAdded).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }),
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }),
-					'Last Edited User': item.lastEditedUser,
-					'Delete Flag': item.deleteFlag
-				}));
-			}
-			else if(tab === "StockEntryExpanded"){
+			if(tab === "StockEntryExpanded"){
 				newRows = data.stockEntryExpanded.map((item: any) => ({
 					'Entry ID': item['Entry ID'],
 					'Branch Name': item['Branch Name'],
@@ -836,89 +532,125 @@
 		showModal = false;
 	}
 
-	async function handleAddFormSave() {
-		// Only add if at least one field is filled
-		if (Object.values(addForm).some((v) => v?.trim() !== '')) {
-			const token = localStorage.getItem('token');
-			const endpoint = createApiMap[selected];
-			try{
-				const finalForm: {[key: string]: any} = {};
-				const varKey = keyMap[selected];
-				
-				const validations = idValidationMap[selected] || [];
-				for(const {field, endpoint: idEndpoint} of validations){
-					const raw = addForm[field]?.trim();
-					if(!raw || isNaN(Number(raw))){
-						alert(`${field} must be a number.`);
-						return;
-					}
-					const id = Number(raw);
-					const exists = await validate(idEndpoint, id)
-					if(!exists){
-						alert(`${field} ${id} does not exist in the database.`);
-						return;
-					}
-					const finalKey = varKey[field];
-					if(finalKey) {
-						finalForm[finalKey] = id;
-					}
-				}
+async function handleAddFormSave() {
+	if (Object.values(addForm).some((v) => v?.trim() !== '')) {
+		const token = localStorage.getItem('token');
+		const endpoint = createApiMap[selected];
+		const finalForm: { [key: string]: any } = {};
+		const varKey = keyMap[selected];
+		const validations = idValidationMap[selected] || [];
 
-				for(const key in addForm){
-					const bKey = varKey[key];
-					if (!bKey || finalForm.hasOwnProperty(bKey)) continue;
-					const value = addForm[key]?.trim();
-					if(bKey === 'pathName'){
-						finalForm[bKey] = value === '' ? null: value;
-					}
-					else if(value !== ''){
-						if(['cost', 'retailPrice', 'stockOnHand', 'safeStockCount', 'restockFlag', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)){
-							const num = Number(value);
-							if(isNaN(num) || num < 0){
-								alert(`${bKey} must be a valid number`);
-								return;
-							}
-								finalForm[bKey] = num;
-						}
-						else{
-							finalForm[bKey] = value;
-						}
-					}
-				}
-				// console.log("Final form to submit:", finalForm);
+		// Get user ID from token
+		let currentUserId: number | null = null;
+		try {
+			const payload = JSON.parse(atob(token.split('.')[1]));
+			currentUserId = payload.userId || payload.id || null;
+		} catch (err) {
+			alert("Login session invalid. Please log in again.");
+			return;
+		}
 
-				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`
-					},
-					body: JSON.stringify(finalForm)
-				});
-				// const data = await res.json();
-				// console.log("data: ", data);
-				if(!res.ok){
-					alert("Error creating!");
+		// Validate foreign key IDs
+		for (const { field, endpoint: idEndpoint } of validations) {
+			if (field === "productId") continue; // handled below
+
+			const raw = addForm[field]?.trim();
+			if (!raw || isNaN(Number(raw))) {
+				alert(`${field} must be a number.`);
+				return;
+			}
+			const id = Number(raw);
+			const exists = await validate(idEndpoint, id);
+			if (!exists) {
+				alert(`${field} ${id} does not exist in the database.`);
+				return;
+			}
+			const finalKey = varKey[field];
+			if (finalKey) finalForm[finalKey] = id;
+		}
+
+		// Handle productId from input ("Product Name" column)
+		const rawProductId = addForm['Product Name']?.trim();
+		if (!rawProductId || isNaN(Number(rawProductId))) {
+			alert("Product ID must be a valid number.");
+			return;
+		}
+		finalForm.productId = Number(rawProductId);
+
+		// Map remaining fields
+		for (const key in addForm) {
+			if (key === 'Product Name' || key === 'productId') continue;
+
+			const bKey = varKey[key];
+			if (!bKey || finalForm.hasOwnProperty(bKey)) continue;
+
+			const value = addForm[key]?.trim();
+			if (value === '') continue;
+
+			if (['quantityReceived', 'deliveryReceiptNumber'].includes(bKey)) {
+				const num = Number(value);
+				if (isNaN(num)) {
+					alert(`${bKey} must be a number.`);
 					return;
 				}
-
-				await fetchTabData(selected);
-				
-				// Reset pagination and reload from beginning after add
-				currentOffset = 0;
-				hasMoreData = true;
-				rows = [];
-				await fetchTabData(selected);
-				
-				// rows = [...rows, { ...addForm }];
-				isAddForm = false;
-				showModal = false;
-			}catch(err){
-				console.error("Error creating: ", err);
+				finalForm[bKey] = num;
+			} else if (bKey === 'dateReceived') {
+				// Only accept valid date
+				const date = new Date(value);
+				if (isNaN(date.getTime())) {
+					alert("Invalid date for dateReceived.");
+					return;
+				}
+				finalForm[bKey] = value;
+			} else {
+				finalForm[bKey] = value;
 			}
 		}
+
+		// Auto-fill metadata
+		const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+		finalForm.lastEditedUser = currentUserId;
+		finalForm.lastEditedDate = now;
+
+		// Fallback: auto-fill today's dateReceived if still missing
+		if (!finalForm.dateReceived) {
+			finalForm.dateReceived = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+		}
+
+		console.log("[DEBUG] Final form to submit:", finalForm);
+
+		try {
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`
+				},
+				body: JSON.stringify(finalForm)
+			});
+
+			if (!res.ok) {
+				const error = await res.json();
+				alert("Error creating: " + (error.message || res.statusText));
+				console.error("[ERROR] Backend response:", error);
+				return;
+			}
+
+			await fetchTabData(selected);
+			currentOffset = 0;
+			hasMoreData = true;
+			rows = [];
+			await fetchTabData(selected);
+			isAddForm = false;
+			showModal = false;
+			alert("Stock entry created successfully!");
+		} catch (err) {
+			console.error("Error creating StockEntry:", err);
+			alert("Unexpected error while creating stock entry.");
+		}
 	}
-	
+}
+
 	//validate if id exists
 	async function validate(endpoint: string, id: number){
 		const token = localStorage.getItem('token');
@@ -933,58 +665,53 @@
 	}
 
 	async function handleDeleteSelectedRows() {
-		if (
-			selectedRows.length > 0 &&
-			confirm(`Are you sure you want to delete ${selectedRows.length} selected row(s)?`)
-		) {
-			const token = localStorage.getItem('token');
-			const failedDeletes: number[] = []; 
+		if (selectedRows.length === 0) return;
 
-			for (const idx of selectedRows) {
-				const row = rows[idx];
-				const productId = parseInt(row["Product ID"] || row.productId || row.id);
+		if (!confirm(`Delete ${selectedRows.length} selected row(s)?`)) return;
 
-				if (!productId) {
-					console.warn("No product ID found in row:", row);
-					failedDeletes.push(-1);
-					continue;
-				}
+		const token = localStorage.getItem('token');
+		const endpoint = deleteApiMap[selected];
+		const primaryKey = primaryKeyMap[selected];
+		const failedDeletes: number[] = [];
 
-				try {
-					const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteProduct/${productId}`, {
-						method: "DELETE",
-						headers: {
-							"Content-Type": "application/json",
-							Authorization: `Bearer ${token}`
-						}
-					});
+		const rowIds = selectedRows.map(idx => {
+			const row = rows[idx];
+			return parseInt(row?.[primaryKey] || row?.id);
+		}).filter(id => id);
 
-					if (!res.ok) {
-						const err = await res.json();
-						console.error(`Failed to delete product ${productId}:`, err.message || err);
-						failedDeletes.push(productId);
+		for (const rowId of rowIds) {
+			try {
+				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
+					method: "DELETE",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${token}`
 					}
-				} catch (err) {
-					console.error(`Error deleting product ${productId}:`, err);
-					failedDeletes.push(productId);
+				});
+				if (!res.ok) {
+					const err = await res.json().catch(() => ({ message: res.statusText }));
+					console.error(`Failed to delete row ${rowId}:`, err.message);
+					failedDeletes.push(rowId);
 				}
-			}
-
-			selectedRows = [];
-
-			// Reset pagination and reload from beginning after delete
-			currentOffset = 0;
-			hasMoreData = true;
-			rows = [];
-			await fetchTabData(selected);
-
-			if (failedDeletes.length > 0) {
-				alert(`Some deletions failed: ${failedDeletes.join(", ")}`);
-			} else {
-				alert("Deletion successful.");
+			} catch (err) {
+				console.error(`Error deleting row ${rowId}:`, err);
+				failedDeletes.push(rowId);
 			}
 		}
+
+		selectedRows = [];
+		currentOffset = 0;
+		hasMoreData = true;
+		rows = [];
+		await fetchTabData(selected);
+
+		if (failedDeletes.length > 0) {
+			alert(`Some deletions failed: ${failedDeletes.join(", ")}`);
+		} else {
+			alert("Successfully deleted all selected stock entries.");
+		}
 	}
+
 
 </script>
 
@@ -993,19 +720,18 @@
 	<h1>Stock In</h1>
 
 	<div class="flex gap-3">
-		
 		<div class="flex w-fit rounded-4xl bg-white px-3">
-			<!-- dropdown for order by, auto includes all col headers -->
-			<select
-				class="w-35 p-1 outline-none"
-				bind:value={sortColumn}
-				on:change={() => sortBy(sortColumn)}
-			>
-				<option value="">All</option>
-				{#each currentHeaders as head}
-					<option value={head}>{head}</option>
-				{/each}
-			</select>
+			<input 
+				type="text" 
+				placeholder="Search" 
+				class="w-55 p-1" 
+				style="outline:none" 
+				bind:value={searchQuery}
+				on:keydown={(e) => e.key === 'Enter' && handleSearch()}
+			/>
+			<button on:click={handleSearch}>
+				<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
+			</button>
 		</div>
 	</div>
 </header>

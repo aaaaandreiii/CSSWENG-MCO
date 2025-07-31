@@ -114,10 +114,18 @@
 			<li class="flex-row items-center">
 				<a
 					href={tab.link}
-					class="flex {selected === tab.name ? 'selected-tab' : ''}"
+					class={`flex ${
+						selected === tab.name
+						? 'selected-tab'
+						: 'hover:bg-[#0e7b34] hover:text-white hover:shadow hover:rounded-r-[18px] hover:ml-[-30px] hover:pl-[30px] hover:w-[calc(100%+30px)]'
+					}`}
 					on:click={() => {
 						selected = tab.name;
-						if (tab.subtabs) toggleTab(tab.name);
+						if (tab.name === 'Inventory') {
+							toggleTab(tab.name);
+						} else {
+							expandedTab = '';
+						}
 					}}
 				>
 					<img src={tab.icon} alt={tab.icon} style="width: 30px" />
@@ -129,9 +137,13 @@
 							<li>
 								<a
 									href={sub.link}
-									class="block py-2 text-sm {selected === sub.name ? 'selected-tab' : ''}"
+									class={`block py-2 text-sm rounded ${
+										selected === sub.name
+											? 'selected-tab'
+											: 'hover:bg-[#0e7b34] hover:text-white hover:shadow hover:rounded-r-[18px] hover:ml-[-30px] hover:pl-[30px] hover:w-[calc(100%+60px)]'
+										}`}
 									on:click={() => selected = sub.name}
-								>
+									>
 									{sub.name}
 								</a>
 							</li>

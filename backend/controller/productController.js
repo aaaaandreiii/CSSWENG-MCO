@@ -15,7 +15,14 @@ router.post("/createProduct", authenJWT, authorizePermission("edit_product"), as
         const productId = await mysql.createProduct(productName, category, descriptions, supplier, cost, retailPrice, stockOnHand, units, pathName, safeStockCount, restockFlag, lastEditedDate, lastEditedUser, 0);
         await logAudit("add_product", `Created product ID ${productId})`, req.user.userId);
         res.json({message: "Product created successfully!", id: productId});
+        
     }catch(err){
+        console.error("❌ Error creating product:", err); 
+         await auditModel.logAudit(
+            "add_stock",
+            `Error occurred while adding a product.`,
+            req.user?.userId || null
+        );
         res.status(500).json({ message: "Error creating Product" });
     }
 }); //test: curl -X POST http://localhost:5000/api/createProduct -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"productName\":\"Ping Pong Ball\",\"category\":\"ball\",\"descriptions\":\"descriptionss\",\"supplier\":\"someone\",\"cost\":100,\"retailPrice\":150,\"stockOnHand\":50,\"units\":\"pcs\"}"
@@ -51,6 +58,24 @@ router.get("/getProductById/:id", authenJWT, authorizePermission("edit_product")
         res.status(500).json({ message: "Error fetching Product" });
     }
 }); //test: curl -X GET http://localhost:5000/api/getProductById/1 -H "Authorization: Bearer TOKEN_HERE"
+
+router.get("/getProductJoinedInformation", authenJWT, authorizePermission("edit_stock"), async (req, res) => {
+	const offset = parseInt(req.query.offset) || 0;
+	const limit  = parseInt(req.query.limit)  || 100;
+
+	try {
+		const auditJoinedInformation = await mysql.getAuditJoinedInformation(offset, limit);
+
+		if (auditJoinedInformation && auditJoinedInformation.length > 0) {
+			res.json({ message: "Expanded Product Log Entries found!", auditJoinedInformation });
+		} else {
+			res.status(404).json({ message: "No expanded product log entries found" });
+		}
+	} catch (err) {
+		console.error("Error fetching expanded product log entries:", err);
+		res.status(500).json({ message: "Error fetching expanded product log entries" });
+	}
+});
 
 // GET /api/stockHistory?productId=…
 // returns { dates: [...], stockLevels: [...], sales: [...] } for the last 30 days
@@ -171,6 +196,11 @@ router.put("/updateProduct/:id", authenJWT, authorizePermission("edit_product"),
             res.status(404).json({ message: "Product not found or not updated" });
         }
     }catch(err){
+        await auditModel.logAudit(
+            "edit_stock",
+            `Error occurred while updating product with ID ${req.params.id}.`,
+            req.user?.userId || null
+        );
         res.status(500).json({ message: "Error updating Product" });
     }
 }); //test: curl -X PUT http://localhost:5000/api/updateProduct/1 -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"productName\":\"Updated Ping Pong Pan\",\"category\":\"paddle\",\"descriptions\":\"Updated description\",\"supplier\":\"new supplier\",\"cost\":110,\"retailPrice\":160}"
@@ -179,6 +209,7 @@ router.delete("/deleteProduct/:id", authenJWT, authorizePermission("edit_product
     try{
         const productId = parseInt(req.params.id);
         const deleted = await mysql.cascadeDeleteProduct(productId);
+        
         if(deleted){
             await logAudit("delete_product", `Deleted product ID ${productId})`, req.user.userId);
             res.json({ message: "Product deleted successfully!", id: productId });
@@ -187,6 +218,11 @@ router.delete("/deleteProduct/:id", authenJWT, authorizePermission("edit_product
             res.status(404).json({ message: "Product not found or not deleted" });
         }
     }catch(err){
+        await auditModel.logAudit(
+            "delete_stock",
+            `Error occurred while deleting product with ID ${req.params.id}.`,
+            req.user?.userId || null
+        );
         res.status(500).json({ message: "Error deleting Product" });
     }
 }); //test: curl -X DELETE http://localhost:5000/api/deleteProduct/1 -H "Authorization: Bearer TOKEN_HERE"

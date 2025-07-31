@@ -167,3 +167,78 @@ export async function cascadeDeleteOrder(orderId){
     await processCascade(ordersCascadeMap, orderId)
     return true;
 }
+
+export async function getFullOrderDetails() {
+  const [rows] = await db.query(`
+    SELECT 
+      o.orderId,
+      o.customer,
+      o.dateOrdered AS orderDate,
+      o.discount,
+      o.handledBy,
+      o.paymentMethod,
+      o.paymentStatus,
+
+      -- Product Ordered
+      p.productId,
+      p.productName,
+      p.units,
+      p.category,
+
+      -- Order Info
+      oi.orderInfoId,
+      oi.quantity,
+      oi.unitPriceAtPurchase,
+
+      -- Return/Exchange Info (optional)
+      rei.detailId,
+      rei.returnedProductId,
+      rei.returnedQuantity,
+      rei.exchangeProductId,
+      rei.exchangeQuantity,
+      rei.reason,
+      rei.returnType
+
+    FROM Orders o
+    JOIN OrderInfo oi ON o.orderId = oi.orderId AND oi.deleteFlag = 0
+    JOIN Product p ON oi.productId = p.productId AND p.deleteFlag = 0
+    LEFT JOIN ReturnExchangeInfo rei 
+      ON o.orderId = rei.transactionId 
+      AND rei.returnedProductId = p.productId
+      AND rei.deleteFlag = 0
+
+    WHERE o.deleteFlag = 0
+    ORDER BY o.dateOrdered DESC, o.orderId DESC;
+  `);
+  return rows;
+}
+
+// Delete entire order and its items
+export async function deleteOrder(orderId) {
+  const [result] = await db.query(
+    'UPDATE Orders SET deleteFlag = 1 WHERE orderId = ?',
+    [orderId]
+  );
+  return result.affectedRows > 0;
+}
+
+export async function deleteOrderItem(orderInfoId) {
+    try {
+        const [result] = await db.query(
+            'DELETE FROM order_info WHERE order_info_id = ?',
+            [orderInfoId]
+        );
+        return result.affectedRows > 0;
+    } catch (err) {
+        console.error('Error deleting order item:', err);
+        return false;
+    }
+}
+
+export async function deleteAllOrderItems(orderId) {
+  const [result] = await db.query(
+    'UPDATE OrderInfo SET deleteFlag = 1 WHERE orderId = ?',
+    [orderId]
+  );
+  return result.affectedRows > 0;
+}

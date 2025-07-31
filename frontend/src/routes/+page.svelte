@@ -1,7 +1,24 @@
+<script lang="ts">
+	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 
-<script>
-    import Main from "../components/Main.svelte";
+	onMount(() => {
+		// Check if user has a valid token
+		const token = localStorage.getItem('token');
+		if (token) {
+			// If logged in, go to dashboard
+			goto('/dashboard');
+		} else {
+			// If not logged in, go to login page
+			goto('/login');
+		}
+	});
 </script>
 
-
-<Main />
+<!-- Show a loading message while redirecting -->
+<div class="flex items-center justify-center min-h-screen">
+	<div class="text-center">
+		<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+		<p class="text-gray-600">Loading...</p>
+	</div>
+</div>

@@ -1,197 +1,82 @@
 <script lang="ts">
 	import { PUBLIC_API_BASE_URL } from '$env/static/public';
-	
+	import { goto } from '$app/navigation';		
 	import {onMount} from 'svelte';
-	type TabType =
-		| 'Product'
-		| 'Orders'
-		| 'OrderInfo'
-		| 'StockEntry'
-		| 'StockWithdrawal'
-		| 'ReturnExchange'
-		| 'Users';
 
-	let selected: TabType = 'Product';
+	type TabType =
+		| 'StockOutExpanded';
+
+	let selected: TabType = 'StockOutExpanded';
 
 	const getApiMap: Record<TabType, string> = {
-		Product: 'getProducts',
-		Orders: 'getOrders',
-		OrderInfo: 'getOrderInfo',
-		StockEntry: 'getStockEntries',
-		StockWithdrawal: 'getStockWithdrawals',
-		ReturnExchange: 'getReturnExchanges',
-		Users: 'getUsers'
+		StockOutExpanded: 'getStockOutExpanded'
 	};
 
 	const createApiMap: Record<TabType, string> = {
-		Product: 'createProduct',
-		Orders: 'createOrder',
-		OrderInfo: 'createOrderInfo', // X
-		StockEntry: 'createStockEntry',
-		StockWithdrawal: 'createStockWithdrawal',
-		ReturnExchange: 'createReturnExchange',
-		Users: 'createUsers' // X
+		StockOutExpanded: 'createStockOutExpanded'
 	};
 
 	const updateApiMap: Record<TabType, string> = {
-		Product: 'updateProduct',
-		Orders: 'updateOrder',
-		OrderInfo: 'updateOrderInfo',
-		StockEntry: 'updateStockEntry',
-		StockWithdrawal: 'updateStockWithdrawal',
-		ReturnExchange: 'updateReturnExchange',
-		Users: 'updateUsers'
+		StockOutExpanded: 'updateStockOutExpanded'
+	};
+	const deleteApiMap: Record<TabType, string> = {
+		StockOutExpanded: "deleteStockOutExpanded"
 	};
 
 	const keyMap: Record<TabType, Record<string, string>> = {
-		Product: {
-			'Product Name': 'productName',
-			'Category': 'category',
-			'Descriptions': 'descriptions',
-			'Supplier': 'supplier',
-			'Cost': 'cost',
-			'Retail Price': 'retailPrice',
-			'Stock On Hand': 'stockOnHand',
-			'Units': 'units',
-			'Image': 'pathName',
-			'Safe Stock Count': 'safeStockCount',
-			'Restock Flag': 'restockFlag'
-		},
-		Orders: {
-			'Discount': 'discount',
-			'Customer': 'customer',
-			'Handled By': 'handledBy',
-			'Payment Method': 'paymentMethod',
-			'Payment Status': 'paymentStatus'
-		},
-		OrderInfo: {
-			'Quantity': 'quantity',
-			'Order ID': 'orderId',
-			'Product ID': 'productId',
-			'Unit Price At Purchase': 'unitPriceAtPurchase'
-		},
-		StockEntry: {
-			'Branch Name': 'branchName',
-			'Quantity Received': 'quantityReceived',
-			'Delivery Receipt Number': 'deliveryReceiptNumber',
-			'Received By': 'receivedBy',
-			'Product ID': 'productId'
-		},
-		StockWithdrawal: {
+		StockOutExpanded: {
+			'Withdrawal ID': 'withdrawalId',
+			'Entry ID': 'entryId',
+			'Date Withdrawn': 'dateWithdrawn',
 			'Quantity Withdrawn': 'quantityWithdrawn',
 			'Purpose': 'purpose',
-			'Entry ID': 'entryId',
+			'Branch Name': 'branchName',
+			'Product Name': 'productName',
 			'Withdrawn By': 'withdrawnBy',
-			'Authorized By': 'authorizedBy'
-		},
-		ReturnExchange: {
-			'Transaction Status': 'transactionStatus',
-			'Order ID': 'orderId',
-			'Handled By': 'handledBy',
-			'Approved By': 'approvedBy'
-		},
-		Users: {
-			'Returned Product ID': 'returnedProductId',
-			'Returned Quantity': 'returnedQuantity',
-			'Exchange Product ID': 'exchangeProductId',
-			'Exchange Quantity': 'exchangeQuantity',
-			'Reason': 'reason',
-			'Transaction ID': 'transactionId',
-			'Return Type': 'returnType'
-		}
+			'Authorized By': 'authorizedBy',
+			'Last Edited By': 'lastEditedBy',
+			'Last Edited Date': 'lastEditedDate'
+		}	
 	}
 
+	const foreignKeyNameMap: Record<string, Record<string, string>> = {
+		StockOutExpanded: {
+			withdrawnBy: 'users',
+			authorizedBy: 'users',
+			lastEditedUser: 'users',
+			entryId: 'stockentry',
+			productName: 'products'
+		},
+	};
+
 	const idValidationMap: Record<TabType, {field: string; endpoint: string}[]> = {
-		Product: [],
-		Orders: [
-			{field: 'Handled By', endpoint: 'getUserById'}
-		],
-		OrderInfo: [
-			{field: 'Order ID', endpoint: 'getOrderById'},
-			{field: 'Product ID', endpoint: 'getProductById'}
-		],
-		StockEntry: [
-			{field: 'Received By', endpoint: 'getUserById'},
-			{field: 'Product ID', endpoint: 'getProductById'}
-		],
-		StockWithdrawal: [
-			{field: 'Entry ID', endpoint: 'getStockEntryById'},
-			{field: 'Withdrawn By', endpoint: 'getUserById'},
-			{field: 'Authorized By', endpoint: 'getUserById'}
-		],
-		ReturnExchange: [
-			{field: 'Order ID', endpoint: 'getOrderById'},
-			{field: 'Handled By', endpoint: 'getUserById'},
-			{field: 'Approved By', endpoint: 'getUserById'}
-		],
-		Users: [
-			{field: 'Returned Product ID', endpoint: 'getProductById'},
-			{field: 'Exchange Product ID', endpoint: 'getProductById'},
-			{field: 'Transaction ID', endpoint: 'getReturnExchangeById'}
+	
+		StockOutExpanded: [
+			{ field: 'withdrawnBy', endpoint: 'users' },
+			{ field: 'authorizedBy', endpoint: 'users' },
+			{ field: 'entryId', endpoint: 'stockentry' },
+			{ field: 'productName', endpoint: 'products' },
 		]
 	};
 
 	const primaryKeyMap: Record<TabType, string> = {
-		Product: 'Product ID',
-		Orders: 'Order ID',
-		OrderInfo: 'Order Info ID',
-		StockEntry: 'Entry ID',
-		StockWithdrawal: 'Withdrawal ID',
-		ReturnExchange: 'Transaction ID',
-		Users: 'Detail ID'
+		StockOutExpanded: 'Withdrawal ID'
 	};
 
 	const headerMap: Record<TabType, string[]> = {
-		Product: [
-			'Product ID',
-			'Product Name',
-			'Category',
-			'Descriptions',
-			'Supplier',
-			'Cost',
-			'Retail Price',
-			'Stock On Hand',
-			'Units',
-			'Image', //pathName
-			'Safe Stock Count',
-			'Restock Flag',
-			'Last Edited Date',
-			'Last Edited User'
-		],
-		StockEntry: [
-			'Entry ID',
-			'Branch Name',
-			'Date Received',
-			'Quantity Received',
-			'Delivery Receipt Number',
-			'Received By',
-			'Product ID',
-			'Last Edited Date',
-			'Last Edited User'
-		],
-		StockWithdrawal: [
-			'Withdrawal ID',
-			'Date Withdrawn',
-			'Quantity Withdrawn',
-			'Purpose',
-			'Entry ID',
-			'Withdrawn By',
-			'Authorized By',
-			'Last Edited Date',
-			'Last Edited User'
-		],
-		Users: [ //change to users
-			'Detail ID',
-			'Returned Product ID',
-			'Returned Quantity',
-			'Exchange Product ID',
-			'Exchange Quantity',
-			'Reason',
-			'Transaction ID',
-			'Return Type',
-			'Last Edited Date',
-			'Last Edited User'
-		]
+		StockOutExpanded: [
+		'Withdrawal ID',
+		'Entry ID',
+		'Date Withdrawn',
+		'Quantity Withdrawn',
+		'Purpose',
+		'Branch Name',
+		'Product Name',
+		'Withdrawn By',
+		'Authorized By',
+		'Last Edited By',
+		'Last Edited Date'
+		]	
 	};
 
 	$: currentHeaders = headerMap[selected];
@@ -215,6 +100,13 @@
 	let isLoading = false;
 	let hasMoreData = true;
 	const ITEMS_PER_PAGE = 100;
+
+	let searchQuery = '';
+	function handleSearch() {
+		if (searchQuery.trim()) {
+			goto(`/search?q=${encodeURIComponent(searchQuery)}`);
+		}
+	}
 
 	let ready = false;
 	onMount(()=>{
@@ -248,120 +140,19 @@
 
 			let newRows: { [key: string]: string }[] = [];
 
-			if(tab === "Product"){
-				newRows = data.products.map((item: any) =>({
-					'Product ID': item.productId,
-					'Product Name': item.productName,
-					'Category': item.category,
-					'Descriptions': item.descriptions,
-					'Supplier': item.supplier,
-					'Cost': item.cost,
-					'Retail Price': item.retailPrice,
-					'Stock On Hand': item.stockOnHand,
-					'Units': item.units,
-					'Image': item.pathName,
-					'Safe Stock Count': item.safeStockCount,
-					'Restock Flag': item.restockFlag,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-        		}));
-			}
-			else if(tab === "Orders"){
-				newRows = data.orders.map((item: any) =>({
-					'Order ID': item.orderId,
-					'Discount': item.discount,
-					'Customer': item.customer,
-					'Handled By': item.handledBy,
-					'Payment Method': item.paymentMethod,
-					'Payment Status': item.paymentStatus,
-					'Date Ordered': new Date(item.dateOrdered).toLocaleDateString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-				}));
-			}
-			else if(tab === "OrderInfo"){
-				newRows = data.orderInfo.map((item: any) =>({
-					'Order Info ID': item.orderInfoId,
-					'Quantity': item.quantity,
-					'Order ID': item.orderId,
-					'Product ID': item.productId,
-					'Unit Price At Purchase': item.unitPriceAtPurchase,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-				}));
-			}
-			else if(tab === "StockEntry"){
-				newRows = data.stockEntries.map((item: any) =>({
-					'Entry ID': item.entryId,
-					'Branch Name': item.branchName,
-					'Date Received': new Date(item.dateReceived).toLocaleDateString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Quantity Received': item.quantityReceived,
-					'Delivery Receipt Number': item.deliveryReceiptNumber,
-					'Received By': item.receivedBy,
-					'Product ID': item.productId,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-				}));
-			}
-			else if(tab === "StockWithdrawal"){
-				newRows = data.stockWithdrawals.map((item: any) =>({
-					'Withdrawal ID': item.withdrawalId,
-					'Date Withdrawn': new Date(item.dateWithdrawn).toLocaleDateString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Quantity Withdrawn': item.quantityWithdrawn,
-					'Purpose': item.purpose,
-					'Entry ID': item.entryId,
-					'Withdrawn By': item.withdrawnBy,
-					'Authorized By': item.authorizedBy,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-				}));
-			}
-			else if(tab === "ReturnExchange"){
-				newRows = data.returnExchanges.map((item: any) =>({
-					'Transaction ID': item.transactionId,
-					'Date Transaction': new Date(item.dateTransaction).toLocaleDateString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Transaction Status': item.transactionStatus,
-					'Order ID': item.orderId,
-					'Handled By': item.handledBy,
-					'Approved By': item.approvedBy,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
-				}));
-			}
-			else if(tab === "Users"){
-				newRows = data.Users.map((item: any) =>({
-					'Detail ID': item.detailId,
-					'Returned Product ID': item.returnedProductId,
-					'Returned Quantity': item.returnedQuantity,
-					'Exchange Product ID': item.exchangeProductId,
-					'Exchange Quantity': item.exchangeQuantity,
-					'Reason': item.reason,
-					'Transaction ID': item.transactionId,
-					'Return Type': item.returnType,
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
-						timeZone: 'Asia/Manila'
-					}),
-					'Last Edited User': item.lastEditedUser
+			if (tab === "StockOutExpanded") {
+				newRows = data.stockOut.map((item: any) => ({
+					'Withdrawal ID': item['Withdrawal ID'],
+					'Entry ID': item['Entry ID'],
+					'Date Withdrawn': new Date(item['Date Withdrawn']).toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' }),
+					'Quantity Withdrawn': item['Quantity Withdrawn'],
+					'Purpose': item['Purpose'],
+					'Branch Name': item['Branch Name'],
+					'Product Name': item['Product Name'],
+					'Withdrawn By': item['Withdrawn By'],
+					'Authorized By': item['Authorized By'],
+					'Last Edited By': item['Last Edited By'],
+					'Last Edited Date': new Date(item['Last Edited Date']).toLocaleString('en-PH', { timeZone: 'Asia/Manila' })
 				}));
 			}
 
@@ -445,7 +236,7 @@
 	// headerMap.StockEntry.push('Last Updated', 'Edited By');
 	// headerMap.StockWithdrawal.push('Last Updated', 'Edited By');
 	// headerMap.ReturnExchange.push('Last Updated', 'Edited By');
-	// headerMap.Users.push('Last Updated', 'Edited By');
+	// headerMap.ReturnExchangelnfo.push('Last Updated', 'Edited By');
 
 	// edit button in popup
 	let showEditButton = false;
@@ -488,247 +279,165 @@
 		isEditForm = true;
 	}
 
+	function handleEditFormCancel() {
+		isEditForm = false;
+		showModal = false;
+	}
+
 	let editForm: { [key: string]: string } = {};
 	let isEditForm = false;
 
 	let cellEditForm: { value: string } = { value: '' };
 	let isCellEditForm = false;
 
-	// func to handle saving the edit form
-	async function handleEditFormSave() {
-		if (modalRowIndex !== -1) {
-			const token = localStorage.getItem('token');
-			const endpoint = updateApiMap[selected];
-			const primaryKey = primaryKeyMap[selected];
-			const rowId = rows[modalRowIndex][primaryKey];
-			const finalForm: {[key: string]: any} = {};
-			const varKey = keyMap[selected];
+	async function getForeignKeyId(field: string, value: string, token: string, foreignKeyMap: Record<string, string>): Promise<number | null> {
+	const endpoint = foreignKeyMap[field];
+	if (!endpoint) return null;
 
-			const validations = idValidationMap[selected] || [];
-				for(const {field, endpoint: idEndpoint} of validations){
-					const raw = editForm[field];
-					const trim = typeof raw === 'string' ? raw.trim(): raw;
-					if(trim === '' || isNaN(Number(trim))){
-						alert(`${field} must be a number.`);
-						return;
-					}
-					const id = Number(trim);
-					const exists = await validate(idEndpoint, id)
-					if(!exists){
-						alert(`${field} ${id} does not exist in the database.`);
-						return;
-					}
-					const finalKey = varKey[field];
-					if(finalKey) {
-						finalForm[finalKey] = id;
-					}
-				}
+	const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
+		headers: { Authorization: `Bearer ${token}` }
+	});
+	const data = await res.json();
 
-			for(const key in editForm){
-				const bKey = varKey[key];
-				if (!bKey || finalForm.hasOwnProperty(bKey)) continue;
-				const raw = editForm[key];
-				const value = typeof raw === 'string'? raw.trim(): raw;
-				if(bKey === 'pathName'){
-					finalForm[bKey] = value === '' ? null: value;
-				}
-				else if(value !== '' && value !== null && value !== undefined){
-					if(['cost', 'retailPrice', 'stockOnHand', 'safeStockCount', 'restockFlag', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)){
-						const num = Number(value);
-						if(isNaN(num) || num < 0){
-							alert(`${bKey} must be a valid number`);
-							return;
-						}
-							finalForm[bKey] = num;
-					}
-					else{
-						finalForm[bKey] = value;
-					}
-				}
-			}
-			try{
-				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
-					method: 'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`
-					},
-					body: JSON.stringify(finalForm)
-				});
-				// const data = await res.json();
-				if(!res.ok){
-					alert("Error updating!");
-					return;
-				}
-				await fetchTabData(selected);
-				
-				// Reset pagination and reload from beginning after edit
-				currentOffset = 0;
-				hasMoreData = true;
-				rows = [];
-				await fetchTabData(selected);
-				
-				// rows[modalRowIndex] = { ...editForm };
-				isEditForm = false;
-				showModal = false;
-			}catch(err){
-				console.error("Error updating: ", err);
-			}
+	// Match either by `label` or `name` (adjust if needed)
+	const match = data.find((item: any) => item.name === value || item.label === value);
+	return match ? match.id : null;
+}
+
+
+	async function resolveForeignKeyId(
+		field: string,
+		value: string,
+		selectedTab: string,
+		token: string
+	): Promise<number> {
+		const fkMap = foreignKeyNameMap[selectedTab];
+		if (!fkMap || !fkMap[field]) {
+			throw new Error(`Missing foreign key mapping for field '${field}'`);
 		}
+
+		const endpoint = fkMap[field];
+		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
+			headers: {
+				Authorization: `Bearer ${token}`
+			}
+		});
+		if (!res.ok) throw new Error(`Failed to fetch foreign key list from /api/${endpoint}`);
+		const data = await res.json();
+
+		const match = data.find((item: any) =>
+			item.name === value || item.label === value || item.username === value || item.fullName === value
+		);
+		if (!match || typeof match.id !== 'number') {
+			throw new Error(`Cannot resolve ID for '${value}' in '${field}'`);
+		}
+
+		return match.id;
 	}
 
-	// func to handle canceling the edit form
-	function handleEditFormCancel() {
-		isEditForm = false;
+async function handleCellEditFormSave() {
+	if (modalRowIndex === -1 || !modalColumn) return;
+
+	const token = localStorage.getItem('token');
+	if (!token) {
+		alert("User not authenticated.");
+		return;
+	}
+
+	const endpoint = updateApiMap[selected];
+	const primaryKey = primaryKeyMap[selected];
+	const rowId = rows[modalRowIndex][primaryKey];
+	const rowData = rows[modalRowIndex];
+	const varKey = keyMap[selected];
+	const foreignKeyMap = foreignKeyNameMap[selected] || {};
+	const validations = idValidationMap[selected] || [];
+	const foreignIds = validations.map(v => v.field);
+
+	const editedValue = cellEditForm.value;
+	const updatedRow = { ...rowData, [modalColumn]: editedValue };
+
+	const convertedRow: Record<string, any> = {};
+
+	// Known numeric fields
+	const numericFields = [
+		'cost', 'retailPrice', 'stockOnHand', 'safeStockCount', 'restockFlag',
+		'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived',
+		'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'
+	];
+
+	// Map display values to backend keys and convert
+	for (const displayKey in updatedRow) {
+		const backendKey = varKey[displayKey];
+		if (!backendKey) continue;
+
+		let value: string | number = updatedRow[displayKey];
+
+		if (foreignIds.includes(displayKey)) {
+			// Convert display name to ID if needed
+			if (typeof value === 'string' && isNaN(Number(value))) {
+				const id = await getForeignKeyId(displayKey, value, token, foreignKeyMap);
+				if (id === null) {
+					alert(`Invalid ${displayKey}: ${value}`);
+					return;
+				}
+				value = id;
+			} else {
+				value = Number(value);
+			}
+		} else if (numericFields.includes(backendKey)) {
+			value = Number(value);
+		} else if (typeof value === 'string') {
+			value = value.trim();
+		}
+
+		convertedRow[backendKey] = value;
+	}
+
+	// Set lastEditedUser and lastEditedDate
+	try {
+		const payload = JSON.parse(atob(token.split('.')[1]));
+		const userId = payload.userId || payload.id;
+		const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+		convertedRow.lastEditedUser = userId;
+		convertedRow.lastEditedDate = now;
+	} catch {
+		alert("Failed to decode user ID from token.");
+		return;
+	}
+
+	// Submit to backend
+	try {
+		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`
+			},
+			body: JSON.stringify(convertedRow)
+		});
+
+		if (!res.ok) {
+			const err = await res.json();
+			console.error("Backend response:", err);
+			alert("Error updating: " + err.message);
+			return;
+		}
+
+		await fetchTabData(selected);
+		currentOffset = 0;
+		hasMoreData = true;
+		rows = [];
+		await fetchTabData(selected);
+
 		isCellEditForm = false;
 		showModal = false;
+		alert("Update successful!");
+	} catch (err) {
+		console.error("Update error:", err);
+		alert("Unexpected error during update.");
 	}
+}
 
-	// func to handle saving the cell edit form
-	async function handleCellEditFormSave() {
-		if (modalRowIndex !== -1 && modalColumn) {
-			const token = localStorage.getItem('token');
-			const endpoint = updateApiMap[selected];
-			const primaryKey = primaryKeyMap[selected];
-			const rowId = rows[modalRowIndex][primaryKey]; //primary key: id
-			const rowData = rows[modalRowIndex]; //data before update
-			const varKey = keyMap[selected];
-
-			const updatedRow = {...rowData, [modalColumn]: cellEditForm.value}; 
-			
-			const validations = idValidationMap[selected] || [];
-			const foreignIds = validations.map(v => v.field);
-
-			const convertedRow: Record<string, any> = {}; //convert datatype
-			for(const displayKey in updatedRow){
-				const bKey = varKey[displayKey]; //converts Product Name to productName(match backend)
-				if(bKey){ 
-					let value = updatedRow[displayKey] as string | number;
-					if(foreignIds.includes(bKey)){ //if foreign Id
-						const num = Number(value);
-						value = num;
-					}
-					else if (typeof value === 'string') {
-						value = value.trim();
-					}	
-					convertedRow[bKey] = value;
-				}
-			}
-			if(typeof convertedRow.cost === 'string'){
-				convertedRow.cost = Number(convertedRow.cost);
-			}
-			if(typeof convertedRow.retailPrice === 'string'){
-				convertedRow.retailPrice = Number(convertedRow.retailPrice);
-			}
-			if(typeof convertedRow.stockOnHand === 'string'){
-				convertedRow.stockOnHand = Number(convertedRow.stockOnHand);
-			}
-			if(typeof convertedRow.safeStockCount === 'string'){
-				convertedRow.safeStockCount = Number(convertedRow.safeStockCount);
-			}
-			if(typeof convertedRow.restockFlag === 'string'){
-				convertedRow.restockFlag = Number(convertedRow.restockFlag);
-			}
-			if(typeof convertedRow.discount === 'string'){
-				convertedRow.discount = Number(convertedRow.discount);
-			}
-			if(typeof convertedRow.quantity === 'string'){
-				convertedRow.quantity = Number(convertedRow.quantity);
-			}
-			if(typeof convertedRow.unitPriceAtPurchase === 'string'){
-				convertedRow.unitPriceAtPurchase = Number(convertedRow.unitPriceAtPurchase);
-			}
-			if(typeof convertedRow.quantityReceived === 'string'){
-				convertedRow.quantityReceived = Number(convertedRow.quantityReceived);
-			}
-			if(typeof convertedRow.deliveryReceiptNumber === 'string'){
-				convertedRow.deliveryReceiptNumber = Number(convertedRow.deliveryReceiptNumber);
-			}
-			if(typeof convertedRow.quantityWithdrawn === 'string'){
-				convertedRow.quantityWithdrawn = Number(convertedRow.quantityWithdrawn);
-			}
-			if(typeof convertedRow.returnedQuantity === 'string'){
-				convertedRow.returnedQuantity = Number(convertedRow.returnedQuantity);
-			}
-			if(typeof convertedRow.exchangeQuantity === 'string'){
-				convertedRow.exchangeQuantity = Number(convertedRow.exchangeQuantity);
-			}
-
-			const finalForm: Record<string, any> ={
-				...convertedRow
-			};
-			
-			const field = modalColumn;
-			const raw = cellEditForm.value;
-			const trim = typeof raw === 'string' ? raw.trim(): raw;		
-			const validation = validations.find(v => v.field === field);
-			if(validation){
-				if(trim === '' || isNaN(Number(trim))){
-					alert(`${field} must be a number.`);
-					return;
-				}
-				const id = Number(trim);
-				const exists = await validate(validation.endpoint, id)
-				if(!exists){
-					alert(`${field} ${id} does not exist in the database.`);
-					return;
-				}
-				const finalKey = varKey[field];
-				if(finalKey) {
-					finalForm[finalKey] = id;
-				}
-			}
-			else{
-				const bKey = varKey[field];
-				if(bKey === 'pathName'){
-					finalForm[bKey] = trim === '' ? null: trim;
-				}
-				else if(trim !== '' && trim !== null && trim !== undefined){
-					if(['cost', 'retailPrice', 'stockOnHand', 'safeStockCount', 'restockFlag', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)){
-						const num = Number(trim);
-						if(isNaN(num) || num < 0){
-							alert(`${bKey} must be a valid number`);
-							return;
-						}
-							finalForm[bKey] = num;
-					}
-					else{
-						finalForm[bKey] = trim;
-					}
-				}
-			}
-			// console.log("finalForm", finalForm);
-			// console.log("updatedRow", updatedRow);
-			try{
-				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
-					method: 'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`
-					},
-					body: JSON.stringify(finalForm)
-				});
-				// const data = await res.json();
-				if(!res.ok){
-					alert("Error updating!");
-					return;
-				}
-				await fetchTabData(selected);
-		
-				// Reset pagination and reload from beginning after edit
-				currentOffset = 0;
-				hasMoreData = true;
-				rows = [];
-				await fetchTabData(selected);
-
-				// rows[modalRowIndex][modalColumn] = cellEditForm.value;
-				isCellEditForm = false;
-				showModal = false;
-			}catch(err){
-			console.error("Error updating: ", err);
-			}
-		}
-	}
 
 	let addForm: { [key: string]: string | null } = {};
 	let isAddForm = false;
@@ -743,62 +452,85 @@
 		isCellEditForm = false;
 	}
 
-
 	function handleAddFormCancel() {
 		isAddForm = false;
 		showModal = false;
 	}
 
 	async function handleAddFormSave() {
-		// Only add if at least one field is filled
 		if (Object.values(addForm).some((v) => v?.trim() !== '')) {
 			const token = localStorage.getItem('token');
 			const endpoint = createApiMap[selected];
-			try{
-				const finalForm: {[key: string]: any} = {};
+			try {
+				const finalForm: { [key: string]: any } = {};
 				const varKey = keyMap[selected];
-				
+
+				// Attempt to decode user ID from JWT (assuming payload includes userId)
+				let currentUserId: number | null = null;
+				try {
+					const payload = JSON.parse(atob(token.split('.')[1]));
+					currentUserId = payload.userId || payload.id || null;
+				} catch (err) {
+					console.warn("Failed to decode JWT", err);
+				}
+
 				const validations = idValidationMap[selected] || [];
-				for(const {field, endpoint: idEndpoint} of validations){
+				for (const { field, endpoint: idEndpoint } of validations) {
 					const raw = addForm[field]?.trim();
-					if(!raw || isNaN(Number(raw))){
+					if (!raw || isNaN(Number(raw))) {
 						alert(`${field} must be a number.`);
 						return;
 					}
 					const id = Number(raw);
-					const exists = await validate(idEndpoint, id)
-					if(!exists){
+					const exists = await validate(idEndpoint, id);
+					if (!exists) {
 						alert(`${field} ${id} does not exist in the database.`);
 						return;
 					}
 					const finalKey = varKey[field];
-					if(finalKey) {
+					if (finalKey) {
 						finalForm[finalKey] = id;
 					}
 				}
 
-				for(const key in addForm){
+				for (const key in addForm) {
 					const bKey = varKey[key];
 					if (!bKey || finalForm.hasOwnProperty(bKey)) continue;
 					const value = addForm[key]?.trim();
-					if(bKey === 'pathName'){
-						finalForm[bKey] = value === '' ? null: value;
+
+					if (bKey === 'pathName') {
+						finalForm[bKey] = value === '' ? null : value;
 					}
-					else if(value !== ''){
-						if(['cost', 'retailPrice', 'stockOnHand', 'safeStockCount', 'restockFlag', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)){
+					else if (['dateWithdrawn', 'lastEditedDate'].includes(bKey)) {
+						// Auto-fill below if missing
+						continue;
+				}
+					else if (value !== '') {
+						if (['cost', 'retailPrice', 'stockOnHand', 'safeStockCount', 'restockFlag', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)) {
 							const num = Number(value);
-							if(isNaN(num) || num < 0){
+							if (isNaN(num) || num < 0) {
 								alert(`${bKey} must be a valid number`);
 								return;
 							}
-								finalForm[bKey] = num;
-						}
-						else{
+							finalForm[bKey] = num;
+						} else {
 							finalForm[bKey] = value;
 						}
 					}
 				}
-				// console.log("Final form to submit:", finalForm);
+
+				const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+				finalForm.dateWithdrawn = finalForm.dateWithdrawn || now;
+				finalForm.lastEditedDate = finalForm.lastEditedDate || now;
+
+				if (currentUserId) {
+					finalForm.lastEditedUser = currentUserId;
+				} else {
+					alert("Cannot determine current user ID. Please log in again.");
+					return;
+				}
+
+				console.log("Final form to submit:", finalForm);
 
 				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
 					method: 'POST',
@@ -808,29 +540,30 @@
 					},
 					body: JSON.stringify(finalForm)
 				});
-				// const data = await res.json();
-				// console.log("data: ", data);
-				if(!res.ok){
-					alert("Error creating!");
+
+				if (!res.ok) {
+					const error = await res.json();
+					console.error("Backend response:", error);
+					alert("Error creating: " + error.message);
 					return;
 				}
 
 				await fetchTabData(selected);
-				
-				// Reset pagination and reload from beginning after add
 				currentOffset = 0;
 				hasMoreData = true;
 				rows = [];
 				await fetchTabData(selected);
-				
-				// rows = [...rows, { ...addForm }];
+
 				isAddForm = false;
 				showModal = false;
-			}catch(err){
+				
+				alert("New record successfully added.");
+			} catch (err) {
 				console.error("Error creating: ", err);
 			}
 		}
 	}
+
 	
 	//validate if id exists
 	async function validate(endpoint: string, id: number){
@@ -845,177 +578,101 @@
 		return true;
 	}
 
-	async function handleDeleteSelectedRows() {
-		if (
-			selectedRows.length > 0 &&
-			confirm(`Are you sure you want to delete ${selectedRows.length} selected row(s)?`)
-		) {
-			const token = localStorage.getItem('token');
-			const failedDeletes: number[] = []; 
+async function handleDeleteSelectedRows() {
+	if (
+		selectedRows.length > 0 &&
+		confirm(`Are you sure you want to delete ${selectedRows.length} selected row(s)?`)
+	) {
+		const token = localStorage.getItem("token");
+		const failedDeletes: number[] = [];
 
-			for (const idx of selectedRows) {
+		const endpoint = deleteApiMap[selected]; // e.g., deleteStockEntryExpanded
+		const primaryKey = primaryKeyMap[selected]; // e.g., Entry ID
+
+		console.log("Selected tab:", selected);
+		console.log("Delete endpoint:", endpoint);
+		console.log("Primary key used:", primaryKey);
+		console.log("Selected row indices:", selectedRows);
+
+		const rowIds = selectedRows
+			.map((idx) => {
 				const row = rows[idx];
-				const productId= row["Product ID"] || row.productId || row.id; // might need to change datatype to any to remove error
+				const id = parseInt(row?.[primaryKey] || row?.id);
+				console.log(`Row index ${idx} → ID ${id}`);
+				return id;
+			})
+			.filter((id) => !isNaN(id)); // Remove invalid IDs
 
-				if (!productId) {
-					console.warn("No product ID found in row:", row);
-					failedDeletes.push(-1);
-					continue;
-				}
+		console.log("Row IDs to delete:", rowIds);
 
-				try {
-					const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteProduct/${productId}`, {
-						method: "DELETE",
-						headers: {
-							"Content-Type": "application/json",
-							Authorization: `Bearer ${token}`
-						}
-					});
-
-					if (!res.ok) {
-						const err = await res.json();
-						console.error(`Failed to delete product ${productId}:`, err.message || err);
-						failedDeletes.push(productId);
+		for (const rowId of rowIds) {
+			try {
+				console.log(`Sending DELETE to /api/${endpoint}/${rowId}`);
+				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
+					method: "DELETE",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${token}`
 					}
-				} catch (err) {
-					console.error(`Error deleting product ${productId}:`, err);
-					failedDeletes.push(productId);
+				});
+
+				if (!res.ok) {
+					const err = await res.json().catch(() => ({ message: res.statusText }));
+					console.error(`Failed to delete row ${rowId}:`, err.message || "Unknown error");
+					failedDeletes.push(rowId);
+				} else {
+					const result = await res.json();
+					console.log(`Successfully deleted row ${rowId}:`, result.message);
 				}
-			}
-
-			selectedRows = [];
-
-			// Reset pagination and reload from beginning after delete
-			currentOffset = 0;
-			hasMoreData = true;
-			rows = [];
-			await fetchTabData(selected);
-
-			if (failedDeletes.length > 0) {
-				alert(`Some deletions failed: ${failedDeletes.join(", ")}`);
-			} else {
-				alert("Deletion successful.");
+			} catch (err) {
+				console.error(`Fetch error while deleting row ${rowId}:`, err);
+				failedDeletes.push(rowId);
 			}
 		}
-	}
-	// Additional helpers for the new Withdraw Stock form
-	type EntryOption = { id: number; label: string };
-	type UserOption = { id: number; name: string };
-	type ProductMap = Record<number, { productName: string }>;
-	type EntryMap = Record<number, { branchName: string; productId: number }>;
 
-	let productMap: ProductMap = {};
-	let entryMap: EntryMap = {};
-	let userOptions: UserOption[] = [];
-	let entryOptions: EntryOption[] = [];
+		// Reset selection and reload data
+		selectedRows = [];
+		currentOffset = 0;
+		hasMoreData = true;
+		rows = [];
 
-	async function preloadData() {
-		const token = localStorage.getItem('token');
-		const [entriesRes, usersRes, productsRes] = await Promise.all([
-			fetch(`${PUBLIC_API_BASE_URL}/api/getStockEntries`, { headers: { Authorization: `Bearer ${token}` } }),
-			fetch(`${PUBLIC_API_BASE_URL}/api/getUsers`, { headers: { Authorization: `Bearer ${token}` } }),
-			fetch(`${PUBLIC_API_BASE_URL}/api/getProducts`, { headers: { Authorization: `Bearer ${token}` } })
-		]);
-
-		const entries = (await entriesRes.json()).stockEntries;
-		entryOptions = entries.map((e: any) => ({ id: e.entryId, label: `${e.branchName} (Entry #${e.entryId})` }));
-		entryMap = entries.reduce((acc: any, e: any) => {
-			acc[e.entryId] = { branchName: e.branchName, productId: e.productId };
-			return acc;
-		}, {});
-
-		const users = (await usersRes.json()).users;
-		userOptions = users.map((u: any) => ({ id: u.userId, name: u.name }));
-
-		const products = (await productsRes.json()).products;
-		productMap = products.reduce((acc: any, p: any) => {
-			acc[p.productId] = { productName: p.productName };
-			return acc;
-		}, {});
-	}
-
-	let withdrawForm = {
-		entryId: '',
-		quantityWithdrawn: '',
-		purpose: '',
-		withdrawnBy: '',
-		authorizedBy: ''
-	};
-
-	function openWithdrawModal() {
-		withdrawForm = { entryId: '', quantityWithdrawn: '', purpose: '', withdrawnBy: '', authorizedBy: '' };
-		preloadData();
-		isWithdrawForm = true;
-		showModal = true;
-		modalContent = '';
-		isEditForm = false;
-		isCellEditForm = false;
-		isAddForm = false;
-	}
-
-	let isWithdrawForm = false;
-
-	async function handleWithdrawSave() {
-		const token = localStorage.getItem('token');
-		const endpoint = 'createStockWithdrawal';
-
-		const { entryId, quantityWithdrawn, purpose, withdrawnBy, authorizedBy } = withdrawForm;
-		if (!entryId || !quantityWithdrawn || !purpose || !withdrawnBy || !authorizedBy) {
-			alert('All fields are required.');
-			return;
-		}
-
-		const payload = {
-			entryId: Number(entryId),
-			quantityWithdrawn: Number(quantityWithdrawn),
-			purpose: purpose.trim(),
-			withdrawnBy: Number(withdrawnBy),
-			authorizedBy: Number(authorizedBy)
-		};
-
-		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${token}`
-			},
-			body: JSON.stringify(payload)
-		});
-
-		if (!res.ok) {
-			alert('Failed to withdraw stock.');
-			return;
-		}
-
+		console.log("Reloading table after deletion...");
 		await fetchTabData(selected);
-		showModal = false;
-		isWithdrawForm = false;
+
+		if (failedDeletes.length > 0) {
+			alert(`Some deletions failed: ${failedDeletes.join(", ")}`);
+		} else {
+			alert("All selected stock entries were successfully deleted.");
+		}
 	}
+}
+
+
 </script>
 
 <!-- header w/ search bar and filter-->
-<header class="flex justify-between p-7">
-	<h1>Stock Out</h1>
+<header class="flex justify-between p-7 fixed gray1" style="width: 85%; z-index: 10;">
+	<h1>Inventory</h1>
 
 	<div class="flex gap-3">
 		<div class="flex w-fit rounded-4xl bg-white px-3">
-			<!-- dropdown for order by, auto includes all col headers -->
-			<select
-				class="w-35 p-1 outline-none"
-				bind:value={sortColumn}
-				on:change={() => sortBy(sortColumn)}
-			>
-				<option value="">All</option>
-				{#each currentHeaders as head}
-					<option value={head}>{head}</option>
-				{/each}
-			</select>
+			<input 
+				type="text" 
+				placeholder="Search" 
+				class="w-55 p-1" 
+				style="outline:none" 
+				bind:value={searchQuery}
+				on:keydown={(e) => e.key === 'Enter' && handleSearch()}
+			/>
+			<button on:click={handleSearch}>
+				<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
+			</button>
 		</div>
 	</div>
 </header>
 
 <!-- navbar + buttons row -->
-<div class="grid grid-cols-2">
+<div class="grid grid-cols-2 pt-20">
 	<!-- navbar -->
 	<div class="flex w-full">
 		{#each Object.keys(headerMap) as tab, idx (tab)}
@@ -1045,10 +702,10 @@
 			Delete
 		</button>
 		<button
-			class="w-fit p-2 items-center justify-center gap-2 rounded-lg font-bold bg-[#3d843f] text-white hover:bg-[#3b7f3b]"
+			class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold bg-[#3d843f] text-white hover:bg-[#3b7f3b]"
 			on:click={openAddModal}
 		>
-			Withdraw Stock
+			Add
 		</button>
 	</div>
 </div>

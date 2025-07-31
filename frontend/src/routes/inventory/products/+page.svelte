@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { PUBLIC_API_BASE_URL } from '$env/static/public';
-	
+	import { goto } from '$app/navigation';	
 	import {onMount} from 'svelte';
+
 	type TabType =
 		| 'Product'
 		| 'Orders'
@@ -143,6 +144,7 @@
 
 	const headerMap: Record<TabType, string[]> = {
 		Product: [
+			'Image', //pathName-=
 			'Product ID',
 			'Product Name',
 			'Category',
@@ -152,11 +154,13 @@
 			'Retail Price',
 			'Stock On Hand',
 			'Units',
-			'Image', //pathName
 			'Safe Stock Count',
 			'Restock Flag',
+			'Total Stock Received',
+			'Total Sold', 
+			'Total Returned',
 			'Last Edited Date',
-			'Last Edited User'
+			'Last Edited By',
 		]
 	};
 
@@ -164,6 +168,10 @@
 
 	// init selected rows
 	let selectedRows: number[] = [];
+	let searchQuery = '';
+    let isSearching = false;
+    let searchError: string | null = null;
+	let originalRows: Record<string,string>[] = []; //{ [key: string]: string }[] = [];
 
 	// modal states
 	let showModal = false;
@@ -173,7 +181,7 @@
 	let sortColumn: string = '';
 	let sortDirection: 'asc' | 'desc' = 'asc';
 
-	// table data rows, can fill with dummy data
+	// table data rows
 	let rows: { [key: string]: string }[] = [];
 
 	// pagination and infinite scroll state
@@ -370,7 +378,7 @@
 	}
 
 	// store default order for reset
-	let originalRows = [...rows];
+	originalRows = [...rows];
 
 	// sortby function for col heads
 	function sortBy(column: string) {
@@ -820,7 +828,7 @@
 
 			for (const idx of selectedRows) {
 				const row = rows[idx];
-				const productId= row["Product ID"] || row.productId || row.id; // might need to change datatype to any to remove error
+				const productId = parseInt(row["Product ID"] || row.productId || row.id, 10); // might need to change datatype to any to remove error
 
 				if (!productId) {
 					console.warn("No product ID found in row:", row);
@@ -864,6 +872,87 @@
 		}
 	}
 
+	//andrei implementation hehe: new tab for querying all tables
+	function openSearchTab() {
+		if (!searchQuery.trim()) return;
+		window.open(`/search?q=${encodeURIComponent(searchQuery)}`, '_blank');
+	}
+
+	//lance implementation: table‑specific search in‑place
+	async function searchInPlace() {
+		//if the box is empty, clear the filter and re‐load full data
+		if (!searchQuery.trim()) {
+			// if empty --> load full data
+			// currentOffset = 0;
+			// rows = [];
+			await fetchTabData(selected);
+			hasMoreData = true;
+			return;
+		}
+
+		isSearching = true;
+		searchError = null;
+
+		try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(
+                `${PUBLIC_API_BASE_URL}/api/search?table=${selected}&q=${encodeURIComponent(searchQuery)}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (!response.ok) { throw new Error('Search failed'); }
+
+            const data = await response.json();
+			const items = Array.isArray(data) ? data : data.products;
+			rows = items.map(item => ({
+				'Product ID':         item.productId,
+				'Product Name':       item.productName,
+				'Category': item.category,
+				'Descriptions': item.descriptions,
+				'Supplier': item.supplier,
+				'Cost': item.cost,
+				'Retail Price': item.retailPrice,
+				'Stock On Hand': item.stockOnHand,
+				'Units': item.units,
+				'Image': item.pathName,
+				'Safe Stock Count': item.safeStockCount,
+				'Restock Flag': item.restockFlag,
+				'Last Edited Date': item.lastEditedDate ? new Date(item.lastEditedDate).toLocaleString('en-PH', {
+					timeZone: 'Asia/Manila'
+				}) : '',
+				'Last Edited User': item.lastEditedUser
+			}));
+            hasMoreData = false; //disable infinite scroll while in search
+        } catch (err: any) {
+			searchError = err.message;
+            rows = [];
+        } finally {
+            isSearching = false;
+        }
+	}
+
+	//lmfao kaya pala
+	let debounceTimer: ReturnType<typeof setTimeout>;		//for quick input
+	$: if (ready && selected) {
+		//reset state
+		currentOffset = 0;
+		hasMoreData   = true;
+		rows          = [];
+		originalRows  = [];
+		// searchQuery   = '';
+
+		// initial load
+		fetchTabData(selected);
+
+		// now wire up the keystroke-driven search (debounced)
+		clearTimeout(debounceTimer);
+		debounceTimer = setTimeout(searchInPlace, 200);
+	}
+
+	// debounce “search as you type”
+	$: if (ready && selected && searchQuery !== undefined) {
+		clearTimeout(debounceTimer);
+	    debounceTimer = setTimeout(searchInPlace, 200);
+	}
 </script>
 
 <!-- header w/ search bar and filter-->
@@ -872,21 +961,29 @@
 
 	<div class="flex gap-3">
 		<div class="flex w-fit rounded-4xl bg-white px-3">
-			<input type="text" placeholder="Search" class="w-55 p-1" style="outline:none" />
-			<img src="../src/icons/search.svg" alt="search" style="width:15px; " />
-		</div>
-		<div class="flex w-fit rounded-4xl bg-white px-3">
-			<!-- dropdown for order by, auto includes all col headers -->
-			<select
-				class="w-35 p-1 outline-none"
-				bind:value={sortColumn}
-				on:change={() => sortBy(sortColumn)}
+			<input 
+				type="text" 
+				placeholder="Search" 
+				class="w-55 p-1" 
+				style="outline:none" 
+				bind:value={searchQuery}
+				on:input={() => {
+					clearTimeout(debounceTimer);
+					debounceTimer = setTimeout(searchInPlace, 200);
+				}}
+				on:keydown={(e) => e.key === 'Enter' && openSearchTab()}
+				/>
+			<button 
+				on:click={openSearchTab}
+				class="flex items-center"
+				disabled={isSearching}
 			>
-				<option value="">All</option>
-				{#each currentHeaders as head}
-					<option value={head}>{head}</option>
-				{/each}
-			</select>
+				{#if isSearching}
+					<span class="loading-spinner"></span>
+				{:else}
+					<img src="../src/icons/search.svg" alt="search" style="width:15px;" />
+				{/if}
+			</button>
 		</div>
 	</div>
 </header>
@@ -1021,7 +1118,35 @@
 		</tbody>
 	</table>
 </div>
-
+<tbody>
+    {#if searchError}
+        <tr>
+            <td colspan={currentHeaders.length + 2} class="py-4 text-center text-red-500">
+                Search error: {searchError}
+            </td>
+        </tr>
+    {:else if isSearching}
+        <tr>
+            <td colspan={currentHeaders.length + 2} class="py-8 text-center">
+                <div class="flex items-center justify-center gap-2">
+                    <div class="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
+                    <span>Searching...</span>
+                </div>
+            </td>
+        </tr>
+    {:else if searchQuery && rows.length === 0}
+        <tr>
+            <td colspan={currentHeaders.length + 2} class="py-4 text-center text-gray-500">
+                No results found for "{searchQuery}"
+            </td>
+        </tr>
+    {:else}
+        <!-- Your existing rows rendering -->
+        {#each rows as row, i}
+            <!-- ... -->
+        {/each}
+    {/if}
+</tbody>
 <!-- modal popup-->
 {#if showModal}
 	<div
