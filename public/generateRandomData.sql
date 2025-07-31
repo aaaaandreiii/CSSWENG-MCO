@@ -60,19 +60,19 @@ VALUES
 (491),(492),(493),(494),(495),(496),(497),(498),(499),(500);
 
 -- populate Users
-INSERT INTO `mydb`.`Users`
-  (fullName, userRole, username, userPassword, pathName, dateAdded, lastEditedDate, lastEditedUser, deleteFlag)
-SELECT
-  CONCAT('User ', n),
-  ELT((n % 4) + 1, 'admin','staff','auditor','manager'),
-  CONCAT('user', n),
-  CONCAT('pass', LPAD(n,2,'0')),
-  NULL,
-  CURDATE() - INTERVAL (n % 180) DAY,
-  NOW() - INTERVAL (n % 1440) MINUTE,
-  ((n % 50) + 1),
-  0
-FROM seq;
+-- INSERT INTO `mydb`.`Users`
+--   (fullName, userRole, username, userPassword, pathName, dateAdded, lastEditedDate, lastEditedUser, deleteFlag)
+-- SELECT
+--   CONCAT('User ', n),
+--   ELT((n % 4) + 1, 'admin','staff','auditor','manager'),
+--   CONCAT('user', n),
+--   CONCAT('pass', LPAD(n,2,'0')),
+--   NULL,
+--   CURDATE() - INTERVAL (n % 180) DAY,
+--   NOW() - INTERVAL (n % 1440) MINUTE,
+--   ((n % 50) + 1),
+--   0
+-- FROM seq;
 
 -- populate Product
 INSERT INTO `mydb`.`Product`
@@ -187,7 +187,7 @@ FROM seq;
 INSERT INTO `mydb`.`AuditLog`
   (actionType, description, userId, `timestamp`)
 SELECT
-  ELT((n % 5) + 1, 'login','logout','add_stock','edit_stock','delete_stock'),
+  ELT((n % 5) + 1, 'login', 'logout', 'add_user', 'edit_user', 'delete_user', 'add_product', 'edit_product', 'delete_product', 'add_stockEntry', 'edit_stockEntry', 'delete_stockEntry', 'add_stockWithdrawal', 'edit_stockWithdrawal', 'delete_stockWithdrawal', 'add_order', 'edit_order', 'edit_orderInfo', 'delete_order', 'delete_orderInfo', 'add_returnExchange', 'edit_returnExchange', 'edit_returnExchangeInfo', 'delete_returnExchange', 'delete_returnExchangeInfo'),
   CONCAT('Audit log entry ', n),
   ((n % 50) + 1),
   NOW() - INTERVAL (n % 24) HOUR
