@@ -65,9 +65,9 @@
     const data = await res.json();
 
     stocks = [
-      { amount: data.totalStocks,  label: 'Total stocks'  },
-      { amount: data.totalSold,    label: 'Total sold'    },
-      { amount: data.totalPending, label: 'Total pending' }
+      { amount: data.totalStocks,  label: 'Total Stocks',   color:'#AECABD'},
+      { amount: data.totalSold,    label: 'Total Sold',		color:'#AEDFF7'},
+      { amount: data.totalPending, label: 'Total Pending', 	color:'#FFFFFF'}
     ];
 
     products = [
@@ -76,14 +76,16 @@
         mssg:  'Out of stock',
         amount: String(data.outOfStockProducts.amount),
         capital: data.outOfStockProducts.capital.toFixed(2),
-        color: '#DE0101'
+        color: '#DE0101',
+		lightcolor: '#F4C0C0'
       },
       {
         label: 'low-stock',
         mssg:  'Low stock',
         amount: String(data.lowStockProducts.amount),
         capital: data.lowStockProducts.capital.toFixed(2),
-        color: '#FFDE59'
+        color: '#FFDE59',
+		lightcolor: '#F7D6A5'
       }
     ];
 
@@ -156,7 +158,12 @@
 				{#each stocks as stock, index}
 					<div class="stock flex-col content-center">
 						<h1 class="header">{stock.amount}</h1>
-						<p class="text-center">{stock.label}</p>
+						<div 
+							id={stock.label} 
+							class="flex items-center gap-1 px-2 rounded-full"
+							style="background-color: {stock.color}"
+						>
+						<p class="text-center">{stock.label}</p></div>
 					</div>
 				{/each}
 			</div>
@@ -166,7 +173,12 @@
 		<div class="flex gap-7 p-7">
 			{#each products as product, index}
 				<div class="whitebox flex-col content-center">
-					<div id={product.label} class="flex items-center gap-1 px-2">
+					<div 
+						id={product.label} 
+						class="flex items-center gap-1 px-2 rounded-full"
+						style="
+							background-color: {product.lightcolor}"
+					>
 						<div class="circle" style="background-color: {product.color}"></div>
 						<p>{product.mssg}</p>
 					</div>
@@ -177,8 +189,14 @@
 					</div>
 
 					<div class="flex items-center text-left">
-						<p class="text-sm">Estimated capital needed:</p>
-						<p class="text-start font-bold">&nbspP{product.capital}</p>
+						<p class={`text-sm ${product.capital > 999999 ? 'w-32 truncate' : ''}`}>Estimated capital needed:</p>
+						<p class="font-bold ml-1">
+							{new Intl.NumberFormat('en-PH', {
+								style: 'currency',
+								currency: 'PHP',
+								minimumFractionDigits: 2,
+							}).format(product.capital)}
+						</p>
 					</div>
 					<a href="/inventory"
 						><p class="text-s pt-4 font-bold" style="color: #1E8570">Check Inventory</p></a
@@ -280,10 +298,22 @@
 		<div>
 			<br>
 			<p class="text-sm">Total Sales in the last {selectedButton}: </p>
-			<h1 class="header">₱ {totalSalesInTheLastTimePeriod.toFixed(2)}</h1>
+			<h1 class="header">
+				{new Intl.NumberFormat('en-PH', {
+					style: 'currency',
+					currency: 'PHP',
+					minimumFractionDigits: 2,
+				}).format(totalSalesInTheLastTimePeriod)}
+		 	</h1>
 			<br>
 			<p class="text-sm">Average Sales per Month</p>
-			<h1 class="header">₱ {avgSalesPerMonth.toFixed(2)}</h1>
+			<h1 class="header">
+				{new Intl.NumberFormat('en-PH', {
+					style: 'currency',
+					currency: 'PHP',
+					minimumFractionDigits: 2,
+				}).format(avgSalesPerMonth)}
+			</h1>
 		</div>
 		<div>
 			<div class="p-7">
