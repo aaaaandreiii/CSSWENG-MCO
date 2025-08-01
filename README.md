@@ -50,7 +50,7 @@ Scrum Master/Team Leader: Andrei Balingit @aaaaandreiii
 
 UI/UX Designers: Sophia Avelino @Gl1tch8, Marcus Apetreor @Marcus-Apetreor
 
-Developers: Ching Man Wong @ChingManWong, Rafael Navarro @ChinoLim, Deo Diamante @DeoZD
+Developers: __Ching Man__ _@ChingManWong_, __Rafael Navarro___@ChinoLim_, __Deo Diamante__ _@DeoZD_
 
 Quality Assurance Engineer: Lance Medina @limborock12
 
