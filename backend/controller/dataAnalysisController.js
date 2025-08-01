@@ -175,7 +175,7 @@ router.get('/', async (req, res, next) => {
       // classify
       let status = 'ok';
       if (p.stockOnHand === 0)            status = 'out';
-      else if (p.stockOnHand <= p.safeStockCount) status = 'low';
+      else if (p.stockOnHand <= lowStockThreshold) status = 'low';
       else if (p.stockOnHand >= overstockThreshold) status = 'over';
 
       return {

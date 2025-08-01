@@ -245,8 +245,8 @@
         infos = [
         { value: formatCurrency(currentMonetaryValue),      label:'Stock Value',   color:'#AECABD' },
         { value: totalItemsInStock.toLocaleString(),       label:'Total Units',   color:'#AEDFF7' },
-        { value: lowStockAlerts.length.toString(),         label:'Low-Stock',     color:'#F4C0C0' },
-        { value: outOfStockItems.length.toString(),        label:'Out-of-Stock',  color:'#F7D6A5' },
+        { value: outOfStockItems.length.toString(),        label:'Out-of-Stock',  color:'#F4C0C0' },
+        { value: lowStockAlerts.length.toString(),         label:'Low-Stock',     color:'#F7D6A5' },
         { value: overstockItems.length.toString(),         label:'Overstock',     color:'#C8E6C9' },
         ];
 
@@ -266,44 +266,6 @@
         chart.update();
         }
     }
-    // async function loadData() {
-    //     if (!filterStart || !filterEnd) return;
-
-    //     const url = new URL(`${PUBLIC_API_BASE_URL}/api/dataAnalysisController`);
-    //     url.searchParams.set('startDate', filterStart);
-    //     url.searchParams.set('endDate',   filterEnd);
-
-    //     const res = await fetch(url.toString());
-    //     const payload = await res.json();
-
-    //     // your existing assignments:
-    //     turnoverData         = payload.top10;
-    //     currentMonetaryValue = payload.currentMonetaryValue;
-    //     // …
-
-    //     if (Array.isArray(payload.allProducts)) {
-    //         statusItems = payload.allProducts.map((p: any) => ({
-    //             productId:      p.productId,
-    //             productName:    p.productName,
-    //             category:       p.category,
-    //             supplier:       p.supplier,
-    //             units:          p.units,
-    //             stockOnHand:    p.stockOnHand,
-    //             safeStockCount: p.safeStockCount,
-    //             avgDailySales:  p.avgDailySales,
-    //             daysCover:      p.daysCover,
-    //             reorderQty:     p.reorderQty,
-    //             status: p.stockOnHand === 0
-    //                     ? 'out'
-    //                     : p.stockOnHand <= lowThreshold
-    //                     ? 'low'
-    //                     : p.stockOnHand >= overThreshold
-    //                         ? 'over'
-    //                         : 'ok'
-    //         }));
-
-    //     }
-    // }
 
     onMount(() => {
         if (!browser) return;
@@ -317,80 +279,6 @@
         loadData();
         document.addEventListener('mousedown', handleClickOutside);
     });
-
-    // onMount(async () => {
-    //     if (!browser) return;
-
-    //     const today = new Date();
-    //     const prior = new Date(today);
-    //     prior.setDate(prior.getDate() - 30);
-
-    //     filterStart = prior.toISOString().slice(0,10);
-    //     filterEnd   = today.toISOString().slice(0,10);
-    //     await loadData();
-
-    //     document.addEventListener('mousedown', handleClickOutside);
-
-    //     // 1) fetch the object { allProducts, top10 }
-    //     const res = await fetch(`${PUBLIC_API_BASE_URL}/api/dataAnalysisController`);
-    //     const payload = await res.json();               // payload = { allProducts: [...], top10: [...] }
-
-    //     // 2) pick the list you actually want to show
-    //     turnoverData = payload.top10;                    // ← assign into the outer var
-
-    //     currentMonetaryValue = payload.currentMonetaryValue;
-    //     totalItemsInStock    = payload.totalItemsInStock;
-    //     lowStockAlerts       = payload.lowStockAlerts;
-    //     outOfStockItems      = payload.outOfStockItems;
-    //     overstockItems       = payload.overstockItems;
-
-    //     infos = [
-    //         {
-    //             value: formatCurrency(currentMonetaryValue),
-    //             label: 'Stock Value',
-    //             color: '#AECABD'
-    //         },
-    //         {
-    //             value: totalItemsInStock.toLocaleString(),
-    //             label: 'Total Units',
-    //             color: '#AEDFF7'
-    //         },
-    //         {
-    //             value: lowStockAlerts.length.toString(),
-    //             label: 'Low-Stock',
-    //             color: '#F4C0C0'
-    //         },
-    //         {
-    //             value: outOfStockItems.length.toString(),
-    //             label: 'Out-of-Stock',
-    //             color: '#F7D6A5'
-    //         },
-    //         {
-    //             value: overstockItems.length.toString(),
-    //             label: 'Overstock',
-    //             color: '#C8E6C9'
-    //         }
-    //     ];
-
-    //     // 3) now build your chart off of turnoverData
-    //     const labels = turnoverData.map(d => d.productName);
-    //     const data   = turnoverData.map(d => +d.turnoverRate.toFixed(2));
-
-    //     chart = new Chart(chartEl, {
-    //         type: 'bar',
-    //         data: {
-    //             labels,
-    //             datasets: [{ label: 'Inventory Turnover Rate', data }]
-    //         },
-    //         options: {
-    //             responsive: true,
-    //             scales: {
-    //                 x: { ticks: { autoSkip: false } },
-    //                 y: { beginAtZero: true }
-    //             }
-    //         }
-    //     });
-    // });
 
     onDestroy(() => {
         if (!browser) return;
@@ -432,12 +320,12 @@
     let orderQty = 0;
 
     function orderNow(productId: number) {
-    // find the row
-    orderProduct = statusItems.find(p => p.productId === productId) ?? null;
-    if (!orderProduct) return;
-    // default to the computed reorderQty
-    orderQty = orderProduct.reorderQty;
-    showOrderModal = true;
+        // find the row
+        orderProduct = statusItems.find(p => p.productId === productId) ?? null;
+        if (!orderProduct) return;
+        // default to the computed reorderQty
+        orderQty = orderProduct.reorderQty;
+        showOrderModal = true;
     }
 
     async function placeOrder() {
@@ -467,6 +355,16 @@
             }
         }
     }
+
+    // replace your payload’s lowStockAlerts entirely
+    $: lowStockAlerts = statusItems
+        .filter(item => item.status === 'low')
+        .map(item => ({
+        productId:   item.productId,
+        productName: item.productName,
+        stockOnHand: item.stockOnHand
+    }));
+
 </script>
 
 <header class="p-7 fixed gray1 flex justify-between pr-70" style="width: 100%; z-index: 10;">
@@ -475,8 +373,8 @@
         <a href="#item-sales" class="hover:underline font-semibold text-black">Item Sales</a>
         <a href="#stock-status" class="hover:underline font-semibold text-black">Stock Status</a>
         <a href="#turnover" class="hover:underline font-semibold text-black">Turnover</a>
-        <a href="#out-of-stock" class="hover:underline font-semibold text-black">Out-of-Stock</a>
         <a href="#low-stock" class="hover:underline font-semibold text-black">Low Stock</a>
+        <a href="#out-of-stock" class="hover:underline font-semibold text-black">Out-of-Stock</a>
         <a href="#overstock" class="hover:underline font-semibold text-black">Overstock</a>
     </nav>
 </header>
@@ -717,9 +615,9 @@
                         <thead>
                         <tr class="bg-gray-100">
                             <th class="px-3 py-2 border">Product</th>
-                            <th class="px-3 py-2 border">Cat.</th>
+                            <th class="px-3 py-2 border">Category</th>
                             <th class="px-3 py-2 border text-center">On Hand</th>
-                            <th class="px-3 py-2 border text-center">Safe Cnt</th>
+                            <th class="px-3 py-2 border text-center">Safe Count</th>
                             <th class="px-3 py-2 border text-center">Days Cover</th>
                             <th class="px-3 py-2 border text-center">Reorder Qty</th>
                             <th class="px-3 py-2 border">Supplier</th>
