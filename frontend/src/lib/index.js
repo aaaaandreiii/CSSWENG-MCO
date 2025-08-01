@@ -1,0 +1,23 @@
+// place files you want to import through the `$lib` alias in this folder.
+export const items = [
+    {name: 'Rackets', link: 'https://www.greenpaddle.com/cdn/shop/collections/300_416x416.jpg?v=1582359029', sold: '15k'},
+    {name: 'Rubbers', link: 'https://www.greenpaddle.com/cdn/shop/collections/245_416x416.jpg?v=1582359027', sold: '10k'},
+    {name: 'Balls', link: 'https://www.greenpaddle.com/cdn/shop/collections/234_416x416.jpg?v=1582358981', sold: '9k'},
+    {name: 'Tables', link: 'https://www.greenpaddle.com/cdn/shop/collections/222_416x416.jpg?v=1582359424', sold: '5k'},
+    {name: 'Rackets', link: 'https://www.greenpaddle.com/cdn/shop/collections/300_416x416.jpg?v=1582359029', sold: '15k'},
+    {name: 'Rubbers', link: 'https://www.greenpaddle.com/cdn/shop/collections/245_416x416.jpg?v=1582359027', sold: '10k'},
+    {name: 'Balls', link: 'https://www.greenpaddle.com/cdn/shop/collections/234_416x416.jpg?v=1582358981', sold: '9k'},
+    {name: 'Tables', link: 'https://www.greenpaddle.com/cdn/shop/collections/222_416x416.jpg?v=1582359424', sold: '5k'},
+    {name: 'Rackets', link: 'https://www.greenpaddle.com/cdn/shop/collections/300_416x416.jpg?v=1582359029', sold: '15k'},
+    {name: 'Rubbers', link: 'https://www.greenpaddle.com/cdn/shop/collections/245_416x416.jpg?v=1582359027', sold: '10k'},
+    {name: 'Balls', link: 'https://www.greenpaddle.com/cdn/shop/collections/234_416x416.jpg?v=1582358981', sold: '9k'},
+    {name: 'Tables', link: 'https://www.greenpaddle.com/cdn/shop/collections/222_416x416.jpg?v=1582359424', sold: '5k'},
+    {name: 'Rackets', link: 'https://www.greenpaddle.com/cdn/shop/collections/300_416x416.jpg?v=1582359029', sold: '15k'},
+    {name: 'Rubbers', link: 'https://www.greenpaddle.com/cdn/shop/collections/245_416x416.jpg?v=1582359027', sold: '10k'},
+    {name: 'Balls', link: 'https://www.greenpaddle.com/cdn/shop/collections/234_416x416.jpg?v=1582358981', sold: '9k'},
+    {name: 'Tables', link: 'https://www.greenpaddle.com/cdn/shop/collections/222_416x416.jpg?v=1582359424', sold: '5k'},
+    {name: 'Rackets', link: 'https://www.greenpaddle.com/cdn/shop/collections/300_416x416.jpg?v=1582359029', sold: '15k'},
+    {name: 'Rubbers', link: 'https://www.greenpaddle.com/cdn/shop/collections/245_416x416.jpg?v=1582359027', sold: '10k'},
+    {name: 'Balls', link: 'https://www.greenpaddle.com/cdn/shop/collections/234_416x416.jpg?v=1582358981', sold: '9k'},
+    {name: 'Tables', link: 'https://www.greenpaddle.com/cdn/shop/collections/222_416x416.jpg?v=1582359424', sold: '5k'},
+];

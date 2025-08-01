@@ -1,0 +1,33 @@
+{
+  "name": "cssweng-mco",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Green Paddle WebApp (Node.js backend with Svelte frontend)",
+  "homepage": "https://github.com/aaaaandreiii/CSSWENG-MCO#readme",
+  "bugs": {
+    "url": "https://github.com/aaaaandreiii/CSSWENG-MCO/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aaaaandreiii/CSSWENG-MCO.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start:backend": "cd backend && npm i && node app.js",
+    "start:frontend": "cd frontend && npm i && npm run dev",
+    "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"yellow,blue\" \"npm run start:backend\" \"npm run start:frontend\""
+  },
+  "keywords": [],
+  "devDependencies": {
+    "concurrently": "^9.2.0",
+    "argon2": "^0.43.0",
+		"cors": "^2.8.5",
+		"express": "^5.1.0",
+		"mysql2": "^3.14.1",
+		"dotenv": "^17.2.0",
+		"jsonwebtoken": "^9.0.2"
+  }
+}
