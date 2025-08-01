@@ -46,13 +46,23 @@ router.get('/', async (req, res, next) => {
     };
 
     // 3b. low stock products
+    const lowThreshold = +req.query.lowThreshold || 100;
     const lowStockProducts = {
       amount: _(products)
-          .filter(product => product.stockOnHand != 0 && product.stockOnHand < product.safeStockCount)
+          // .filter(product => product.stockOnHand != 0 && product.stockOnHand < product.safeStockCount)
+          .filter(p => p.stockOnHand != 0 && p.stockOnHand < p.safeStockCount)
           .size(),
       capital: _(products)
-          .filter(product => product.stockOnHand != 0 && product.stockOnHand < product.safeStockCount)
-          .sumBy(product => (product.safeStockCount - product.stockOnHand) * product.cost),
+          // .filter(product => product.stockOnHand != 0 && product.stockOnHand < product.safeStockCount)
+          .filter(p => p.stockOnHand != 0 && p.stockOnHand < p.safeStockCount)
+          // .sumBy(product => (product.safeStockCount - product.stockOnHand) * product.cost),
+          .sumBy(p => (p.safeStockCount - p.stockOnHand) * p.cost),
+      amount: _(products)
+          .filter(p => p.stockOnHand > 0 && p.stockOnHand <= lowThreshold)
+          .size(),
+      capital: _(products)
+          .filter(p => p.stockOnHand > 0 && p.stockOnHand <= lowThreshold)
+          .sumBy(p => (lowThreshold - p.stockOnHand) * p.cost),
     };
 
     // 4. top selling products
@@ -91,7 +101,8 @@ router.get('/', async (req, res, next) => {
 
     //6. total sales in the last ___
     const [salesPerMonthInTheLastTimePeriod] = await db.query(
-      `SELECT sum(OrderInfo.quantity * OrderInfo.quantity) AS sum
+      // `SELECT sum(OrderInfo.quantity * OrderInfo.quantity) AS sum    //BRUH LMFAO wat dis square doin here
+      `SELECT sum(OrderInfo.quantity) AS sum
         FROM OrderInfo
         JOIN Orders ON OrderInfo.orderId = Orders.orderId
         WHERE Orders.dateOrdered BETWEEN ? AND ?`, 
