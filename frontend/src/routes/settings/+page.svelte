@@ -189,14 +189,19 @@
 	let openDropdownIndex: number | null = null;
 	const dropdownOptions = ['admin', 'staff', 'manager'];
 
+	let originalRoles: Record<number, string> = {};
+
 	function selectPosition(option: string, filteredIdx: number) {
 		const detail = filteredDetails[filteredIdx];
 		const realIdx = details.findIndex(d => d.userId === detail.userId);
 		const newPosition = option.charAt(0).toUpperCase() + option.slice(1);
+		if(!(detail.userId in originalRoles)){
+			originalRoles[detail.userId] = detail.position;
+		}
 		if (details[realIdx].position !== newPosition) {
 			details[realIdx].position = newPosition;
 			hasDropdownChanged = true;
-			editRoleId = Number(details[realIdx].userId)
+			// editRoleId = Number(details[realIdx].userId)
 		}
 		openDropdownIndex = null;
 	}
@@ -306,8 +311,8 @@
 		if((user.position === 'admin' || (user.position === 'manager' && user.userId !== $userProfile.userId)) && ($userProfile.role === 'manager')) 
 			return false;
 		//if you the only admin left, you cannot change ur role to anything else
-		if(user.position === 'admin' && user.userId === $userProfile.userId && details.filter(u => u.position === 'admin').length === 1)
-			return false;
+		// if(user.position === 'admin' && user.userId === $userProfile.userId && details.filter(u => u.position === 'admin').length === 1)
+		// 	return false;
 		return true;
 	}
 
@@ -534,49 +539,68 @@
 	}
 	
 	async function saveRoleChanges(){	
-		console.log(editRoleId);
-		const idx = details.findIndex(d => d.userId === editRoleId);
-		if(!idx){
-			console.warn("User not found.");
-			return;
-		}
+		// console.log(editRoleId);
+		// const idx = details.findIndex(d => d.userId === editRoleId);
+		// if(!idx){
+		// 	console.warn("User not found.");
+		// 	return;
+		// }
+		const updates = Object.keys(originalRoles).map(userIdStr => {
+			const userId = Number(userIdStr);
+			const user = details.find(d => d.userId === userId);
+			if(!user) return null;
+			return {
+				userId: user.userId,
+				fullName: user.name.trim(),
+				userRole: user.position.trim(),
+				username: user.user.trim(),
+				pathName: user.profilePic.trim() || null
+			};
+		}).filter(Boolean) as {
+			userId: number;
+			fullName: string;
+			userRole: string;
+			username: string;
+			pathName: string | null;
+		}[];
 		// Build payload
-		const payload = {
-			userId: Number(details[idx].userId),
-			fullName: details[idx].name.trim(),
-			userRole: details[idx].position.trim(),
-			username: details[idx].user.trim(),
-			pathName: details[idx].profilePic.trim() || null
-		};
+		// const payload = {
+		// 	userId: Number(details[idx].userId),
+		// 	fullName: details[idx].name.trim(),
+		// 	userRole: details[idx].position.trim(),
+		// 	username: details[idx].user.trim(),
+		// 	pathName: details[idx].profilePic.trim() || null
+		// };
 
 		try{
 			const token = localStorage.getItem('token');
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/updateUser/${payload.userId}`, {
-				method: 'PUT',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`
-				},
-				body: JSON.stringify(payload)
-			});
-
-			// TODO for backend: if response = not ok, return error message
-			const result = await res.json();
-			if(!res.ok){
-				alert('Failed to update role.');
-				return;
-			}
-			//update sidebar info
-			const currentUser = get(userProfile);
-			if(currentUser?.userId === payload.userId){
-				userProfile.set({
-					userId: payload.userId,
-					username: payload.username.trim(),
-					role: payload.userRole.trim(),
-					profilePic: payload.pathName?.trim() || "../src/icons/user.svg"
+			for(const payload of updates){
+				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/updateUser/${payload.userId}`, {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${token}`
+					},
+					body: JSON.stringify(payload)
 				});
+				// TODO for backend: if response = not ok, return error message
+				const result = await res.json();
+				if(!res.ok){
+					alert('Failed to update role.');
+					return;
+				}
+				//update sidebar info
+				const currentUser = get(userProfile);
+				if(currentUser?.userId === payload.userId){
+					userProfile.set({
+						userId: payload.userId,
+						username: payload.username.trim(),
+						role: payload.userRole.trim(),
+						profilePic: payload.pathName?.trim() || "../src/icons/user.svg"
+					});
+				}
 			}
-
+			originalRoles = {};
 			isEditMode = false; 
 			openDropdownIndex = null; 
 			hasDropdownChanged = false; 
@@ -988,7 +1012,7 @@
 										class="flex w-full items-center justify-center gap-1 rounded-full px-3 py-1 
 										focus:outline-none"
 										onclick={() => {
-											if (isEditMode && canUpdate(detail.userId)) {
+											if (isEditMode && canUpdate(detail.userId) && !(detail.position === 'admin' && detail.userId === $userProfile.userId && details.filter(u => u.position === 'admin').length === 1)) {
 												openDropdownIndex === idx
 													? (openDropdownIndex = null)
 													: (openDropdownIndex = idx);
@@ -996,11 +1020,11 @@
 										}}
 										aria-label="Show dropdown"
 										style="background: none; border: none;"
-										disabled={!(isEditMode && canUpdate(detail.userId))}
+										disabled={!(isEditMode && canUpdate(detail.userId) && !(detail.position === 'admin' && detail.userId === $userProfile.userId && details.filter(u => u.position === 'admin').length === 1))}
 										tabindex={isEditMode ? 0 : -1}
 									>
 										<p class="mb-0 select-none">{detail.position}</p>
-										{#if isEditMode && canUpdate(detail.userId)}
+										{#if isEditMode && canUpdate(detail.userId) && !(detail.position === 'admin' && detail.userId === $userProfile.userId && details.filter(u => u.position === 'admin').length === 1)}
 											<img
 												src="../src/icons/down-black.svg"
 												alt="dropdown arrow"
@@ -1061,7 +1085,14 @@
 				{/if}
 				<button
 					class="px-8 py-3 rounded-lg bg-gray-500 text-white font-bold shadow-lg hover:bg-gray-400 transition-colors duration-150"
-					onclick={() => { isEditMode = false; openDropdownIndex = null; hasDropdownChanged = false; }}
+					onclick={() => { 
+						for (const [userId, role] of Object.entries(originalRoles)){
+							const idx = details.findIndex(d => d.userId === Number(userId));
+							if (idx !== -1) {
+								details[idx].position = role;
+							}
+						}
+						isEditMode = false; openDropdownIndex = null; hasDropdownChanged = false; originalRoles = {};}}
 					type="button"
 				>
 					Cancel
@@ -1243,11 +1274,15 @@
 									id="editUserRole"
 									class="w-full border rounded px-3 py-2"
 									bind:value={editUserRole}
+									disabled={$userProfile.userId === editUserId && editUserRole === 'admin' && details.filter(u => u.position === 'admin').length === 1}
 								>
 									{#each dropdownOptions as option}
 									<option value={option}>{option.charAt(0).toUpperCase() + option.slice(1)}</option>
 									{/each}
 								</select>
+								{#if $userProfile.userId === editUserId && editUserRole === 'admin' && details.filter(u => u.position === 'admin').length === 1}
+									<p class="text-sm text-red-600 mt-1">You are the last admin. Role change is disabled.</p>
+								{/if}
 							</div>
 							<div class="mb-3">
 								<label for="editPassword" class="block mb-1 text-sm font-medium">Password</label>

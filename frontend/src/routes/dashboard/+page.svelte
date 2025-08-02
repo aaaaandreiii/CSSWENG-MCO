@@ -91,7 +91,7 @@
 
     items = data.topSellingProducts.map(p => ({
       name: p.productName,
-      link: `/products/${p.productId}`,
+	  link: p.pathName || null,
       qty:  p.totalQty
     }));
 
@@ -261,7 +261,7 @@
 			{#each items as item}
 				<div>
 					<!-- can add href to link in inventory -->
-					<img src={item.link} alt={item.name} />
+					<img src={item.link || 'https://png.pngtree.com/png-vector/20221125/ourmid/pngtree-no-image-available-icon-flatvector-illustration-picture-coming-creative-vector-png-image_40968940.jpg'} alt={item.name} />
 					<p class="text-center text-sm">{item.name}</p>
 				</div>
 			{/each}
