@@ -268,7 +268,7 @@
 			<img src={detail.profilePic} alt="Profile" class="avatar h-48 w-48 rounded-full" />
 			<div class="upload-section flex flex-col items-start">
 				<h1 class="text-5xl font-bold py-5">{detail.name}</h1>
-                <button
+                <!-- <button
 					on:click={openPhotoModal}
 					class="upload-photo mb-2 cursor-pointer rounded-lg border-none bg-gray-200 px-6 py-3 font-bold"
 				>
@@ -276,7 +276,7 @@
 				</button>
 				<p class="photo-instructions text-left text-gray-400">
 					Recommended photo size is 750x750px. JPG or PNG is allowed.
-				</p>
+				</p> -->
 			</div>
 		</div>
 
