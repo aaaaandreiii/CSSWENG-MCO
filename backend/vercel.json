@@ -5,5 +5,11 @@
   ],
   "routes": [
     { "src": "/(.*)",   "dest": "app.js" }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://cssweng-mco-backend.vercel.app/:path*"
+    }
   ]
 }
