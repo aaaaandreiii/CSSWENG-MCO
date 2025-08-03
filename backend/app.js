@@ -23,17 +23,18 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 const corsOptions = {
-  origin: (incomingOrigin, callback) => {
-    if (!incomingOrigin || allowedOrigins.includes(incomingOrigin)) {
-      callback(null, incomingOrigin);   //echo back the request Origin
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, origin); // ✅ return origin string
     } else {
-      callback(new Error(`Origin ${incomingOrigin} not allowed by CORS`));
+      callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization'],
-  credentials: false,  //or true if using cookies/auth headers
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true // ✅ REQUIRED when using cookies or Authorization headers
 };
+
 app.use(cors(corsOptions));
 
 // app.use(cors({
