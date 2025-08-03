@@ -1,5 +1,6 @@
 import express from "express";
 import * as ordersModel from "../model/ordersModel.js";
+import * as ordersMergeModel from "../model/ordersMergeModel.js"
 import * as orderInfoModel from "../model/orderInfoModel.js";
 import { authenJWT } from "../middleware/authenJWT.js";
 import { authorizePermission } from "../middleware/authoPerms.js";
@@ -25,6 +26,19 @@ router.post("/createOrder", authenJWT, authorizePermission("edit_order"), async(
     }
 }); //test: curl -X POST http://localhost:5000/api/createOrder -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"discount\":0.10,\"customer\":\"John Doe\",\"handledBy\":1,\"items\":[{\"quantity\":2,\"productId\":1},{\"quantity\":1, \"productId\":2}]}"
 
+router.post("/createOrderInfo", authenJWT, authorizePermission("edit_order"), async(req, res) =>{
+    try{
+        const {quantity, orderId, productId, unitPriceAtPurchase} = req.body;  
+        const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedUser = req.user.userId;
+        const orderInfoId = await orderInfoModel.createOrderInfo(quantity, orderId, productId, unitPriceAtPurchase, lastEditedDate, lastEditedUser, 0);
+        await logAudit("add_order", `Created orderInfo ID ${orderInfoId} for order ${orderId})`, req.user.userId);
+        res.json({message: "Order Info created successfully!", id: orderInfoId});
+    }catch(err){
+        res.status(500).json({ message: "Error creating Order Info" });
+    }
+});
+
 router.get("/getOrders", authenJWT, authorizePermission("edit_order"), async(req, res) =>{
     try{
         const orders = await ordersModel.getOrders();
@@ -39,6 +53,21 @@ router.get("/getOrders", authenJWT, authorizePermission("edit_order"), async(req
         res.status(500).json({ message: "Error fetching Orders" });
     }
 }); //test: curl -X GET http://localhost:5000/api/getOrders -H "Authorization: Bearer TOKEN_HERE"
+
+router.get("/getMergeOrders", authenJWT, authorizePermission("edit_order"), async(req, res) =>{
+    try{
+        const orders = await ordersMergeModel.getMergeOrders();
+        if(orders){
+            // console.log("Orders fetched: ", orders);
+            res.json({message: "Orders found!", orders});
+        }
+        else{
+            res.status(404).json({ message: "Orders not found or already deleted" });
+        }
+    }catch(err){
+        res.status(500).json({ message: "Error fetching Orders" });
+    }
+});
 
 router.get("/getOrderInfo", authenJWT, authorizePermission("edit_order"), async(req, res) =>{
     try{
@@ -70,6 +99,41 @@ router.get("/getOrderById/:id", authenJWT, authorizePermission("edit_order"), as
         res.status(500).json({ message: "Error fetching Order" });
     }
 }); //test: curl -X GET http://localhost:5000/api/getOrderById/1 -H "Authorization: Bearer TOKEN_HERE"
+
+// Example route: /checkProductInOrder/:orderId/:productId
+
+// router.get("/checkProductInOrder/:orderId/:productId", authenJWT, authorizePermission("edit_order"), async (req, res) => {
+// 	try {
+// 		const orderId = parseInt(req.params.orderId);
+// 		const productId = parseInt(req.params.productId);
+
+// 		const exists = await orderInfoModel.productExistsInOrder(orderId, productId);
+// 		if (exists) {
+// 			res.json({ message: "Product exists in order", exists: true });
+// 		} else {
+// 			res.status(404).json({ message: "Product not found in order", exists: false });
+// 		}
+// 	} catch (err) {
+// 		console.error("Error checking product in order:", err);
+// 		res.status(500).json({ message: "Internal server error" });
+// 	}
+// });
+
+// router.get("/getOrderIdByTransaction/:transactionId", authenJWT, async (req, res) => {
+// 	try {
+// 		const transactionId = req.params.transactionId;
+// 		const [[row]] = await db.query(`
+// 			SELECT orderId FROM ReturnExchange WHERE transactionId = ? AND deleteFlag = 0
+// 		`, [transactionId]);
+
+// 		if (!row) return res.status(404).send("Transaction not found");
+// 		res.json(row); // { orderId: 5 }
+// 	} catch (err) {
+// 		console.error(err);
+// 		res.status(500).send("Server error");
+// 	}
+// });
+
 
 router.get("/getOrderInfoById/:id", authenJWT, authorizePermission("edit_order"), async(req, res) =>{
     try{
@@ -128,6 +192,36 @@ router.put("/updateOrderInfo/:id", authenJWT, authorizePermission("edit_order"),
         res.status(500).json({ message: "Error updating Order Info" });
     }
 }); //test: curl -X PUT http://localhost:5000/api/updateOrderInfo/1 -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"quantity\":3,\"productId\":2}"
+
+router.put("/updateMergedOrder/:orderInfoId/:orderId", authenJWT, authorizePermission("edit_order"), async (req, res) => {
+    try {
+        const orderInfoId = parseInt(req.params.orderInfoId);
+        const orderId = parseInt(req.params.orderId);
+        const updatedData = req.body;
+
+        const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace("T", " ");
+        const lastEditedUser = req.user.userId;
+
+        updatedData.lastEditedDate = lastEditedDate;
+        updatedData.lastEditedUser = lastEditedUser;
+
+        const infoResult = await orderInfoModel.updateOrderInfoById(orderInfoId, updatedData);
+        const parentResult = await ordersModel.updateOrderById(orderId, updatedData);
+
+        if (infoResult || parentResult) {
+            await logAudit("edit_order", `Updated order ID ${orderId}`, req.user.userId);
+            res.json({
+                message: "Order and order Info updated successfully",
+                orderInfoId, orderId: orderId
+            });
+        } else {
+            res.status(404).json({ message: "Nothing was updated." });
+        }
+    } catch (err) {
+        console.error("Error updating merged order:", err);
+        res.status(500).json({ message: "Error updating merged order." });
+    }
+});
 
 router.delete("/deleteOrder/:id", authenJWT, authorizePermission("edit_order"), async(req, res) =>{
     try{

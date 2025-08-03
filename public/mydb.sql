@@ -236,7 +236,7 @@ DEFAULT CHARACTER SET = utf8mb4;
 DROP TABLE IF EXISTS `mydb`.`ReturnExchange` ;
 
 CREATE TABLE IF NOT EXISTS `mydb`.`ReturnExchange` (
-  `transactionId` INT NOT NULL,
+  `transactionId` INT NOT NULL AUTO_INCREMENT,
   `dateTransaction` DATE NOT NULL,
   `transactionStatus` ENUM('refunded', 'replaced', 'denied') NOT NULL,
   `orderId` INT NOT NULL,
