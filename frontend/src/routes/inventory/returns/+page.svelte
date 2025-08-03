@@ -1243,12 +1243,12 @@
 </script>
 
 <!-- header w/ search bar and filter-->
-<header class="flex justify-between p-7">
-	<h1>Returns & Exchanges</h1>
+<header class="flex justify-between p-7 fixed gray1 pr-70" style="width: 100%; z-index: 10;">
+	<h1>Returns</h1>
 </header>
 
 <!-- return or exchange -->
-<div class = "w-full p-5">
+<div class = "w-full p-5 pt-22">
     <div class = " h-auto rounded-lg bg-white p-5">
         <div class = "flex-col items-center gap-5">
 
@@ -1407,15 +1407,16 @@
             <button
                 class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold
                     {selectedRows.length === 0
-                    ? 'cursor-not-allowed bg-gray-400 text-gray-200'
-                    : 'red1 text-white hover:bg-red-700'}"
+						? 'cursor-not-allowed bg-gray-400 text-gray-200'
+						: isLoading ? 'bg-gray-500 text-white' 
+						: 'red1 text-white hover:bg-red-700'}"
                 disabled={selectedRows.length === 0}
                 on:click={handleDeleteSelectedRows}
             >
-                Delete
+                {isLoading ? 'Deleting...' : 'Delete'}
             </button>
             <button
-                class="w-fit p-2 items-center justify-center gap-2 rounded-lg font-bold bg-[#3d843f] text-white hover:bg-[#3b7f3b]"
+                class="w-fit p-2 items-center justify-center gap-2 rounded-lg font-bold bg-[#3d843f] text-white hover:bg-[#2c5f2c]"
                 on:click={openAddModal}
             >
                 Create Return/Exchange

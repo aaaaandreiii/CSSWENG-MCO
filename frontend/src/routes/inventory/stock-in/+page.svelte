@@ -716,7 +716,7 @@ async function handleAddFormSave() {
 </script>
 
 <!-- header w/ search bar and filter-->
-<header class="flex justify-between p-7">
+<header class="flex justify-between p-7 fixed gray1 pr-70" style="width: 100%; z-index: 10;">
 	<h1>Stock In</h1>
 
 	<div class="flex gap-3">
@@ -736,137 +736,142 @@ async function handleAddFormSave() {
 	</div>
 </header>
 
-<!-- navbar + buttons row -->
-<div class="grid grid-cols-2">
-	<!-- navbar -->
-	<div class="flex w-full">
-		{#each Object.keys(headerMap) as tab, idx (tab)}
-			<button
-				class="buttonss flex w-full items-center justify-center text-center transition-all duration-150
-					{selected === tab ? 'selected bg-white font-bold' : 'mr-2 truncate bg-gray-100'}"
-				style={selected === tab ? '' : 'max-width: 12ch; min-width: 0;'}
-				on:click={() => (selected = tab as TabType)}
-				title={tab}
-			>
-				<span class="w-full text-center">
-					{selected === tab ? tab : tab.length > 6 ? tab.slice(0, 6) + '...' : tab}
-				</span>
-			</button>
-		{/each}
-	</div>
-	<!-- buttons for actions -->
-	<div class="ml-auto flex gap-5 p-2.5 pr-10">
-		<button
-			class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold
-				{selectedRows.length === 0
-				? 'cursor-not-allowed bg-gray-400 text-gray-200'
-				: 'red1 text-white hover:bg-red-700'}"
-			disabled={selectedRows.length === 0}
-			on:click={handleDeleteSelectedRows}
-		>
-			Delete
-		</button>
-		<button
-			class="w-fit p-2 items-center justify-center gap-2 rounded-lg font-bold bg-[#3d843f] text-white hover:bg-[#3b7f3b]"
-			on:click={openAddModal}
-		>
-			Add New Shipment
-		</button>
-	</div>
-</div>
+<div class = "pt-17"></div>
 
-<!-- table -->
-<div class="w-full overflow-x-auto" on:scroll={handleScroll}>
-	<table class="w-full table-fixed border-collapse">
-		<thead class="border-b border-black bg-white">
-			<tr>
-				<th class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center"></th>
-				{#each currentHeaders as head}
-					<th
-						class="px-4 py-5 text-center align-middle break-words whitespace-normal"
-						style="width: calc({head.length}ch + 40px);"
-					>
-						<button
-							class="flex w-full items-center justify-center gap-1 font-bold"
-							on:click={() => sortBy(head)}
-						>
-							<span class="w-full break-words whitespace-normal">{head}</span>
-							<span class="inline-block w-4 min-w-[1rem] text-center align-middle"
-								>{sortColumn === head
-									? sortDirection === 'asc'
-										? '▲'
-										: sortDirection === 'desc'
-											? '▼'
-											: ''
-									: ''}</span
-							>
-						</button>
-					</th>
-				{/each}
-				<th class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center"></th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each rows as row, i}
-				<tr class="border-b border-black {i % 2 === 0 ? 'bg-[#eeeeee]' : 'bg-white'}">
-					<td class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center"
-						><input type="checkbox" bind:group={selectedRows} value={i} /></td
-					>
-					{#each currentHeaders as head}
-						<td
-							class="overflow-hidden px-4 py-5 text-center text-ellipsis whitespace-nowrap"
-							style="width: calc({head.length}ch + 40px);"
-							title={row[head]}
-							on:click={() => openModal(row[head], i, head)}
-						>
-						{#if head === "Image"}
-							{#if row[head]}
-								<img src = {row[head]} alt="" class="mx-auto max-h-16 max-w-[100px] object-contain"/>
-							{:else}
-								<span class="text-gray-400 italic">Null</span>
-							{/if}
-						{:else}
-							{row[head]}
-						{/if}
-						</td>
-					{/each}
-					<td class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center">
-						<button
-							type="button"
-							class="mx-auto flex h-5 w-5 items-center justify-center"
-							aria-label="Edit"
-							on:click={() => openEditModal(i)}
-						>
-							<img src="../src/icons/edit.svg" alt="" class="pointer-events-none h-5 w-5" />
-						</button>
-					</td>
-				</tr>
+<!-- entire table -->
+<div class = "m-5 border-1 rounded-lg border-gray-400 shadow-lg">
+	<!-- navbar + buttons row -->
+	<div class="grid grid-cols-2">
+		<!-- navbar -->
+		<div class="flex w-full">
+			{#each Object.keys(headerMap) as tab, idx (tab)}
+				<button
+					class="buttonss flex w-full items-center justify-center text-center transition-all duration-150
+						{selected === tab ? 'selected bg-white font-bold' : 'mr-2 truncate bg-gray-100'}"
+					style={selected === tab ? '' : 'max-width: 12ch; min-width: 0;'}
+					on:click={() => (selected = tab as TabType)}
+					title={tab}
+				>
+					<span class="w-full text-center">
+						{selected === tab ? tab : tab.length > 6 ? tab.slice(0, 6) + '...' : tab}
+					</span>
+				</button>
 			{/each}
-			
-			<!-- Loading indicator -->
-			{#if isLoading}
-				<tr>
-					<td colspan={currentHeaders.length + 2} class="py-8 text-center">
-						<div class="flex items-center justify-center gap-2">
-							<div class="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
-							<span>Loading more data...</span>
-						</div>
-					</td>
-				</tr>
-			{/if}
-			
-			<!-- End of data indicator -->
-			{#if !hasMoreData && rows.length > 0}
-				<tr>
-					<td colspan={currentHeaders.length + 2} class="py-4 text-center text-gray-500">
-						No more data to load
-					</td>
-				</tr>
-			{/if}
-		</tbody>
-	</table>
-</div>
+		</div>
+		<!-- buttons for actions -->
+		<div class="ml-auto flex gap-5 p-2.5 pr-10">
+			<button
+				class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold
+					{selectedRows.length === 0
+					    ? 'cursor-not-allowed bg-gray-400 text-gray-200'
+						: isLoading ? 'bg-gray-500 text-white' 
+						: 'red1 text-white hover:bg-red-700'}"
+				disabled={selectedRows.length === 0}
+				on:click={handleDeleteSelectedRows}
+			>
+				{isLoading ? 'Deleting...' : 'Delete'}
+			</button>
+			<button
+				class="w-fit p-2 items-center justify-center gap-2 rounded-lg font-bold bg-[#3d843f] text-white hover:bg-[#2c5f2c]"
+				on:click={openAddModal}
+			>
+				Add New Shipment
+			</button>
+		</div>
+	</div>
 
+	<!-- table -->
+	<div class="w-full overflow-x-auto" on:scroll={handleScroll}>
+		<table class="w-full table-fixed border-collapse">
+			<thead class="border-b border-black bg-white">
+				<tr>
+					<th class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center"></th>
+					{#each currentHeaders as head}
+						<th
+							class="px-4 py-5 text-center align-middle break-words whitespace-normal"
+							style="width: calc({head.length}ch + 40px);"
+						>
+							<button
+								class="flex w-full items-center justify-center gap-1 font-bold"
+								on:click={() => sortBy(head)}
+							>
+								<span class="w-full break-words whitespace-normal">{head}</span>
+								<span class="inline-block w-4 min-w-[1rem] text-center align-middle"
+									>{sortColumn === head
+										? sortDirection === 'asc'
+											? '▲'
+											: sortDirection === 'desc'
+												? '▼'
+												: ''
+										: ''}</span
+								>
+							</button>
+						</th>
+					{/each}
+					<th class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center"></th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each rows as row, i}
+					<tr class="border-b border-black {i % 2 === 0 ? 'bg-[#eeeeee]' : 'bg-white'}">
+						<td class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center"
+							><input type="checkbox" bind:group={selectedRows} value={i} /></td
+						>
+						{#each currentHeaders as head}
+							<td
+								class="overflow-hidden px-4 py-5 text-center text-ellipsis whitespace-nowrap"
+								style="width: calc({head.length}ch + 40px);"
+								title={row[head]}
+								on:click={() => openModal(row[head], i, head)}
+							>
+							{#if head === "Image"}
+								{#if row[head]}
+									<img src = {row[head]} alt="" class="mx-auto max-h-16 max-w-[100px] object-contain"/>
+								{:else}
+									<span class="text-gray-400 italic">Null</span>
+								{/if}
+							{:else}
+								{row[head]}
+							{/if}
+							</td>
+						{/each}
+						<td class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center">
+							<button
+								type="button"
+								class="mx-auto flex h-5 w-5 items-center justify-center"
+								aria-label="Edit"
+								on:click={() => openEditModal(i)}
+							>
+								<img src="../src/icons/edit.svg" alt="" class="pointer-events-none h-5 w-5" />
+							</button>
+						</td>
+					</tr>
+				{/each}
+				
+				<!-- Loading indicator -->
+				{#if isLoading}
+					<tr>
+						<td colspan={currentHeaders.length + 2} class="py-8 text-center">
+							<div class="flex items-center justify-center gap-2">
+								<div class="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
+								<span>Loading more data...</span>
+							</div>
+						</td>
+					</tr>
+				{/if}
+				
+				<!-- End of data indicator -->
+				{#if !hasMoreData && rows.length > 0}
+					<tr>
+						<td colspan={currentHeaders.length + 2} class="py-4 text-center text-gray-500">
+							No more data to load
+						</td>
+					</tr>
+				{/if}
+			</tbody>
+		</table>
+	</div>
+</div>
 <!-- modal popup-->
 {#if showModal}
 	<div

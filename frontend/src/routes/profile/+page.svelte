@@ -262,7 +262,7 @@
 
 <!-- profile card -->
 {#each details as detail}
-<div class="p-10">
+<div class="p-10 pt-20">
 	<section class="rounded-lg bg-white p-8">
 		<div class="profile-photo mb-8 flex items-start gap-4">
 			<img src={detail.profilePic} alt="Profile" class="avatar h-48 w-48 rounded-full" />
