@@ -19,8 +19,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const allowedOrigins = [
   process.env.PUBLIC_API_BASE_URL,
-  'https://cssweng-mco.vercel.app',
-  'http://localhost:5173',
+  'https://cssweng-mco.vercel.app'
 ].filter(Boolean);
 
 const corsOptions = {
