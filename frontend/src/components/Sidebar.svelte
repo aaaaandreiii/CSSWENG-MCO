@@ -17,7 +17,7 @@
 				{ name: 'Stock Out', link: '/inventory/stock-out' },
 				{ name: 'Orders', link: '/inventory/orders' },
 				{ name: 'Returns', link: '/inventory/returns' },
-				{ name: 'Activity Logs', link: '/inventory/reports' }
+				{ name: 'Activity Logs', link: '/inventory/activity-logs' }
 			]
 		},
 		{ name: 'Analytics', link: '/analytics', icon: '../src/icons/analytics.svg' },
@@ -139,8 +139,8 @@
 									href={sub.link}
 									class={`block py-2 text-sm rounded ${
 										selected === sub.name
-											? 'selected-tab'
-											: 'hover:bg-[#0e7b34] hover:text-white hover:shadow hover:rounded-r-[18px] hover:ml-[-30px] hover:pl-[30px] hover:w-[calc(100%+60px)]'
+											? 'selected-subtab'
+											: 'hover:bg-[#0e7b34] hover:text-white hover:shadow hover:rounded-r-[18px] hover:ml-[-80px] hover:pl-[80px] hover:w-[calc(100%+40px)]'
 										}`}
 									on:click={() => selected = sub.name}
 									>
