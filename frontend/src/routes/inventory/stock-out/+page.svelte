@@ -446,6 +446,7 @@ export async function getLastEditedUserByWithdrawalId(withdrawalId: number): Pro
 		console.error("getLastEditedUserByWithdrawalId error:", err);
 		return null;
 	}
+}
 
 async function handleCellEditFormSave() {
 	if (modalRowIndex !== -1 && modalColumn) {
@@ -628,9 +629,7 @@ async function handleCellEditFormSave() {
 	}
 }
 
-
-
-let addForm: { [key: string]: string | null } = {};
+	let addForm: { [key: string]: string | null } = {};
 	let isAddForm = false;
 
 	function openAddModal() {
@@ -783,7 +782,7 @@ async function handleDeleteSelectedRows() {
 		selectedRows.length > 0 &&
 		confirm(`Are you sure you want to delete ${selectedRows.length} selected row(s)?`)
 	) {
-		const token = localStorage.getItem("token");
+		const token = localStorage.getItem("actkn");
 		const failedDeletes: number[] = [];
 
 		const endpoint = deleteApiMap[selected]; // e.g., deleteStockEntryExpanded
@@ -854,8 +853,6 @@ async function handleDeleteSelectedRows() {
 		}
 	}
 }
-
-
 </script>
 
 <!-- header w/ search bar and filter-->
