@@ -20,6 +20,7 @@ const PORT = process.env.PORT || 5000;
 const allowedOrigin = process.env.PUBLIC_API_BASE_URL; 
 const allowed = [
   'http://localhost:5173',
+  'https://cssweng-mco.vercel.app',
   process.env.PUBLIC_API_BASE_URL   //in prod == frontend URL
 ];
 
