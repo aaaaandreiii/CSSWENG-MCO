@@ -18,7 +18,6 @@ import dashboardRouter from './controller/dashboardController.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 const allowedOrigins = [
-  process.env.PUBLIC_API_BASE_URL,
   'https://cssweng-mco.vercel.app'
 ].filter(Boolean);
 
@@ -32,7 +31,7 @@ const corsOptions = {
   },
   methods: ['GET','POST','PUT','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization'],
-  credentials: false,  //or true if using cookies/auth headers
+  credentials: true,  //or true if using cookies/auth headers
 };
 app.use(cors(corsOptions));
 
