@@ -17,18 +17,16 @@ import dashboardRouter from './controller/dashboardController.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const allowedOrigin = process.env.PUBLIC_API_BASE_URL; 
-const allowed = [
-  'http://localhost:5173',
+const allowedOrigins = [
   'https://cssweng-mco.vercel.app',
-  process.env.PUBLIC_API_BASE_URL   //in prod == frontend URL
+  'http://localhost:5173',
+  process.env.PUBLIC_API_BASE_URL
 ];
 
 app.use(cors({
-    origin: (origin, cb) =>
-      cb(null, allowed.includes(origin)),
-    methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-    allowedHeaders: ['Content-Type','Authorization']
+  origin: allowedOrigins,
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization']
 })); //enable CORS during development
 app.use(express.json());
 
