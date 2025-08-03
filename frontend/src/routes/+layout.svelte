@@ -1,12 +1,27 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import '../app.css';
-	import Header from "../components/Header.svelte";
 	import Sidebar from "../components/Sidebar.svelte";
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { PUBLIC_API_BASE_URL } from '$env/static/public';
 	import { onMount } from 'svelte';
+	import '../app.css';
+
+	//header
+	import Header from '../components/Header.svelte';
+	import { derived } from 'svelte/store';
+
+	function formatTitle(path: string | null): string {
+		if (!path) return 'Unknown Page';
+		const lastSegment = path.split('/').filter(Boolean).pop() || '';
+		return lastSegment.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+	}
+
+	const pageTitle = derived(page, ($page) =>
+		$page.route.id === '/' ? 'Dashboard' : formatTitle($page.route.id)
+	);
+
+
 	let { children } = $props();
 	
 	const showSidebar = $derived($page.route.id !== '/login' && $page.route.id !== '/signup' && $page.route.id !== '/forgot_password' && $page.route.id !== '/');
@@ -114,6 +129,7 @@
 {/if}
 
 {#if showSidebar}
+	<Header {pageTitle} />
 	<aside class = 'sidebar'>
 		<Sidebar />
 	</aside>
