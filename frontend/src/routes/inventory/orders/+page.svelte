@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { PUBLIC_API_BASE_URL } from '$env/static/public';
+  // import { PUBLIC_API_BASE_URL } from '$env/static/public';    //replaced by privateClient and publicClient
+  import { publicClient } from '$lib/api/public.client';
+  import privateClient   from '$lib/api/private.client';
 	import { goto } from '$app/navigation';	
   import { onMount } from 'svelte';
 
@@ -156,19 +158,26 @@
 
   // Fetch data
   async function fetchFullOrderData(offset = 0, append = false) {
-    if (isLoading) return;
+    // if (isLoading) return;
     isLoading = true;
     
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(
-        `${PUBLIC_API_BASE_URL}/api/${apiMaps.get}?offset=${offset}&limit=${ITEMS_PER_PAGE}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      //fix: uses privateClient
+      // const token = localStorage.getItem('token');
+      // const res = await fetch(
+      //   `${PUBLIC_API_BASE_URL}/api/${apiMaps.get}?offset=${offset}&limit=${ITEMS_PER_PAGE}`,
+      //   { headers: { Authorization: `Bearer ${token}` } }
+      // );
+      // const { data } = await res.json();
 
-      const { data } = await res.json();
-      
-      const newRows = data.map((item: any) => ({
+      const res = await privateClient.get(`/api/${apiMaps.get}`, {
+        params: { offset, limit: ITEMS_PER_PAGE }
+      });
+      console.log('📦 getFullOrderDetails response:', res.data);
+
+      const list = res.data.data;
+
+      const newRows = list.map(item => ({
         'Order ID': item.orderId,
         'Customer': item.customer,
         'Date Ordered': item.orderDate,
@@ -188,15 +197,17 @@
         'Reason': item.reason || '',
         'Return Type': item.returnType || ''
       }));
-	  console.log(newRows[0]?.orderInfoId);
+
+	    console.log(newRows[0]?.orderInfoId);
 
       hasMoreData = newRows.length === ITEMS_PER_PAGE;
 
-      if (append) {
-        rows = [...rows, ...newRows];
-      } else {
-        rows = newRows;
-      }
+      // if (append) {
+      //   rows = [...rows, ...newRows];
+      // } else {
+      //   rows = newRows;
+      // }
+      rows = append ? [...rows, ...newRows] : newRows;
       
       originalRows = append ? [...originalRows, ...newRows] : [...newRows];
     } catch(err) {
@@ -255,11 +266,19 @@
 
   // CRUD Operations
   async function validate(endpoint: string, id: number) {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    return res.ok;
+    //fix: uses privateClient
+    // const token = localStorage.getItem('token');
+    // const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${id}`, {
+    //   headers: { Authorization: `Bearer ${token}` }
+    // });
+    // return res.ok;
+
+    try {
+      await privateClient.get(`/api/${endpoint}/${id}`);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   // Delete functionality
@@ -275,7 +294,7 @@ async function handleDeleteSelected() {
     
     if (!confirm(confirmMessage)) return;
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('actkn');
     const failedDeletes: string[] = [];
 
     // Debug: Log what we're trying to delete
@@ -285,14 +304,21 @@ async function handleDeleteSelected() {
     // Delete entire orders first
     for (const orderId of ordersToDelete) {
         try {
-            const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteOrder/${orderId}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (!res.ok) {
-                console.error('Failed to delete order', orderId, res.status);
-                failedDeletes.push(`Order ${orderId}`);
-            }
+          //fix: uses privateClient
+          // const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteOrder/${orderId}`, {
+          //     method: 'DELETE',
+          //     headers: { Authorization: `Bearer ${token}` }
+          // });
+          // if (!res.ok) {
+          //     console.error('Failed to delete order', orderId, res.status);
+          //     failedDeletes.push(`Order ${orderId}`);
+          // }
+
+          try {
+            await privateClient.delete(`/api/deleteOrder/${orderId}`);
+          } catch {
+            failedDeletes.push(`Order ${orderId}`);
+          }
         } catch (err) {
             console.error('Error deleting order', orderId, err);
             failedDeletes.push(`Order ${orderId}`);
@@ -304,14 +330,19 @@ async function handleDeleteSelected() {
         for (const orderInfoId of itemsToDelete) {
             try {
                 console.log('Deleting item with orderInfoId:', orderInfoId);
-                const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteOrderItem/${orderInfoId}`, {
-                    method: 'DELETE',
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                
-                if (!res.ok) {
-                    console.error('Failed to delete item', orderInfoId, res.status);
-                    failedDeletes.push(`Item ${orderInfoId}`);
+                // const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteOrderItem/${orderInfoId}`, {
+                //     method: 'DELETE',
+                //     headers: { Authorization: `Bearer ${token}` }
+                // });
+                // if (!res.ok) {
+                //     console.error('Failed to delete item', orderInfoId, res.status);
+                //     failedDeletes.push(`Item ${orderInfoId}`);
+                // }
+
+                try {
+                  await privateClient.delete(`/api/deleteOrderItem/${orderInfoId}`);
+                } catch {
+                  failedDeletes.push(`Item ${orderInfoId}`);
                 }
             } catch (err) {
                 console.error('Error deleting item', orderInfoId, err);
@@ -370,7 +401,7 @@ async function handleDeleteSelected() {
   // Save edited cell
   async function handleCellEditFormSave() {
     if (modalRowIndex !== -1 && modalColumn) {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('actkn');
       const rowId = rows[modalRowIndex]['Order ID'];
       const finalForm: Record<string, any> = {};
       const field = modalColumn;
@@ -396,19 +427,25 @@ async function handleDeleteSelected() {
       }
 
       try {
-        const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${apiMaps.update}/${rowId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify(finalForm)
-        });
+        //fix: uses privateClient
+        // const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${apiMaps.update}/${rowId}`, {
+        //   method: 'PUT',
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //     Authorization: `Bearer ${token}`
+        //   },
+        //   body: JSON.stringify(finalForm)
+        // });
 
-        if (!res.ok) {
-          alert("Error updating!");
-          return;
-        }
+        // if (!res.ok) {
+        //   alert("Error updating!");
+        //   return;
+        // }
+
+        await privateClient.put(
+          `/api/${apiMaps.update}/${rowId}`,
+          finalForm
+        );
 
         await fetchFullOrderData();
         closeModal();
@@ -421,7 +458,7 @@ async function handleDeleteSelected() {
   // Save new order
   async function handleAddFormSave() {
     if (Object.values(addForm).some(v => v?.trim() !== '')) {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('actkn');
       const finalForm: Record<string, any> = {};
 
       // Validate ID fields
@@ -449,19 +486,25 @@ async function handleDeleteSelected() {
       }
 
       try {
-        const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${apiMaps.create}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify(finalForm)
-        });
+        //fix: uses privateClient
+        // const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${apiMaps.create}`, {
+        //   method: 'POST',
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //     Authorization: `Bearer ${token}`
+        //   },
+        //   body: JSON.stringify(finalForm)
+        // });
 
-        if (!res.ok) {
-          alert("Error creating order!");
-          return;
-        }
+        // if (!res.ok) {
+        //   alert("Error creating order!");
+        //   return;
+        // }
+
+        await privateClient.post(
+          `/api/${apiMaps.create}`,
+          finalForm
+        );
 
         await fetchFullOrderData();
         closeModal();
@@ -533,14 +576,19 @@ async function handleDeleteSelected() {
 		searchError = null;
 
 		try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(
-                `${PUBLIC_API_BASE_URL}/api/search?table=${selected}&q=${encodeURIComponent(searchQuery)}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            if (!response.ok) { throw new Error('Search failed'); }
+      //fix: uses privateClient
+      // const token = localStorage.getItem('token');
+      // const response = await fetch(
+      //     `${PUBLIC_API_BASE_URL}/api/search?table=${selected}&q=${encodeURIComponent(searchQuery)}`,
+      //     { headers: { Authorization: `Bearer ${token}` } }
+      // );
+      // if (!response.ok) { throw new Error('Search failed');
+      // const data = await response.json();
 
-            const data = await response.json();
+      const { data } = await privateClient.get(
+        '/api/search',
+        { params: { table: selected, q: searchQuery } }
+      );
 			const items = Array.isArray(data) ? data : data.products;
 			rows = items.map(item => ({
         'Order ID':              item.orderId,

@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { PUBLIC_API_BASE_URL } from '$env/static/public';
+	// import { PUBLIC_API_BASE_URL } from '$env/static/public';    //replaced by privateClient and publicClient
+    import { publicClient } from '$lib/api/public.client';
+    import privateClient   from '$lib/api/private.client';
 	import { goto } from '$app/navigation';		
 	import {onMount} from 'svelte';
 
@@ -128,14 +130,17 @@
 		isLoading = true;
 		
 		try{
-			const token = localStorage.getItem('token');
+			//fix: uses privateClient
+			// const token = localStorage.getItem('token');
 			const endpoint = getApiMap[tab];
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}?offset=${offset}&limit=${ITEMS_PER_PAGE}`, {
-				headers: {
-					Authorization: `Bearer ${token}`
-				}
-			});
-			const data = await res.json();
+			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}?offset=${offset}&limit=${ITEMS_PER_PAGE}`, {
+			// 	headers: {
+			// 		Authorization: `Bearer ${token}`
+			// 	}
+			// });
+			// const data = await res.json();
+
+			const { data } = await privateClient.get(`/api/${endpoint}`);
         	console.log('Fetched data:', data);
 
 			let newRows: { [key: string]: string }[] = [];
@@ -291,18 +296,21 @@
 	let isCellEditForm = false;
 
 	async function getForeignKeyId(field: string, value: string, token: string, foreignKeyMap: Record<string, string>): Promise<number | null> {
-	const endpoint = foreignKeyMap[field];
-	if (!endpoint) return null;
+		const endpoint = foreignKeyMap[field];
+		if (!endpoint) return null;
 
-	const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
-		headers: { Authorization: `Bearer ${token}` }
-	});
-	const data = await res.json();
+		//fix: uses privateClient
+		// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
+		// 	headers: { Authorization: `Bearer ${token}` }
+		// });
+		// const data = await res.json();
 
-	// Match either by `label` or `name` (adjust if needed)
-	const match = data.find((item: any) => item.name === value || item.label === value);
-	return match ? match.id : null;
-}
+		const { data } = await privateClient.get(`/api/${endpoint}`);
+
+		// Match either by `label` or `name` (adjust if needed)
+		const match = data.find((item: any) => item.name === value || item.label === value);
+		return match ? match.id : null;
+	}
 
 
 	async function resolveForeignKeyId(
@@ -317,13 +325,17 @@
 		}
 
 		const endpoint = fkMap[field];
-		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
-			headers: {
-				Authorization: `Bearer ${token}`
-			}
-		});
-		if (!res.ok) throw new Error(`Failed to fetch foreign key list from /api/${endpoint}`);
-		const data = await res.json();
+
+		//fix: uses privateClient
+		// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
+		// 	headers: {
+		// 		Authorization: `Bearer ${token}`
+		// 	}
+		// });
+		// if (!res.ok) throw new Error(`Failed to fetch foreign key list from /api/${endpoint}`);
+		// const data = await res.json();
+
+		const { data } = await privateClient.get(`/api/${endpoint}`);
 
 		const match = data.find((item: any) =>
 			item.name === value || item.label === value || item.username === value || item.fullName === value
@@ -338,7 +350,7 @@
 async function handleCellEditFormSave() {
 	if (modalRowIndex === -1 || !modalColumn) return;
 
-	const token = localStorage.getItem('token');
+	const token = localStorage.getItem('actkn');
 	if (!token) {
 		alert("User not authenticated.");
 		return;
@@ -407,21 +419,24 @@ async function handleCellEditFormSave() {
 
 	// Submit to backend
 	try {
-		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
-			method: 'PUT',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${token}`
-			},
-			body: JSON.stringify(convertedRow)
-		});
+		//fix: uses privateClient
+		// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
+		// 	method: 'PUT',
+		// 	headers: {
+		// 		'Content-Type': 'application/json',
+		// 		Authorization: `Bearer ${token}`
+		// 	},
+		// 	body: JSON.stringify(convertedRow)
+		// });
 
-		if (!res.ok) {
-			const err = await res.json();
-			console.error("Backend response:", err);
-			alert("Error updating: " + err.message);
-			return;
-		}
+		// if (!res.ok) {
+		// 	const err = await res.json();
+		// 	console.error("Backend response:", err);
+		// 	alert("Error updating: " + err.message);
+		// 	return;
+		// }
+
+		await privateClient.put(`/api/${endpoint}/${rowId}`, convertedRow);
 
 		await fetchTabData(selected);
 		currentOffset = 0;
@@ -459,7 +474,7 @@ async function handleCellEditFormSave() {
 
 	async function handleAddFormSave() {
 		if (Object.values(addForm).some((v) => v?.trim() !== '')) {
-			const token = localStorage.getItem('token');
+			const token = localStorage.getItem('actkn');
 			const endpoint = createApiMap[selected];
 			try {
 				const finalForm: { [key: string]: any } = {};
@@ -532,21 +547,23 @@ async function handleCellEditFormSave() {
 
 				console.log("Final form to submit:", finalForm);
 
-				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`
-					},
-					body: JSON.stringify(finalForm)
-				});
+				// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
+				// 	method: 'POST',
+				// 	headers: {
+				// 		'Content-Type': 'application/json',
+				// 		Authorization: `Bearer ${token}`
+				// 	},
+				// 	body: JSON.stringify(finalForm)
+				// });
 
-				if (!res.ok) {
-					const error = await res.json();
-					console.error("Backend response:", error);
-					alert("Error creating: " + error.message);
-					return;
-				}
+				// if (!res.ok) {
+				// 	const error = await res.json();
+				// 	console.error("Backend response:", error);
+				// 	alert("Error creating: " + error.message);
+				// 	return;
+				// }
+
+				await privateClient.post(`/api/${endpoint}`, finalForm);
 
 				await fetchTabData(selected);
 				currentOffset = 0;
@@ -567,15 +584,21 @@ async function handleCellEditFormSave() {
 	
 	//validate if id exists
 	async function validate(endpoint: string, id: number){
-		const token = localStorage.getItem('token');
-		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${id}`, {
-			headers: {
-				Authorization: `Bearer ${token}`
-			}
-		});
-		if(!res.ok) return false;
-		// const data = await res.json();
-		return true;
+		//fix: uses privateClient
+		// const token = localStorage.getItem('token');
+		// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${id}`, {
+		// 	headers: {
+		// 		Authorization: `Bearer ${token}`
+		// 	}
+		// });
+		// if(!res.ok) return false;
+
+		try {
+			await privateClient.get(`/api/${endpoint}/${id}`);
+			return true;
+		} catch {
+			return false;
+		}
 	}
 
 async function handleDeleteSelectedRows() {
@@ -608,21 +631,29 @@ async function handleDeleteSelectedRows() {
 		for (const rowId of rowIds) {
 			try {
 				console.log(`Sending DELETE to /api/${endpoint}/${rowId}`);
-				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
-					method: "DELETE",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${token}`
-					}
-				});
 
-				if (!res.ok) {
-					const err = await res.json().catch(() => ({ message: res.statusText }));
-					console.error(`Failed to delete row ${rowId}:`, err.message || "Unknown error");
+				//fix: uses privateClient
+				// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
+				// 	method: "DELETE",
+				// 	headers: {
+				// 		"Content-Type": "application/json",
+				// 		Authorization: `Bearer ${token}`
+				// 	}
+				// });
+
+				// if (!res.ok) {
+				// 	const err = await res.json().catch(() => ({ message: res.statusText }));
+				// 	console.error(`Failed to delete row ${rowId}:`, err.message || "Unknown error");
+				// 	failedDeletes.push(rowId);
+				// } else {
+				// 	const result = await res.json();
+				// 	console.log(`Successfully deleted row ${rowId}:`, result.message);
+				// }
+
+				try {
+					await privateClient.delete(`/api/${endpoint}/${rowId}`);
+				} catch (e) {
 					failedDeletes.push(rowId);
-				} else {
-					const result = await res.json();
-					console.log(`Successfully deleted row ${rowId}:`, result.message);
 				}
 			} catch (err) {
 				console.error(`Fetch error while deleting row ${rowId}:`, err);
@@ -865,7 +896,7 @@ async function handleDeleteSelectedRows() {
 				</form>
 			{:else if isEditForm}
 				<!-- edit popup form for entire row -->
-				<form on:submit|preventDefault={handleEditFormSave}>
+				<form on:submit|preventDefault={handleCellEditFormSave}>
 					{#each currentHeaders.filter(h => h !== primaryKeyMap[selected] && !/^date/i.test(h) && !['Last Edited Date', 'Last Edited User'].includes(h)) as head}
 						<div class="mb-2">
 							<label class="mb-1 block font-bold" for={'edit-' + head}>{head}</label>

@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { PUBLIC_API_BASE_URL } from '$env/static/public';
+	// import { PUBLIC_API_BASE_URL } from '$env/static/public';    //replaced by privateClient and publicClient
+    import { publicClient } from '$lib/api/public.client';
+    import privateClient   from '$lib/api/private.client';
 	import { goto } from '$app/navigation';		
 	import {onMount} from 'svelte';
 
@@ -292,14 +294,21 @@
 		isLoading = true;
 		
 		try{
-			const token = localStorage.getItem('token');
+			//fix: uses privateClient
+			// const token = localStorage.getItem('token');
 			const endpoint = getApiMap[tab];
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}?offset=${offset}&limit=${ITEMS_PER_PAGE}`, {
-				headers: {
-					Authorization: `Bearer ${token}`
-				}
+			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}?offset=${offset}&limit=${ITEMS_PER_PAGE}`, {
+			// 	headers: {
+			// 		Authorization: `Bearer ${token}`
+			// 	}
+			// });
+			// const data = await res.json();
+
+			const { data } = await privateClient.get(`/api/${endpoint}`, {
+				params: { offset, limit: ITEMS_PER_PAGE }
 			});
-			const data = await res.json();
+
+
         	console.log('Fetched data:', data);
 
 			let newRows: { [key: string]: string }[] = [];
@@ -553,7 +562,7 @@
 	// func to handle saving the edit form
 	async function handleEditFormSave() {
 		if (modalRowIndex !== -1) {
-			const token = localStorage.getItem('token');
+			const token = localStorage.getItem('actkn');
 			const endpoint = updateApiMap[selected];
 			const primaryKey = primaryKeyMap[selected];
 			const rowId = rows[modalRowIndex][primaryKey];
@@ -603,19 +612,23 @@
 				}
 			}
 			try{
-				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
-					method: 'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`
-					},
-					body: JSON.stringify(finalForm)
-				});
-				// const data = await res.json();
-				if(!res.ok){
-					alert("Error updating!");
-					return;
-				}
+				//fix: uses privateClient
+				// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
+				// 	method: 'PUT',
+				// 	headers: {
+				// 		'Content-Type': 'application/json',
+				// 		Authorization: `Bearer ${token}`
+				// 	},
+				// 	body: JSON.sringify(finalForm)
+				// });
+				// // const data = await res.json();
+				// if(!res.ok){
+				// 	alert("Error updating!");
+				// 	return;
+				// }
+
+				await privateClient.put(`/api/${endpoint}/${rowId}`, finalForm);
+
 				await fetchTabData(selected);
 				
 				// Reset pagination and reload from beginning after edit
@@ -643,7 +656,7 @@
 	// func to handle saving the cell edit form
 	async function handleCellEditFormSave() {
 		if (modalRowIndex !== -1 && modalColumn) {
-			const token = localStorage.getItem('token');
+			const token = localStorage.getItem('actkn');
 			const endpoint = updateApiMap[selected];
 			const primaryKey = primaryKeyMap[selected];
 			const rowId = rows[modalRowIndex][primaryKey]; //primary key: id
@@ -756,19 +769,23 @@
 			// console.log("finalForm", finalForm);
 			// console.log("updatedRow", updatedRow);
 			try{
-				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
-					method: 'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`
-					},
-					body: JSON.stringify(finalForm)
-				});
-				// const data = await res.json();
-				if(!res.ok){
-					alert("Error updating!");
-					return;
-				}
+				//fix: uses privateClient
+				// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
+				// 	method: 'PUT',
+				// 	headers: {
+				// 		'Content-Type': 'application/json',
+				// 		Authorization: `Bearer ${token}`
+				// 	},
+				// 	body: JSON.stringify(finalForm)
+				// });
+				// // const data = await res.json();
+				// if(!res.ok){
+				// 	alert("Error updating!");
+				// 	return;
+				// }
+
+				await privateClient.put(`/api/${endpoint}/${rowId}`, finalForm);
+
 				await fetchTabData(selected);
 		
 				// Reset pagination and reload from beginning after edit
@@ -807,7 +824,7 @@
 	async function handleAddFormSave() {
 		// Only add if at least one field is filled
 		if (Object.values(addForm).some((v) => v?.trim() !== '')) {
-			const token = localStorage.getItem('token');
+			const token = localStorage.getItem('actkn');
 			const endpoint = createApiMap[selected];
 			try{
 				const finalForm: {[key: string]: any} = {};
@@ -855,20 +872,23 @@
 				}
 				// console.log("Final form to submit:", finalForm);
 
-				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`
-					},
-					body: JSON.stringify(finalForm)
-				});
-				// const data = await res.json();
-				// console.log("data: ", data);
-				if(!res.ok){
-					alert("Error creating!");
-					return;
-				}
+				//fix: uses privateClient
+				// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
+				// 	method: 'POST',
+				// 	headers: {
+				// 		'Content-Type': 'application/json',
+				// 		Authorization: `Bearer ${token}`
+				// 	},
+				// 	body: JSON.stringify(finalForm)
+				// });
+				// // const data = await res.json();
+				// // console.log("data: ", data);
+				// if(!res.ok){
+				// 	alert("Error creating!");
+				// 	return;
+				// }
+
+				await privateClient.post(`/api/${endpoint}`, finalForm);
 
 				await fetchTabData(selected);
 				
@@ -889,15 +909,21 @@
 	
 	//validate if id exists
 	async function validate(endpoint: string, id: number){
-		const token = localStorage.getItem('token');
-		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${id}`, {
-			headers: {
-				Authorization: `Bearer ${token}`
-			}
-		});
-		if(!res.ok) return false;
-		// const data = await res.json();
-		return true;
+		//fix: uses privateClient
+		// const token = localStorage.getItem('token');
+		// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${id}`, {
+		// 	headers: {
+		// 		Authorization: `Bearer ${token}`
+		// 	}
+		// });
+		// if(!res.ok) return false;
+
+		try {
+			await privateClient.get(`/api/${endpoint}/${id}`);
+			return true;
+		} catch {
+			return false;
+		}
 	}
 
 	async function handleDeleteSelectedRows() {
@@ -905,12 +931,12 @@
 			selectedRows.length > 0 &&
 			confirm(`Are you sure you want to delete ${selectedRows.length} selected row(s)?`)
 		) {
-			const token = localStorage.getItem('token');
+			const token = localStorage.getItem('actkn');
 			const failedDeletes: number[] = []; 
 
 			for (const idx of selectedRows) {
 				const row = rows[idx];
-				const productId= row["Product ID"] || row.productId || row.id; // might need to change datatype to any to remove error
+				const productId: any = row["Product ID"] || row.productId || row.id; // might need to change datatype to any to remove error
 
 				if (!productId) {
 					console.warn("No product ID found in row:", row);
@@ -919,19 +945,22 @@
 				}
 
 				try {
-					const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteProduct/${productId}`, {
-						method: "DELETE",
-						headers: {
-							"Content-Type": "application/json",
-							Authorization: `Bearer ${token}`
-						}
-					});
+					// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteProduct/${productId}`, {
+					// 	method: "DELETE",
+					// 	headers: {
+					// 		"Content-Type": "application/json",
+					// 		Authorization: `Bearer ${token}`
+					// 	}
+					// });
 
-					if (!res.ok) {
-						const err = await res.json();
-						console.error(`Failed to delete product ${productId}:`, err.message || err);
-						failedDeletes.push(productId);
-					}
+					// if (!res.ok) {
+					// 	const err = await res.json();
+					// 	console.error(`Failed to delete product ${productId}:`, err.message || err);
+					// 	failedDeletes.push(productId);
+					// }
+
+					await privateClient.delete(`/api/deleteProduct/${productId}`);
+
 				} catch (err) {
 					console.error(`Error deleting product ${productId}:`, err);
 					failedDeletes.push(productId);

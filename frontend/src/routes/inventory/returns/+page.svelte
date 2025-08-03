@@ -1,6 +1,7 @@
 <script lang="ts">
-
-    import { PUBLIC_API_BASE_URL } from '$env/static/public';
+	import { PUBLIC_API_BASE_URL } from '$env/static/public';    //replaced by privateClient and publicClient
+    import { publicClient } from '$lib/api/public.client';
+    import privateClient   from '$lib/api/private.client';
     import { items } from '$lib/index.js';
     import { onMount, onDestroy } from 'svelte';
     import { browser } from '$app/environment';
@@ -133,14 +134,23 @@
     async function loadData() {
         // if (!filterStart || !filterEnd) return;
 
-        const url = new URL(`${PUBLIC_API_BASE_URL}/api/dataAnalysisController`);
-        url.searchParams.set('startDate',    filterStart);
-        url.searchParams.set('endDate',      filterEnd);
-        url.searchParams.set('lowThreshold',  lowThreshold.toString());
-        url.searchParams.set('overThreshold', overThreshold.toString());
+        // const url = new URL(`${PUBLIC_API_BASE_URL}/api/dataAnalysisController`);
+        // url.searchParams.set('startDate',    filterStart);
+        // url.searchParams.set('endDate',      filterEnd);
+        // url.searchParams.set('lowThreshold',  lowThreshold.toString());
+        // url.searchParams.set('overThreshold', overThreshold.toString());
 
-        const res     = await fetch(url.toString());
-        const payload = await res.json();
+        // const res     = await fetch(url.toString());
+        // const payload = await res.json();
+
+		const { data: payload } = await privateClient.get(
+			'/api/dataAnalysisController',
+			{ params: {
+				startDate:    filterStart,
+				endDate:      filterEnd,
+				lowThreshold:  lowThreshold,
+				overThreshold: overThreshold
+		}});
 
         // grab *all* of it in one shot:
         turnoverData         = payload.top10;
@@ -506,7 +516,7 @@
 		isLoading = true;
 		
 		try{
-			const token = localStorage.getItem('token');
+			const token = localStorage.getItem('actkn');
 			const endpoint = getApiMap[tab];
 			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}?offset=${offset}&limit=${ITEMS_PER_PAGE}`, {
 				headers: {
@@ -758,7 +768,7 @@
 	// func to handle saving the edit form
 	async function handleEditFormSave() {
 		if (modalRowIndex !== -1) {
-			const token = localStorage.getItem('token');
+			const token = localStorage.getItem('actkn');
 			const endpoint = updateApiMap[selected];
 			const primaryKey = primaryKeyMap[selected];
 			const rowId = rows[modalRowIndex][primaryKey];
@@ -848,7 +858,7 @@
 	// func to handle saving the cell edit form
 	async function handleCellEditFormSave() {
 		if (modalRowIndex !== -1 && modalColumn) {
-			const token = localStorage.getItem('token');
+			const token = localStorage.getItem('actkn');
 			const endpoint = updateApiMap[selected];
 			const primaryKey = primaryKeyMap[selected];
 			const rowId = rows[modalRowIndex][primaryKey]; //primary key: id
@@ -1012,7 +1022,7 @@
 	async function handleAddFormSave() {
 		// Only add if at least one field is filled
 		if (Object.values(addForm).some((v) => v?.trim() !== '')) {
-			const token = localStorage.getItem('token');
+			const token = localStorage.getItem('actkn');
 			const endpoint = createApiMap[selected];
 			try{
 				const finalForm: {[key: string]: any} = {};
@@ -1094,7 +1104,7 @@
 	
 	//validate if id exists
 	async function validate(endpoint: string, id: number){
-		const token = localStorage.getItem('token');
+		const token = localStorage.getItem('actkn');
 		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${id}`, {
 			headers: {
 				Authorization: `Bearer ${token}`
@@ -1110,7 +1120,7 @@
 			selectedRows.length > 0 &&
 			confirm(`Are you sure you want to delete ${selectedRows.length} selected row(s)?`)
 		) {
-			const token = localStorage.getItem('token');
+			const token = localStorage.getItem('actkn');
 			const failedDeletes: number[] = []; 
 
 			for (const idx of selectedRows) {
@@ -1181,7 +1191,7 @@
 		searchError = null;
 
 		try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('actkn');
             const response = await fetch(
                 `${PUBLIC_API_BASE_URL}/api/search?table=${selected}&q=${encodeURIComponent(searchQuery)}`,
                 { headers: { Authorization: `Bearer ${token}` } }

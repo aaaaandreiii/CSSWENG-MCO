@@ -18,12 +18,16 @@ import dashboardRouter from './controller/dashboardController.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 const allowedOrigin = process.env.PUBLIC_API_BASE_URL; 
+const allowed = [
+  'http://localhost:5173',
+  process.env.PUBLIC_API_BASE_URL   //in prod == frontend URL
+];
 
 app.use(cors({
-    origin: 'http://localhost:5173' || allowedOrigin,
+    origin: (origin, cb) =>
+      cb(null, allowed.includes(origin)),
     methods: ['GET','POST','PUT','DELETE','OPTIONS'],
     allowedHeaders: ['Content-Type','Authorization']
-
 })); //enable CORS during development
 app.use(express.json());
 

@@ -1,7 +1,9 @@
 <script lang="ts">
+	// import { PUBLIC_API_BASE_URL } from '$env/static/public';    //replaced by privateClient and publicClient
+    import { publicClient } from '$lib/api/public.client';
+    import privateClient   from '$lib/api/private.client';
 	import { tick, onMount } from 'svelte';
 	import { browser } from '$app/environment';
-	import { PUBLIC_API_BASE_URL } from '$env/static/public';
 	import Chart from 'chart.js/auto';
 
 	// --- DATA STATE ---
@@ -44,25 +46,30 @@
 	};
 	$: salesReportDuration = buttonDurationMap[selectedButton];
 
-	// --- AUTH & URL ---
-	let token: string | null = null;
-	if (browser) {
-		token = localStorage.getItem('token');
-	}
+	// // --- AUTH & URL ---
+	// let token: string | null = null;
+	// if (browser) {
+	// 	token = localStorage.getItem('token');
+	// }
 
   // --- FETCHING ---
   async function fetchDashboard() {
-    const res = await fetch(
-      `${PUBLIC_API_BASE_URL}/api/dashboard?topSellingDuration=${topSellingDuration}`
-      + `&salesReportDuration=${salesReportDuration}`,
-      { headers: token ? { Authorization: `Bearer ${token}` } : {} }
-    );
+	//fix: uses privateClient
+    // const res = await fetch(
+    //   `${PUBLIC_API_BASE_URL}/api/dashboard?topSellingDuration=${topSellingDuration}`
+    //   + `&salesReportDuration=${salesReportDuration}`,
+    //   { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+    // );
+    // if (!res.ok) {
+    //   console.error('Dashboard load error:', await res.text());
+    //   return;
+    // }
+    // const data = await res.json();
 
-    if (!res.ok) {
-      console.error('Dashboard load error:', await res.text());
-      return;
-    }
-    const data = await res.json();
+	const { data } = await privateClient.get(
+      '/api/dashboard',
+      { params: { topSellingDuration, salesReportDuration } }
+    );
 
     stocks = [
       { amount: data.totalStocks,  label: 'Total Stocks',   color:'#AECABD'},

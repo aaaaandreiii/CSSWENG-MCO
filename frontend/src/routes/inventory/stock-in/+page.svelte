@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { PUBLIC_API_BASE_URL } from '$env/static/public';
+	// import { PUBLIC_API_BASE_URL } from '$env/static/public';    //replaced by privateClient and publicClient
+    import { publicClient } from '$lib/api/public.client';
+    import privateClient   from '$lib/api/private.client';
 	import { goto } from '$app/navigation';		
 	import {onMount} from 'svelte';
 
@@ -118,14 +120,19 @@
 	// console.log('Raw API response:', data);
 
 		try{
-			const token = localStorage.getItem('token');
+			//fix: uses privateClient
+			// const token = localStorage.getItem('token');
 			const endpoint = getApiMap[tab];
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}?offset=${offset}&limit=${ITEMS_PER_PAGE}`, {
-				headers: {
-					Authorization: `Bearer ${token}`
-				}
+			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}?offset=${offset}&limit=${ITEMS_PER_PAGE}`, {
+			// 	headers: {
+			// 		Authorization: `Bearer ${token}`
+			// 	}
+			// });
+			// const data = await res.json();
+			const { data } = await privateClient.get(`/api/${endpoint}`, {
+				params: { offset, limit: ITEMS_PER_PAGE }
 			});
-			const data = await res.json();
+
         	console.log('Fetched data:', data);
 
 			let newRows: { [key: string]: string }[] = [];
@@ -281,7 +288,7 @@
 	// func to handle saving the edit form
 	async function handleEditFormSave() {
 		if (modalRowIndex !== -1) {
-			const token = localStorage.getItem('token');
+			const token = localStorage.getItem('actkn');
 			const endpoint = updateApiMap[selected];
 			const primaryKey = primaryKeyMap[selected];
 			const rowId = rows[modalRowIndex][primaryKey];
@@ -331,19 +338,23 @@
 				}
 			}
 			try{
-				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
-					method: 'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`
-					},
-					body: JSON.stringify(finalForm)
-				});
-				// const data = await res.json();
-				if(!res.ok){
-					alert("Error updating!");
-					return;
-				}
+				//fix: uses privateClient
+				// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
+				// 	method: 'PUT',
+				// 	headers: {
+				// 		'Content-Type': 'application/json',
+				// 		Authorization: `Bearer ${token}`
+				// 	},
+				// 	body: JSON.stringify(finalForm)
+				// });
+				// // const data = await res.json();
+				// if(!res.ok){
+				// 	alert("Error updating!");
+				// 	return;
+				// }
+
+				await privateClient.put(`/api/${endpoint}/${rowId}`, finalForm);
+
 				await fetchTabData(selected);
 				
 				// Reset pagination and reload from beginning after edit
@@ -371,7 +382,7 @@
 	// func to handle saving the cell edit form
 	async function handleCellEditFormSave() {
 		if (modalRowIndex !== -1 && modalColumn) {
-			const token = localStorage.getItem('token');
+			const token = localStorage.getItem('actkn');
 			const endpoint = updateApiMap[selected];
 			const primaryKey = primaryKeyMap[selected];
 			const rowId = rows[modalRowIndex][primaryKey]; //primary key: id
@@ -484,19 +495,23 @@
 			// console.log("finalForm", finalForm);
 			// console.log("updatedRow", updatedRow);
 			try{
-				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
-					method: 'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`
-					},
-					body: JSON.stringify(finalForm)
-				});
-				// const data = await res.json();
-				if(!res.ok){
-					alert("Error updating!");
-					return;
-				}
+				//fix: uses privateClient
+				// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
+				// 	method: 'PUT',
+				// 	headers: {
+				// 		'Content-Type': 'application/json',
+				// 		Authorization: `Bearer ${token}`
+				// 	},
+				// 	body: JSON.stringify(finalForm)
+				// });
+				// // const data = await res.json();
+				// if(!res.ok){
+				// 	alert("Error updating!");
+				// 	return;
+				// }
+
+				await privateClient.put(`/api/${endpoint}/${rowId}`, finalForm);
+
 				await fetchTabData(selected);
 		
 				// Reset pagination and reload from beginning after edit
@@ -534,7 +549,7 @@
 
 async function handleAddFormSave() {
 	if (Object.values(addForm).some((v) => v?.trim() !== '')) {
-		const token = localStorage.getItem('token');
+		const token = localStorage.getItem('actkn');
 		const endpoint = createApiMap[selected];
 		const finalForm: { [key: string]: any } = {};
 		const varKey = keyMap[selected];
@@ -620,21 +635,24 @@ async function handleAddFormSave() {
 		console.log("[DEBUG] Final form to submit:", finalForm);
 
 		try {
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`
-				},
-				body: JSON.stringify(finalForm)
-			});
+			//fix: uses privateClient
+			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
+			// 	method: 'POST',
+			// 	headers: {
+			// 		'Content-Type': 'application/json',
+			// 		Authorization: `Bearer ${token}`
+			// 	},
+			// 	body: JSON.stringify(finalForm)
+			// });
 
-			if (!res.ok) {
-				const error = await res.json();
-				alert("Error creating: " + (error.message || res.statusText));
-				console.error("[ERROR] Backend response:", error);
-				return;
-			}
+			// if (!res.ok) {
+			// 	const error = await res.json();
+			// 	alert("Error creating: " + (error.message || res.statusText));
+			// 	console.error("[ERROR] Backend response:", error);
+			// 	return;
+			// }
+
+			const res = await privateClient.post(`/api/${endpoint}`, finalForm);
 
 			await fetchTabData(selected);
 			currentOffset = 0;
@@ -653,15 +671,20 @@ async function handleAddFormSave() {
 
 	//validate if id exists
 	async function validate(endpoint: string, id: number){
-		const token = localStorage.getItem('token');
-		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${id}`, {
-			headers: {
-				Authorization: `Bearer ${token}`
-			}
-		});
-		if(!res.ok) return false;
+		// const token = localStorage.getItem('token');
+		// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${id}`, {
+		// 	headers: {
+		// 		Authorization: `Bearer ${token}`
+		// 	}
+		// });
+		// if(!res.ok) return false;
 		// const data = await res.json();
-		return true;
+		try {
+			await privateClient.get(`/api/${endpoint}/${id}`);
+			return true;
+		} catch {
+			return false;
+		}
 	}
 
 	async function handleDeleteSelectedRows() {
@@ -669,7 +692,7 @@ async function handleAddFormSave() {
 
 		if (!confirm(`Delete ${selectedRows.length} selected row(s)?`)) return;
 
-		const token = localStorage.getItem('token');
+		const token = localStorage.getItem('actkn');
 		const endpoint = deleteApiMap[selected];
 		const primaryKey = primaryKeyMap[selected];
 		const failedDeletes: number[] = [];
@@ -681,18 +704,20 @@ async function handleAddFormSave() {
 
 		for (const rowId of rowIds) {
 			try {
-				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
-					method: "DELETE",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${token}`
-					}
-				});
-				if (!res.ok) {
-					const err = await res.json().catch(() => ({ message: res.statusText }));
-					console.error(`Failed to delete row ${rowId}:`, err.message);
-					failedDeletes.push(rowId);
-				}
+				//fix: uses privateClient
+				// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
+				// 	method: "DELETE",
+				// 	headers: {
+				// 		"Content-Type": "application/json",
+				// 		Authorization: `Bearer ${token}`
+				// 	}
+				// });
+				// if (!res.ok) {
+				// 	const err = await res.json().catch(() => ({ message: res.statusText }));
+				// 	console.error(`Failed to delete row ${rowId}:`, err.message);
+				// 	failedDeletes.push(rowId);
+				// }
+				await privateClient.delete(`/api/${endpoint}/${rowId}`);
 			} catch (err) {
 				console.error(`Error deleting row ${rowId}:`, err);
 				failedDeletes.push(rowId);

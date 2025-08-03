@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { PUBLIC_API_BASE_URL } from '$env/static/public';
+	// import { PUBLIC_API_BASE_URL } from '$env/static/public';    //replaced by privateClient and publicClient
+    import { publicClient } from '$lib/api/public.client';
+    import privateClient   from '$lib/api/private.client';
 	import { goto } from '$app/navigation';	
 	import { onMount } from 'svelte';
 
@@ -60,11 +62,14 @@
 		if (isLoading) return;
 		isLoading = true;
 		try {
-			const token = localStorage.getItem('token');
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getAuditJoinedInformation?offset=${offset}&limit=${ITEMS_PER_PAGE}`, {
-				headers: { Authorization: `Bearer ${token}` }
+			// const token = localStorage.getItem('token');
+			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getAuditJoinedInformation?offset=${offset}&limit=${ITEMS_PER_PAGE}`, {
+			// 	headers: { Authorization: `Bearer ${token}` }
+			// });
+			// const data = await res.json();
+			const { data } = await privateClient.get('/api/getAuditJoinedInformation', {
+				params: { offset, limit: ITEMS_PER_PAGE }
 			});
-			const data = await res.json();
 			const newRows = data.auditJoinedInformation.map((item: any) => ({
 				'Audit ID': item.auditId,
 				'Action Type': item.actionType,

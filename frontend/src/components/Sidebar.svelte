@@ -1,7 +1,9 @@
 <script lang="ts">
+	// import { PUBLIC_API_BASE_URL } from '$env/static/public';    //replaced by privateClient and publicClient
+    import { publicClient } from '$lib/api/public.client';
+    import privateClient   from '$lib/api/private.client';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { PUBLIC_API_BASE_URL } from '$env/static/public';
 	import { goto } from '$app/navigation';
 
 	let selected = 'dashboard';
@@ -67,11 +69,15 @@
 
 	onMount(async () => {
 		try {
-			const token = localStorage.getItem('token');
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getUserProfile`, {
-				headers: { Authorization: `Bearer ${token}` }
-			});
-			const data = await res.json();
+			//fix: uses privateClient
+			// const token = localStorage.getItem('token');
+			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getUserProfile`, {
+			// 	headers: { Authorization: `Bearer ${token}` }
+			// });
+			// const data = await res.json();
+
+			const { data } = await privateClient.get('/api/getUserProfile');
+
 			userProfile.set({
 				userId: data.user.userId,
 				username: data.user.username,
@@ -89,14 +95,18 @@
 
 	async function handleLogout(){
 		try{
-			const token = localStorage.getItem('token');
-			//log audit
-			await fetch(`${PUBLIC_API_BASE_URL}/api/logout`, {
-				method: 'POST',
-				headers: { 
-					Authorization: `Bearer ${token}` 
-				}
-			});
+			//fix: uses privateClient
+			// const token = localStorage.getItem('token');
+			// //log audit
+			// await fetch(`${PUBLIC_API_BASE_URL}/api/logout`, {
+			// 	method: 'POST',
+			// 	headers: { 
+			// 		Authorization: `Bearer ${token}` 
+			// 	}
+			// });
+
+			//log audit & clear session
+		    await privateClient.post('/api/logout');
 			localStorage.removeItem('token');
 			goto('/login');
 		}catch(err){

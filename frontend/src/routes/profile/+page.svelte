@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { PUBLIC_API_BASE_URL } from '$env/static/public';
+	// import { PUBLIC_API_BASE_URL } from '$env/static/public';    //replaced by privateClient and publicClient
+    import { publicClient } from '$lib/api/public.client';
+    import privateClient   from '$lib/api/private.client';
 	import {onMount} from 'svelte';
 	import {userProfile} from '$lib/stores/user';
 
@@ -32,14 +34,18 @@
 
 	async function fetchProfile(){
 		try{
+			//fix: uses privateClient
 			// TODO for backend: ensure getUserProfile API returns correct user data structure
-			const token = localStorage.getItem('token');
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getUserProfile`, {
-				headers: {
-					Authorization: `Bearer ${token}`
-				}
-			});
-			const data = await res.json();
+			// const token = localStorage.getItem('token');
+			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getUserProfile`, {
+			// 	headers: {
+			// 		Authorization: `Bearer ${token}`
+			// 	}
+			// });
+			// const data = await res.json();
+
+			const { data } = await privateClient.get('/api/getUserProfile');
+
 			details = [{
 				userId: Number(data.user.userId),
 				name: data.user.fullName,
@@ -58,13 +64,17 @@
 
 	async function fetchUsers(){
 		try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getUsers`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            const data = await res.json();
+			//fix: uses privateClient
+            // const token = localStorage.getItem('token');
+            // const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getUsers`, {
+            //     headers: {
+            //         Authorization: `Bearer ${token}`
+            //     }
+            // });
+            // const data = await res.json();
+
+			const { data } = await privateClient.get('/api/getUsers');
+
             console.log('Fetched data:', data);
             list = data.users.map((item: any) => ({
                 userId: item.userId,
@@ -230,20 +240,24 @@
 			}
 
 			try{
-				const token = localStorage.getItem('token');
-				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/updateProfile`, {
-					method:  'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization:   `Bearer ${token}`
-					},
-					body: JSON.stringify(payload)
-				});
-				// const result = await res.json();
-				if(!res.ok){
-					alert("Error updating!");
-					return;
-				}
+				//fix: uses privateClient
+				// const token = localStorage.getItem('token');
+				// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/updateProfile`, {
+				// 	method:  'PUT',
+				// 	headers: {
+				// 		'Content-Type': 'application/json',
+				// 		Authorization:   `Bearer ${token}`
+				// 	},
+				// 	body: JSON.stringify(payload)
+				// });
+				// // const result = await res.json();
+				// if(!res.ok){
+				// 	alert("Error updating!");
+				// 	return;
+				// }
+
+				await privateClient.put('/api/updateProfile', payload);
+
 				await fetchProfile();
 				//update sidebar info
 				userProfile.set({

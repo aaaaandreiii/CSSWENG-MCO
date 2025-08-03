@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { PUBLIC_API_BASE_URL } from '$env/static/public';
+	// import { PUBLIC_API_BASE_URL } from '$env/static/public';    //replaced by privateClient and publicClient
+    import { publicClient } from '$lib/api/public.client';
+    import privateClient   from '$lib/api/private.client';
 	import { userProfile } from '$lib/stores/user';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
@@ -100,11 +102,15 @@
 
 	async function fetchUsers() {
 		try {
-			const token = localStorage.getItem('token');
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getUsers`, {
-			headers: { Authorization: `Bearer ${token}` }
-			});
-			const data = await res.json();
+			//fix: uses privateClient
+			// const token = localStorage.getItem('token');
+			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getUsers`, {
+			// headers: { Authorization: `Bearer ${token}` }
+			// });
+			// const data = await res.json();
+
+			const { data } = await privateClient.get('/api/getUsers');
+
         	console.log('Fetched data:', data);
 			details = data.users.map((item: any) => ({
 				userId: Number(item.userId),
@@ -403,23 +409,26 @@
 		};
 
 		try{
-			//TODO: Backend API call to create user
-			const token = localStorage.getItem('token');
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/createUser`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`
-				},
-				body: JSON.stringify(payload)
-			});
+			//fix: uses privateClient
+			// const token = localStorage.getItem('token');
+			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/createUser`, {
+			// 	method: 'POST',
+			// 	headers: {
+			// 		'Content-Type': 'application/json',
+			// 		Authorization: `Bearer ${token}`
+			// 	},
+			// 	body: JSON.stringify(payload)
+			// });
 
-			const result = await res.json();
-			if (!res.ok) {
-				addError = result.message || 'Failed to create user.';
-				showAck(addError);
-				return;
-			}
+			// const result = await res.json();
+			// if (!res.ok) {
+			// 	addError = result.message || 'Failed to create user.';
+			// 	showAck(addError);
+			// 	return;
+			// }
+
+			//no need to do do above bc axios throws 4__ or 5__ error if unsuccessful
+			const { data: result } = await privateClient.post('/api/createUser', payload);
 
 			// on success, close the modal
 			closeAddModal();
@@ -490,23 +499,28 @@
 		}
 
 		try{
-			// TODO for backend: API call to update user
-			const token = localStorage.getItem('token');
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/updateUser/${payload.userId}`, {
-				method: 'PUT',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`
-				},
-				body: JSON.stringify(payload)
-			});
+			// fix: uses privateClient
+			// const token = localStorage.getItem('token');
+			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/updateUser/${payload.userId}`, {
+			// 	method: 'PUT',
+			// 	headers: {
+			// 		'Content-Type': 'application/json',
+			// 		Authorization: `Bearer ${token}`
+			// 	},
+			// 	body: JSON.stringify(payload)
+			// });
 
-			// TODO for backend: if response = not ok, return error message
-			const result = await res.json();
-			if(!res.ok){
-				editError = result.message || 'Failed to update user.';
-				return;
-			}
+			// const result = await res.json();
+			// if(!res.ok){
+			// 	editError = result.message || 'Failed to update user.';
+			// 	return;
+			// }
+
+			const { data: result } = await privateClient.put(
+				`/api/updateUser/${payload.userId}`,
+				payload
+			);
+
 			//update sidebar info
 			const currentUser = get(userProfile);
 			if(currentUser?.userId === payload.userId){
@@ -573,22 +587,28 @@
 		// };
 
 		try{
-			const token = localStorage.getItem('token');
+			// const token = localStorage.getItem('token');
 			for(const payload of updates){
-				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/updateUser/${payload.userId}`, {
-					method: 'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`
-					},
-					body: JSON.stringify(payload)
-				});
-				// TODO for backend: if response = not ok, return error message
-				const result = await res.json();
-				if(!res.ok){
-					alert('Failed to update role.');
-					return;
-				}
+				// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/updateUser/${payload.userId}`, {
+				// 	method: 'PUT',
+				// 	headers: {
+				// 		'Content-Type': 'application/json',
+				// 		Authorization: `Bearer ${token}`
+				// 	},
+				// 	body: JSON.stringify(payload)
+				// });
+				// // TODO for backend: if response = not ok, return error message
+				// const result = await res.json();
+				// if(!res.ok){
+				// 	alert('Failed to update role.');
+				// 	return;
+				// }
+
+				await privateClient.put(
+					`/api/updateUser/${payload.userId}`,
+					payload
+				);
+
 				//update sidebar info
 				const currentUser = get(userProfile);
 				if(currentUser?.userId === payload.userId){
@@ -613,22 +633,23 @@
 
 	async function handleDeleteAccount() {
 		try{
-			// TODO for backend: API call to delete user
-			const token = localStorage.getItem('token');
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteUser/${deleteUserId}`, {
-				method: 'DELETE',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`
-				}
-			});
+			//fix: uses privateClient
+			// const token = localStorage.getItem('token');
+			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteUser/${deleteUserId}`, {
+			// 	method: 'DELETE',
+			// 	headers: {
+			// 		'Content-Type': 'application/json',
+			// 		Authorization: `Bearer ${token}`
+			// 	}
+			// });
 			
-			// TODO for backend: if response = not ok, return error message
-			const result = await res.json();
-			if(!res.ok){
-				showAck(result.message || 'Failed to delete user.');
-				return;
-			}
+			// const result = await res.json();
+			// if(!res.ok){
+			// 	showAck(result.message || 'Failed to delete user.');
+			// 	return;
+			// }
+
+			await privateClient.delete(`/api/deleteUser/${deleteUserId}`);
 
 			// Success: close modal, reload list
 			closeDeleteModal();
@@ -669,14 +690,18 @@
 		isLoading = true;
 		
 		try{
-			const token = localStorage.getItem('token');
+			// const token = localStorage.getItem('token');
 			const endpoint = getApiMap[tab];
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}?offset=${offset}&limit=${ITEMS_PER_PAGE}`, {
-				headers: {
-					Authorization: `Bearer ${token}`
-				}
+			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}?offset=${offset}&limit=${ITEMS_PER_PAGE}`, {
+			// 	headers: {
+			// 		Authorization: `Bearer ${token}`
+			// 	}
+			// });
+			// const data = await res.json();
+
+			const { data } = await privateClient.get(`/api/${endpoint}`, {
+				params: { offset, limit: ITEMS_PER_PAGE }
 			});
-			const data = await res.json();
         	console.log('Fetched data:', data);
 
 			let newRows: { [key: string]: string }[] = [];
@@ -738,14 +763,20 @@
 		searchError = null;
 
 		try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(
-                `${PUBLIC_API_BASE_URL}/api/search?table=${selectedTabType}&q=${encodeURIComponent(searchQuery)}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            if (!response.ok) { throw new Error('Search failed'); }
+			//fix: uses privateClient
+            // const token = localStorage.getItem('token');
+            // const response = await fetch(
+            //     `${PUBLIC_API_BASE_URL}/api/search?table=${selectedTabType}&q=${encodeURIComponent(searchQuery)}`,
+            //     { headers: { Authorization: `Bearer ${token}` } }
+            // );
+            // if (!response.ok) { throw new Error('Search failed'); }
+            // const data = await response.json();
 
-            const data = await response.json();
+			const { data } = await privateClient.get('/api/search', {
+				params: { table: selectedTabType, q: searchQuery }
+			});
+
+
 			const items = Array.isArray(data) ? data : data.products;
 			rows = items.map(item => ({
 				'Product ID':         item.productId,

@@ -5,7 +5,9 @@
 	import Sidebar from "../components/Sidebar.svelte";
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
-	import { PUBLIC_API_BASE_URL } from '$env/static/public';
+	// import { PUBLIC_API_BASE_URL } from '$env/static/public';    //replaced by privateClient and publicClient
+    import { publicClient } from '$lib/api/public.client';
+    import privateClient   from '$lib/api/private.client';
 	import { onMount } from 'svelte';
 	let { children } = $props();
 	
@@ -35,14 +37,19 @@
 	async function handleExpiredLogout(token: string){
 		// notify server (optional)
 		try {
-			await fetch(`${PUBLIC_API_BASE_URL}/api/logoutExpired`, {
-				method: 'POST',
-				headers: { Authorization: `Bearer ${token}` }
-			});
+			//fix: uses privateClient
+			// await fetch(`${PUBLIC_API_BASE_URL}/api/logoutExpired`, {
+			// 	method: 'POST',
+			// 	headers: { Authorization: `Bearer ${token}` }
+			// });
+			await privateClient.post('/api/logoutExpired');
 		} catch(err) {
 			console.error("Error notifying expired token: ", err);
 		}
-		localStorage.removeItem('token');
+		// localStorage.removeItem('token');
+		localStorage.removeItem('actkn');
+   		localStorage.removeItem('reftkn');
+
 		// show our custom modal instead of immediate redirect
 		showSessionExpired.set(true);
 	}
@@ -53,14 +60,14 @@
 	}
 
 	onMount(() => {
-		const token = localStorage.getItem('token');
+		const token = localStorage.getItem('actkn');
 		if(token && isTokenExpired(token)){
-			handleExpiredLogout(token)
+			handleExpiredLogout(token);
 			return;	
 		}
 
 		const check = setInterval(() => {
-			const token = localStorage.getItem('token');
+			const token = localStorage.getItem('actkn');
 			if(token && isTokenExpired(token)){
 				clearInterval(check);
 				handleExpiredLogout(token);
@@ -73,7 +80,8 @@
 	// Testing function to create token with custom expiry (development only)
 	if (dev && browser) {
 		(window as any).setTokenExpiry = (minutesFromNow: number) => {
-			const currentToken = localStorage.getItem('token');
+			//fix: helper function only edits actkn and not the token directly
+			const currentToken = localStorage.getItem('actkn');
 			if (!currentToken) {
 				console.log('No token found');
 				return;
@@ -87,7 +95,7 @@
 				payload.exp = Math.floor(Date.now() / 1000) + (minutesFromNow * 60);
 				
 				const newToken = parts[0] + '.' + btoa(JSON.stringify(payload)) + '.' + parts[2];
-				localStorage.setItem('token', newToken);
+				localStorage.setItem('actkn', newToken);
 				
 				console.log(`Token expiry set to ${minutesFromNow} minutes from now`);
 				console.log(`Expires at: ${new Date(payload.exp * 1000).toLocaleString()}`);

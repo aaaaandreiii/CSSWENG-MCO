@@ -1,7 +1,9 @@
 <script lang="ts">
+  // import { PUBLIC_API_BASE_URL } from '$env/static/public';    //replaced by privateClient and publicClient
+  import { publicClient } from '$lib/api/public.client';
+  import privateClient   from '$lib/api/private.client';
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
-  import { PUBLIC_API_BASE_URL } from '$env/static/public';
 
   let q = '';
   let results: Record<string, any[]> = {};
@@ -16,13 +18,20 @@
     loading = true;
     error = '';
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(
-        `${PUBLIC_API_BASE_URL}/api/search?q=${encodeURIComponent(q)}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+      //fix: uses privateClient
+      // const token = localStorage.getItem('token');
+      // const res = await fetch(
+      //   `${PUBLIC_API_BASE_URL}/api/search?q=${encodeURIComponent(q)}`,
+      //   { headers: { Authorization: `Bearer ${token}` } }
+      // );
+      // if (!res.ok) throw new Error(await res.text());
+      // results = await res.json();
+
+      const { data } = await privateClient.get(
+        '/api/search',
+        { params: { q } }
       );
-      if (!res.ok) throw new Error(await res.text());
-      results = await res.json();
+      results = data;
     } catch (e) {
       console.error(e);
       error = 'Failed to load search results.';

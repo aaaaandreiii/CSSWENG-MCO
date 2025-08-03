@@ -1,5 +1,7 @@
 <script lang="ts">
-    import { PUBLIC_API_BASE_URL } from '$env/static/public';
+    // import { PUBLIC_API_BASE_URL } from '$env/static/public';    //replaced by privateClient and publicClient
+    import { publicClient } from '$lib/api/public.client';
+    import privateClient   from '$lib/api/private.client';
     import { items } from '$lib/index.js';
     import { onMount, onDestroy } from 'svelte';
     import { browser } from '$app/environment';
@@ -215,16 +217,24 @@
 
     // ——— Main loader ———
     async function loadData() {
-        // if (!filterStart || !filterEnd) return;
+        
+        //fixed for deployment; uses privateClient instead of PUBLIC_API_BASE_URL
+            // const url = new URL(`${PUBLIC_API_BASE_URL}/api/dataAnalysisController`);
+            // url.searchParams.set('startDate',    filterStart);
+            // url.searchParams.set('endDate',      filterEnd);
+            // url.searchParams.set('lowThreshold',  lowThreshold.toString());
+            // url.searchParams.set('overThreshold', overThreshold.toString());
+            // const res     = await fetch(url.toString());
+            // const payload = await res.json();
 
-        const url = new URL(`${PUBLIC_API_BASE_URL}/api/dataAnalysisController`);
-        url.searchParams.set('startDate',    filterStart);
-        url.searchParams.set('endDate',      filterEnd);
-        url.searchParams.set('lowThreshold',  lowThreshold.toString());
-        url.searchParams.set('overThreshold', overThreshold.toString());
-
-        const res     = await fetch(url.toString());
-        const payload = await res.json();
+        const { data: payload } = await privateClient.get('/api/dataAnalysisController', {
+            params: {
+            startDate:    filterStart,
+            endDate:      filterEnd,
+            lowThreshold,
+            overThreshold
+            }
+        });
 
         // grab *all* of it in one shot:
         turnoverData         = payload.top10;
@@ -331,15 +341,22 @@
     async function placeOrder() {
         if (!orderProduct) return;
         try {
-            const res = await fetch(`${PUBLIC_API_BASE_URL}/api/reorders`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                productId: orderProduct.productId,
-                quantity: orderQty
-            })
+            //fixed for deployment; uses privateClient instead
+            // const res = await fetch(`${PUBLIC_API_BASE_URL}/api/reorders`, {
+            // method: 'POST',
+            // headers: { 'Content-Type': 'application/json' },
+            // body: JSON.stringify({
+            //     productId: orderProduct.productId,
+            //     quantity: orderQty
+            // })
+            // });
+            // if (!res.ok) throw new Error(await res.text());
+
+            await privateClient.post('/api/reorders', {
+            productId: orderProduct.productId,
+            quantity:  orderQty
             });
-            if (!res.ok) throw new Error(await res.text());
+
             // success UX
             alert(`Order placed for ${orderQty} × ${orderProduct.productName}`);
             showOrderModal = false;

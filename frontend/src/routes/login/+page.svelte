@@ -1,5 +1,8 @@
 <script>
-	import { PUBLIC_API_BASE_URL } from '$env/static/public';
+	// import { PUBLIC_API_BASE_URL } from '$env/static/public';    //replaced by privateClient and publicClient
+    import { publicClient } from '$lib/api/public.client';
+    import privateClient   from '$lib/api/private.client';
+	import { goto } from '$app/navigation';
 
 	let username = '';
 	let password = '';
@@ -16,25 +19,35 @@
 		}
 
 		try {
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/login`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({username, password})
-			});
-			const data = await res.json();
-			if(res.ok){
-				localStorage.setItem('token', data.token);
-				loginError = '';
-				window.location.href = '/dashboard';
-			}
-			else {
-				loginError = data?.message;
-			}
+			//fix: uses publicClient
+			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/login`, {
+			// 	method: 'POST',
+			// 	headers: {
+			// 		'Content-Type': 'application/json'
+			// 	},
+			// 	body: JSON.stringify({username, password})
+			// });
+			// const data = await res.json();
+			// if(res.ok){
+			// 	localStorage.setItem('token', data.token);
+			// 	loginError = '';
+			// 	window.location.href = '/dashboard';
+			// }
+			// else {
+			// 	loginError = data?.message;
+			// }
+
+			const { data } = await publicClient.post('/api/login', { username, password });
+			localStorage.setItem('actkn', data.token);
+			localStorage.setItem('reftkn', data.refreshToken);
+
+
+			loginError = '';
+			goto('/dashboard');
+
 		} catch (err) {
 			console.error('Login error:', err);
-			loginError = 'An error occurred. Please try again.';
+			loginError = err.response?.data?.message || 'An error occurred. Please try again.';
 		}
 	}
 </script>

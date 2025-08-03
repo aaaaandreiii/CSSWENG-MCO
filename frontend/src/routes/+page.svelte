@@ -4,7 +4,7 @@
 
 	onMount(() => {
 		// Check if user has a valid token
-		const token = localStorage.getItem('token');
+		const token = localStorage.getItem('actkn');
 		if (token) {
 			// If logged in, go to dashboard
 			goto('/dashboard');
