@@ -726,7 +726,7 @@ async function handleDeleteSelectedRows() {
 			class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold
 				{selectedRows.length === 0
 				? 'cursor-not-allowed bg-gray-400 text-gray-200'
-				: 'red1 text-white hover:bg-red-700'}"
+				: 'bg-red-600 text-white hover:bg-red-800'}"
 			disabled={selectedRows.length === 0}
 			on:click={handleDeleteSelectedRows}
 		>

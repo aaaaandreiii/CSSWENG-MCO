@@ -674,7 +674,7 @@ async function handleDeleteSelected() {
         {(selectedIndividualRows.size === 0 && selectedOrders.size === 0)
           ? 'cursor-not-allowed bg-gray-400 text-gray-200'
           : isLoading ? 'bg-gray-500 text-white' 
-          : 'red1 text-white hover:bg-red-700'}"
+          : 'bg-red-600 text-white hover:bg-red-800'}"
       disabled={selectedIndividualRows.size === 0 && selectedOrders.size === 0 || isLoading}
       on:click={handleDeleteSelected}
     >
@@ -791,7 +791,7 @@ async function handleDeleteSelected() {
 
   <!-- Add Order Modal -->
   {#if showModal && isAddForm}
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="modal-backdrop backdrop-blur-sm fixed inset-0 flex items-center justify-center z-50" style="background-color: rgba(10, 10, 10, 0.5);">
       <div class="bg-white rounded-lg p-6 w-[500px] max-w-full">
         <h2 class="text-xl font-bold mb-4">Add New Order</h2>
         
@@ -835,7 +835,7 @@ async function handleDeleteSelected() {
 
   <!-- Edit Cell Modal -->
   {#if showModal && isCellEditForm}
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="modal-backdrop backdrop-blur-sm fixed inset-0 flex items-center justify-center z-50" style="background-color: rgba(10, 10, 10, 0.5);">
       <div class="bg-white rounded-lg p-6 w-[500px] max-w-full">
         <h2 class="text-xl font-bold mb-4">Edit {modalColumn}</h2>
         
