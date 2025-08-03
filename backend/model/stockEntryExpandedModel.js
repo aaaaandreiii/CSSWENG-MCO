@@ -65,40 +65,6 @@ export async function createStockEntry(data) {
 	}
 }
 
-export async function updateStockEntry(entryId, data) {
-	const sql = `
-		UPDATE StockEntry
-		SET
-			productId = ?,
-			branchName = ?,
-			dateReceived = ?,
-			quantityReceived = ?,
-			deliveryReceiptNumber = ?,
-			receivedBy = ?,
-			lastEditedUser = ?,
-			lastEditedDate = ?,
-			deleteFlag = ?
-		WHERE entryId = ?
-	`;
-
-	const values = [
-		data.productId ?? null,
-		data.branchName ?? null,
-		data.dateReceived ?? null,
-		data.quantityReceived ?? null,
-		data.deliveryReceiptNumber ?? null,
-		data.receivedBy ?? null,
-		data.lastEditedUser ?? null,
-		data.lastEditedDate ?? null,
-		data.deleteFlag ?? 0,
-		entryId
-	];
-
-	const [result] = await db.query(sql, values);
-	return result;
-}
-
-
 export async function deleteStockEntryById(entryId) {
 	try {
 		console.log(`[DEBUG] Deleting entryId = ${entryId}`);
@@ -162,14 +128,14 @@ export async function updateStockEntry(entryId, data) {
 	`;
 
 	const values = [
-		data.branchName,
-		data.dateReceived,
-		data.quantityReceived,
-		data.deliveryReceiptNumber,
-		data.receivedBy,
-		data.productId,
-		data.lastEditedUser,
-		data.lastEditedDate,
+		data.productId ?? null,
+		data.branchName ?? null,
+		data.dateReceived ?? null,
+		data.quantityReceived ?? null,
+		data.deliveryReceiptNumber ?? null,
+		data.receivedBy ?? null,
+		data.lastEditedUser ?? null,
+		data.lastEditedDate ?? null,
 		data.deleteFlag ?? 0,
 		entryId
 	];
