@@ -164,6 +164,28 @@ body.login-page {
 	color: black;
 }
 
+#username {
+	padding: 2%;
+	border-bottom: 2px solid;
+	border-color: #eeeeee;
+	background-color: transparent;
+	width: 100%;
+	margin: 1%;
+	justify-self: center;
+	color: black;
+}
+
+#password {
+	padding: 2%;
+	border-bottom: 2px solid;
+	border-color: #eeeeee;
+	background-color: transparent;
+	width: 100%;
+	margin: 1%;
+	justify-self: center;
+	color: black;
+}
+
 #white_box {
 	background-color: white;
 	width: 35%;
