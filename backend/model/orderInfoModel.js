@@ -62,6 +62,16 @@ export async function getOrderInfoById(orderInfoId){
     }
 }
 
+// export async function productExistsInOrder(orderId, productId) {
+// 	const sql = `
+// 		SELECT 1 FROM OrderInfo
+// 		WHERE orderId = ? AND productId = ? AND deleteFlag = 0
+// 		LIMIT 1
+// 	`;
+// 	const [results] = await db.query(sql, [orderId, productId]);
+// 	return results.length > 0;
+// }
+
 //UPDATE
 // export function updateOrderInfoById(orderInfoId, updatedObject){
 export async function updateOrderInfoById(orderInfoId, updatedObject){

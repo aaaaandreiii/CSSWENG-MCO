@@ -18,11 +18,11 @@
 
 	const getApiMap: Record<TabType, string> = {
 		Product: 'getProducts',
-		Orders: 'getOrders',
+		Orders: 'getMergeOrders',
 		OrderInfo: 'getOrderInfo',
 		StockEntry: 'getStockEntries',
 		StockWithdrawal: 'getStockWithdrawals',
-		ReturnExchange: 'getReturnExchanges',
+		ReturnExchange: 'getMergeReturnExchanges',
 		ReturnExchangelnfo: 'getReturnExchangeInfo'
 	};
 
@@ -38,11 +38,11 @@
 
 	const updateApiMap: Record<TabType, string> = {
 		Product: 'updateProduct',
-		Orders: 'updateOrder',
+		Orders: 'updateMergedOrder',
 		OrderInfo: 'updateOrderInfo',
 		StockEntry: 'updateStockEntry',
 		StockWithdrawal: 'updateStockWithdrawal',
-		ReturnExchange: 'updateReturnExchange',
+		ReturnExchange: 'updateMergedReturn',
 		ReturnExchangelnfo: 'updateReturnExchangeInfo'
 	};
 
@@ -75,7 +75,10 @@
 			'Customer': 'customer',
 			'Handled By': 'handledBy',
 			'Payment Method': 'paymentMethod',
-			'Payment Status': 'paymentStatus'
+			'Payment Status': 'paymentStatus',
+			'Quantity': 'quantity',
+			'Product ID': 'productId',
+			'Unit Price At Purchase': 'unitPriceAtPurchase'
 		},
 		OrderInfo: {
 			'Quantity': 'quantity',
@@ -101,7 +104,13 @@
 			'Transaction Status': 'transactionStatus',
 			'Order ID': 'orderId',
 			'Handled By': 'handledBy',
-			'Approved By': 'approvedBy'
+			'Approved By': 'approvedBy',
+			'Returned Product ID': 'returnedProductId',
+			'Returned Quantity': 'returnedQuantity',
+			'Exchange Product ID': 'exchangeProductId',
+			'Exchange Quantity': 'exchangeQuantity',
+			'Reason': 'reason',
+			'Return Type': 'returnType'
 		},
 		ReturnExchangelnfo: {
 			'Returned Product ID': 'returnedProductId',
@@ -117,7 +126,8 @@
 	const idValidationMap: Record<TabType, {field: string; endpoint: string}[]> = {
 		Product: [],
 		Orders: [
-			{field: 'Handled By', endpoint: 'getUserById'}
+			{field: 'Handled By', endpoint: 'getUserById'},
+			{field: 'Product ID', endpoint: 'getProductById'}
 		],
 		OrderInfo: [
 			{field: 'Order ID', endpoint: 'getOrderById'},
@@ -135,7 +145,9 @@
 		ReturnExchange: [
 			{field: 'Order ID', endpoint: 'getOrderById'},
 			{field: 'Handled By', endpoint: 'getUserById'},
-			{field: 'Approved By', endpoint: 'getUserById'}
+			{field: 'Approved By', endpoint: 'getUserById'},
+			{field: 'Returned Product ID', endpoint: 'getProductById'},
+			{field: 'Exchange Product ID', endpoint: 'getProductById'}
 		],
 		ReturnExchangelnfo: [
 			{field: 'Returned Product ID', endpoint: 'getProductById'},
@@ -179,9 +191,26 @@
 			'Payment Method',
 			'Payment Status',
 			'Date Ordered',
-			'Last Edited Date',
-			'Last Edited User'
+			'Order Last Edited Date',
+			'Order Last Edited User',
+			'Order Info ID',
+			'Quantity',
+			'Product ID',
+			'Unit Price At Purchase',
+			'Info Last Edited Date',
+			'Info Last Edited User'
 		],
+		// Orders1: [
+		// 	'Order ID',
+		// 	'Discount',
+		// 	'Customer',
+		// 	'Handled By',
+		// 	'Payment Method',
+		// 	'Payment Status',
+		// 	'Date Ordered',
+		// 	'Last Edited Date',
+		// 	'Last Edited User'
+		// ],
 		OrderInfo: [
 			'Order Info ID',
 			'Quantity',
@@ -220,8 +249,17 @@
 			'Order ID',
 			'Handled By',
 			'Approved By',
-			'Last Edited Date',
-			'Last Edited User'
+			'Transaction Last Edited Date',
+			'Transaction Last Edited User',
+			'Detail ID',
+			'Returned Product ID',
+			'Returned Quantity',
+			'Exchange Product ID',
+			'Exchange Quantity',
+			'Reason',
+			'Return Type',
+			'Detail Last Edited Date',
+			'Detail Last Edited User'
 		],
 		ReturnExchangelnfo: [
 			'Detail ID',
@@ -367,10 +405,23 @@
 					'Date Ordered': new Date(item.dateOrdered).toLocaleDateString('en-PH', {
 						timeZone: 'Asia/Manila'
 					}),
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
+					'Order Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
 						timeZone: 'Asia/Manila'
 					}),
-					'Last Edited User': (() => {
+					'Order Last Edited User': (() => {
+						const user = userDetails.find(u => u.userId === item.lastEditedUser);
+						if (!user || user.deleteFlag) return `Deleted User: ${item.lastEditedUser}`;
+						return item.lastEditedUser;
+					})(),
+					'Order Info ID': item.orderInfoId,
+					'Quantity': item.quantity,
+					// 'Order ID': item.orderId,
+					'Product ID': item.productId,
+					'Unit Price At Purchase': item.unitPriceAtPurchase,
+					'Info Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
+						timeZone: 'Asia/Manila'
+					}),
+					'Info Last Edited User': (() => {
 						const user = userDetails.find(u => u.userId === item.lastEditedUser);
 						if (!user || user.deleteFlag) return `Deleted User: ${item.lastEditedUser}`;
 						return item.lastEditedUser;
@@ -378,6 +429,32 @@
 					// 'Deleted': item.deleteFlag
 				}));
 			}
+			// else if(tab === "Orders"){
+			// 	newRows = data.orders.map((item: any) =>({
+			// 		'Order ID': item.orderId,
+			// 		'Discount': item.discount,
+			// 		'Customer': item.customer,
+			// 		'Handled By': (() => {
+			// 			const user = userDetails.find(u => u.userId === item.handledBy);
+			// 			if (!user || user.deleteFlag === 1) return `Deleted User: ${item.handledBy}`;
+			// 			return item.handledBy;
+			// 		})(),
+			// 		'Payment Method': item.paymentMethod,
+			// 		'Payment Status': item.paymentStatus,
+			// 		'Date Ordered': new Date(item.dateOrdered).toLocaleDateString('en-PH', {
+			// 			timeZone: 'Asia/Manila'
+			// 		}),
+			// 		'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
+			// 			timeZone: 'Asia/Manila'
+			// 		}),
+			// 		'Last Edited User': (() => {
+			// 			const user = userDetails.find(u => u.userId === item.lastEditedUser);
+			// 			if (!user || user.deleteFlag) return `Deleted User: ${item.lastEditedUser}`;
+			// 			return item.lastEditedUser;
+			// 		})()
+			// 		// 'Deleted': item.deleteFlag
+			// 	}));
+			// }
 			else if(tab === "OrderInfo"){
 				newRows = data.orderInfo.map((item: any) =>({
 					'Order Info ID': item.orderInfoId,
@@ -490,15 +567,29 @@
 						if (!user || user.deleteFlag) return `Deleted User: ${item.approvedBy}`;
 						return item.approvedBy;
 					})(),
-					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
+					'Transaction Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
 						timeZone: 'Asia/Manila'
 					}),
-					'Last Edited User': (() => {
+					'Transaction Last Edited User': (() => {
+						const user = userDetails.find(u => u.userId === item.lastEditedUser);
+						if (!user || user.deleteFlag) return `Deleted User: ${item.lastEditedUser}`;
+						return item.lastEditedUser;
+					})(),
+					'Detail ID': item.detailId,
+					'Returned Product ID': item.returnedProductId,
+					'Returned Quantity': item.returnedQuantity,
+					'Exchange Product ID': item.exchangeProductId,
+					'Exchange Quantity': item.exchangeQuantity,
+					'Reason': item.reason,
+					'Return Type': item.returnType,
+					'Detail Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
+						timeZone: 'Asia/Manila'
+					}),
+					'Detail Last Edited User': (() => {
 						const user = userDetails.find(u => u.userId === item.lastEditedUser);
 						if (!user || user.deleteFlag) return `Deleted User: ${item.lastEditedUser}`;
 						return item.lastEditedUser;
 					})()
-					// 'Deleted': item.deleteFlag
 				}));
 			}
 			else if(tab === "ReturnExchangelnfo"){
@@ -766,7 +857,7 @@
 			const token = localStorage.getItem('actkn');
 			const endpoint = updateApiMap[selected];
 			const primaryKey = primaryKeyMap[selected];
-			const rowId = rows[modalRowIndex][primaryKey];
+			let rowId = rows[modalRowIndex][primaryKey];
 			const finalForm: {[key: string]: any} = {};
 			const varKey = keyMap[selected];
 
@@ -774,6 +865,7 @@
 				for(const {field, endpoint: idEndpoint} of validations){
 					const raw = editForm[field];
 					const trim = typeof raw === 'string' ? raw.trim(): raw;
+					if ((field === 'Exchange Product ID' || field === 'Exchange Quantity') && raw === '') continue;
 					if(trim === '' || isNaN(Number(trim))){
 						alert(`${field} must be a number.`);
 						return;
@@ -813,23 +905,48 @@
 				}
 			}
 			try{
-				//fix: uses privateClient
-				// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
-				// 	method: 'PUT',
-				// 	headers: {
-				// 		'Content-Type': 'application/json',
-				// 		Authorization: `Bearer ${token}`
-				// 	},
-				// 	body: JSON.sringify(finalForm)
-				// });
-				// // const data = await res.json();
-				// if(!res.ok){
-				// 	alert("Error updating!");
-				// 	return;
-				// }
-
-				await privateClient.put(`/api/${endpoint}/${rowId}`, finalForm);
-
+				let res;
+				if(primaryKey === 'Transaction ID'){
+					rowId = editForm['Detail ID'];
+					console.log(rowId);
+					console.log(editForm['Transaction ID']);
+					res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}/${editForm['Transaction ID']}`, {
+						method: 'PUT',
+						headers: {
+							'Content-Type': 'application/json',
+							Authorization: `Bearer ${token}`
+						},
+						body: JSON.stringify(finalForm)
+					});
+				}
+				else if(primaryKey === 'Order ID'){
+					rowId = editForm['Order Info ID'];
+					console.log(rowId);
+					console.log(editForm['Order ID']);
+					res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}/${editForm['Order ID']}`, {
+						method: 'PUT',
+						headers: {
+							'Content-Type': 'application/json',
+							Authorization: `Bearer ${token}`
+						},
+						body: JSON.stringify(finalForm)
+					});
+				}
+				else{
+					res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
+						method: 'PUT',
+						headers: {
+							'Content-Type': 'application/json',
+							Authorization: `Bearer ${token}`
+						},
+						body: JSON.stringify(finalForm)
+					});
+				}
+				// const data = await res.json();
+				if(!res.ok){
+					alert("Error updating!");
+					return;
+				}
 				await fetchTabData(selected);
 				
 				// Reset pagination and reload from beginning after edit
@@ -860,7 +977,7 @@
 			const token = localStorage.getItem('actkn');
 			const endpoint = updateApiMap[selected];
 			const primaryKey = primaryKeyMap[selected];
-			const rowId = rows[modalRowIndex][primaryKey]; //primary key: id
+			let rowId = rows[modalRowIndex][primaryKey]; //primary key: id
 			const rowData = rows[modalRowIndex]; //data before update
 			const varKey = keyMap[selected];
 
@@ -933,19 +1050,27 @@
 			const trim = typeof raw === 'string' ? raw.trim(): raw;		
 			const validation = validations.find(v => v.field === field);
 			if(validation){
-				if(trim === '' || isNaN(Number(trim))){
-					alert(`${field} must be a number.`);
-					return;
+				if ((field === 'Exchange Product ID' || field === 'Exchange Quantity') && trim === '') {
+					const finalKey = varKey[field];
+					if (finalKey) {
+						finalForm[finalKey] = null;
+					}
 				}
-				const id = Number(trim);
-				const exists = await validate(validation.endpoint, id)
-				if(!exists){
-					alert(`${field} ${id} does not exist in the database.`);
-					return;
-				}
-				const finalKey = varKey[field];
-				if(finalKey) {
-					finalForm[finalKey] = id;
+				else{
+					if(trim === '' || isNaN(Number(trim))){
+						alert(`${field} must be a number.`);
+						return;
+					}
+					const id = Number(trim);
+					const exists = await validate(validation.endpoint, id)
+					if(!exists){
+						alert(`${field} ${id} does not exist in the database.`);
+						return;
+					}
+					const finalKey = varKey[field];
+					if(finalKey) {
+						finalForm[finalKey] = id;
+					}
 				}
 			}
 			else{
@@ -970,23 +1095,47 @@
 			// console.log("finalForm", finalForm);
 			// console.log("updatedRow", updatedRow);
 			try{
-				//fix: uses privateClient
-				// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
-				// 	method: 'PUT',
-				// 	headers: {
-				// 		'Content-Type': 'application/json',
-				// 		Authorization: `Bearer ${token}`
-				// 	},
-				// 	body: JSON.stringify(finalForm)
-				// });
-				// // const data = await res.json();
-				// if(!res.ok){
-				// 	alert("Error updating!");
-				// 	return;
-				// }
-
-				await privateClient.put(`/api/${endpoint}/${rowId}`, finalForm);
-
+				let res;
+				if(primaryKey === 'Transaction ID'){
+					rowId = rowData['Detail ID'];
+					console.log(rowData['Transaction ID']);
+					console.log(rowId);
+					res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}/${rowData['Transaction ID']}`, {
+						method: 'PUT',
+						headers: {
+							'Content-Type': 'application/json',
+							Authorization: `Bearer ${token}`
+						},
+						body: JSON.stringify(finalForm)
+					});
+				}
+				else if(primaryKey === 'Order ID'){
+					rowId = rowData['Order Info ID'];
+					console.log(rowId);
+					res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}/${rowData['Order ID']}`, {
+						method: 'PUT',
+						headers: {
+							'Content-Type': 'application/json',
+							Authorization: `Bearer ${token}`
+						},
+						body: JSON.stringify(finalForm)
+					});
+				}
+				else{
+					res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
+						method: 'PUT',
+						headers: {
+							'Content-Type': 'application/json',
+							Authorization: `Bearer ${token}`
+						},
+						body: JSON.stringify(finalForm)
+					});
+				}
+				// const data = await res.json();
+				if(!res.ok){
+					alert("Error updating!");
+					return;
+				}
 				await fetchTabData(selected);
 		
 				// Reset pagination and reload from beginning after edit
@@ -1034,12 +1183,14 @@
 				const validations = idValidationMap[selected] || [];
 				for(const {field, endpoint: idEndpoint} of validations){
 					const raw = addForm[field]?.trim();
+					if ((field === 'Exchange Product ID' || field === 'Exchange Quantity') && raw === '') continue;
 					if(!raw || isNaN(Number(raw))){
 						alert(`${field} must be a number.`);
 						return;
 					}
 					const id = Number(raw);
-					const exists = await validate(idEndpoint, id)
+					const exists = await validate(idEndpoint, id);
+				
 					if(!exists){
 						alert(`${field} ${id} does not exist in the database.`);
 						return;
@@ -1072,27 +1223,57 @@
 					}
 				}
 				// console.log("Final form to submit:", finalForm);
+				if (selected === 'Orders') {
+					const item = {
+						productId: finalForm.productId,
+						quantity: finalForm.quantity,
+						unitPriceAtPurchase: finalForm.unitPriceAtPurchase
+					};
 
-				//fix: uses privateClient
-				// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
-				// 	method: 'POST',
-				// 	headers: {
-				// 		'Content-Type': 'application/json',
-				// 		Authorization: `Bearer ${token}`
-				// 	},
-				// 	body: JSON.stringify(finalForm)
-				// });
-				// // const data = await res.json();
-				// // console.log("data: ", data);
-				// if(!res.ok){
-				// 	alert("Error creating!");
-				// 	return;
-				// }
+					// Remove from finalForm to avoid duplication
+					delete finalForm.productId;
+					delete finalForm.quantity;
+					delete finalForm.unitPriceAtPurchase;
 
-				await privateClient.post(`/api/${endpoint}`, finalForm);
+					finalForm.items = [item];
+				}
+				if (selected === 'ReturnExchange') {
+					const item = {
+						returnedProductId: finalForm.returnedProductId,
+						returnedQuantity: finalForm.returnedQuantity, 
+						exchangeProductId: finalForm.exchangeProductId, 
+						exchangeQuantity: finalForm.exchangeQuantity, 
+						reason: finalForm.reason,  
+						returnType: finalForm.returnType
+					};
 
+					// Remove from finalForm to avoid duplication
+					delete finalForm.returnedProductId;
+					delete finalForm.returnedQuantity;
+					delete finalForm.exchangeProductId;
+					delete finalForm.exchangeQuantity;
+					delete finalForm.reason;
+					delete finalForm.returnType;
+					finalForm.transactions = [item];
+				}
+
+
+				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${token}`
+					},
+					body: JSON.stringify(finalForm)
+				});
+				// const data = await res.json();
+				// console.log("data: ", data);
+				if(!res.ok){
+					alert("Error creating!");
+					return;
+				}
 				await fetchTabData(selected);
-				
+
 				// Reset pagination and reload from beginning after add
 				currentOffset = 0;
 				hasMoreData = true;
@@ -1392,7 +1573,7 @@
 			{#if isAddForm}
 				<!-- add popup form for new row -->
 				<form on:submit|preventDefault={handleAddFormSave}>
-					{#each currentHeaders.filter(h => h !== primaryKeyMap[selected] && !/^date/i.test(h) && !['Last Edited Date', 'Last Edited User'].includes(h)) as head}
+					{#each currentHeaders.filter(h => h !== primaryKeyMap[selected] && !(selected === 'Orders' && h.replace(/\s+/g, '').toLowerCase() === 'orderinfoid') && !(selected === 'ReturnExchange' && h.replace(/\s+/g, '').toLowerCase() === 'detailid')&& !/^date/i.test(h) && !['Last Edited Date', 'Last Edited User', 'Order Last Edited Date', 'Order Last Edited User', 'Info Last Edited Date', 'Info Last Edited User', 'Transaction Last Edited Date', 'Transaction Last Edited User', 'Detail Last Edited Date', 'Detail Last Edited User'].includes(h)) as head}
 						<div class="mb-2">
 							<label class="mb-1 block" for={'add-' + head}>{head}</label>
 							<input
@@ -1424,7 +1605,7 @@
 			{:else if isEditForm}
 				<!-- edit popup form for entire row -->
 				<form on:submit|preventDefault={handleEditFormSave}>
-					{#each currentHeaders.filter(h => h !== primaryKeyMap[selected] && !/^date/i.test(h) && !['Last Edited Date', 'Last Edited User'].includes(h)) as head}
+					{#each currentHeaders.filter(h => h !== primaryKeyMap[selected] && !(selected === 'Orders' && h.replace(/\s+/g, '').toLowerCase() === 'orderinfoid') && !(selected === 'ReturnExchange' && h.replace(/\s+/g, '').toLowerCase() === 'detailid') && !/^date/i.test(h) && !['Last Edited Date', 'Last Edited User', 'Order Last Edited Date', 'Order Last Edited User', 'Info Last Edited Date', 'Info Last Edited User', 'Transaction Last Edited Date', 'Transaction Last Edited User', 'Detail Last Edited Date', 'Detail Last Edited User'].includes(h)) as head}
 						<div class="mb-2">
 							<label class="mb-1 block font-bold" for={'edit-' + head}>{head}</label>
 							<input
@@ -1461,18 +1642,38 @@
 							bind:value={cellEditForm.value}
 							readonly={ //primary key, date_, last edited fields
 								modalColumn === primaryKeyMap[selected] ||
+								(selected === 'Orders' && modalColumn.replace(/\s+/g, '').toLowerCase() === 'orderinfoid') ||
+								(selected === 'ReturnExchange' && modalColumn.replace(/\s+/g, '').toLowerCase() === 'detailid') ||
 								/^date/i.test(modalColumn) ||
 								modalColumn === 'Last Edited Date' ||
-								modalColumn === 'Last Edited User'
+								modalColumn === 'Last Edited User' ||
+								modalColumn === 'Order Last Edited Date' ||
+								modalColumn === 'Order Last Edited User' ||
+								modalColumn === 'Info Last Edited Date' ||
+								modalColumn === 'Info Last Edited User' ||
+								modalColumn === 'Transaction Last Edited Date' ||
+								modalColumn === 'Transaction Last Edited User' ||
+								modalColumn === 'Detail Last Edited Date' ||
+								modalColumn === 'Detail Last Edited User'
 							}
 						/>
 					</div>
 					<div class="mt-4 flex gap-2">
 						{#if !(
 							modalColumn === primaryKeyMap[selected] ||
+							(selected === 'Orders' && modalColumn.replace(/\s+/g, '').toLowerCase() === 'orderinfoid') ||
+							(selected === 'ReturnExchange' && modalColumn.replace(/\s+/g, '').toLowerCase() === 'detailid') ||
 							/^date/i.test(modalColumn) ||
 							modalColumn === 'Last Edited Date' ||
-							modalColumn === 'Last Edited User'
+							modalColumn === 'Last Edited User' ||
+							modalColumn === 'Order Last Edited Date' ||
+							modalColumn === 'Order Last Edited User' ||
+							modalColumn === 'Info Last Edited Date' ||
+							modalColumn === 'Info Last Edited User' ||
+							modalColumn === 'Transaction Last Edited Date' ||
+							modalColumn === 'Transaction Last Edited User' ||
+							modalColumn === 'Detail Last Edited Date' ||
+							modalColumn === 'Detail Last Edited User'
 						)}
 							<button
 								type="submit"

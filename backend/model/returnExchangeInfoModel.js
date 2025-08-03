@@ -12,9 +12,8 @@ export async function createReturnExchangeInfo(returnedProductId, returnedQuanti
     //     });
     // });
     const [result] = await db.query(sql, [
-        fullName, userRole, username, hashedPassword,
-        pathName, dateAdded, lastEditedDate, lastEditedUser,
-        deleteFlag
+        returnedProductId, returnedQuantity, exchangeProductId, exchangeQuantity, 
+        reason, transactionId, returnType, lastEditedDate, lastEditedUser, deleteFlag
     ]);
     console.log("Return Exchange Info created:", result.insertId);
     return result.insertId;

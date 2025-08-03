@@ -1,6 +1,7 @@
 import express from "express";
 import * as returnExchangeModel from "../model/returnExchangeModel.js";
 import * as returnExchangeInfoModel from "../model/returnExchangeInfoModel.js";
+import * as returnExchangeMergeModel from "../model/returnExchangeMergeModel.js";
 import { authenJWT } from "../middleware/authenJWT.js";
 import { authorizePermission } from "../middleware/authoPerms.js";
 import { logAudit } from "../model/auditModel.js"
@@ -19,13 +20,29 @@ router.post("/createReturnExchange", authenJWT, authorizePermission("process_ret
             const exchangeQuantity = transaction.exchangeQuantity ?? null;
             await returnExchangeInfoModel.createReturnExchangeInfo(transaction.returnedProductId, transaction.returnedQuantity, exchangeProductId, exchangeQuantity, transaction.reason, transactionId, transaction.returnType, lastEditedDate, lastEditedUser, 0);
         }
-        await logAudit("add_returnExchange", `Created transaction ID ${transactionId} for order ${orderId})`, req.user.userId);
+        await logAudit("add_returnExchange", `Created transaction ID ${transactionId} for order ${orderId}`, req.user.userId);
         res.json({message: "Return Exchange and Return Exchange Info created successfully!", id: transactionId});
     }catch(err){
         console.error("Return Exchange Error:", err);
         res.status(500).json({ message: "Error creating Return Exchange and Return Exchange Info" });
     }
 }); //test: curl -X POST http://localhost:5000/api/createReturnExchange -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_HERE" -d "{\"transactionStatus\":\"refunded\",\"orderId\":1,\"handledBy\":1,\"approvedBy\":1,\"transactions\":[{\"returnedProductId\":1,\"returnedQuantity\":1,\"exchangeProductId\":1,\"exchangeQuantity\":1,\"reason\":\"damaged\"},{\"returnedProductId\":2,\"returnedQuantity\":1,\"exchangeProductId\":null,\"exchangeQuantity\":null,\"reason\":\"damaged\"}]}"
+
+router.post("/createReturnExchangeInfo", authenJWT, authorizePermission("process_returns"), async(req, res) =>{
+    try{
+        const {returnedProductId, returnedQuantity, exchangeProductId, exchangeQuantity, reason, transactionId, returnType} = req.body;   
+        const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+        const lastEditedUser = req.user.userId; 
+        const finalExchangeProductId = exchangeProductId ?? null;
+        const finalExchangeQuantity = exchangeQuantity ?? null;
+        const detailId = await returnExchangeInfoModel.createReturnExchangeInfo(returnedProductId, returnedQuantity, finalExchangeProductId, finalExchangeQuantity, reason, transactionId, returnType, lastEditedDate, lastEditedUser, 0);
+        await logAudit("add_returnExchange", `Created detail ID ${detailId} for transaction ${transactionId}`, req.user.userId);
+        res.json({message: "Return Exchange Info created successfully!", id: detailId});
+    }catch(err){
+        console.error("Return Exchange Error:", err);
+        res.status(500).json({ message: "Error creating Return Exchange and Return Exchange Info" });
+    }
+});
 
 router.get("/getReturnExchanges", authenJWT, authorizePermission("process_returns"), async(req, res) =>{
     try{
@@ -41,6 +58,21 @@ router.get("/getReturnExchanges", authenJWT, authorizePermission("process_return
         res.status(500).json({ message: "Error fetching Return Exchanges" });
     }
 }); //test: curl -X GET http://localhost:5000/api/getReturnExchanges -H "Authorization: Bearer TOKEN_HERE"
+
+router.get("/getMergeReturnExchanges", authenJWT, authorizePermission("process_returns"), async(req, res) =>{
+    try{
+        const returnExchanges = await returnExchangeMergeModel.getMergeReturns();
+        if(returnExchanges){
+            // console.log("Return Exchanges fetched: ", returnExchanges);
+            res.json({message: "Return Exchanges found!", returnExchanges});
+        }
+        else{
+            res.status(404).json({ message: "Return Exchanges not found or already deleted" });
+        }
+    }catch(err){
+        res.status(500).json({ message: "Error fetching Return Exchanges" });
+    }
+});
 
 router.get("/getReturnExchangeInfo", authenJWT, authorizePermission("process_returns"), async(req, res) =>{
     try{
@@ -89,6 +121,21 @@ router.get("/getReturnExchangeInfoById/:id", authenJWT, authorizePermission("pro
     }
 }); //test: curl -X GET http://localhost:5000/api/getReturnExchangeInfoById/1 -H "Authorization: Bearer TOKEN_HERE"
 
+// router.get("/getOrderIdByTransaction/:transactionId", authenJWT, async (req, res) => {
+// 	try {
+// 		const transactionId = req.params.transactionId;
+// 		const [[row]] = await db.query(`
+// 			SELECT orderId FROM ReturnExchange WHERE transactionId = ? AND deleteFlag = 0
+// 		`, [transactionId]);
+
+// 		if (!row) return res.status(404).send("Transaction not found");
+// 		res.json(row); // { orderId: 5 }
+// 	} catch (err) {
+// 		console.error(err);
+// 		res.status(500).send("Server error");
+// 	}
+// });
+
 router.put("/updateReturnExchange/:id", authenJWT, authorizePermission("process_returns"), async(req, res) =>{
     try{
         const transactionId = parseInt(req.params.id);
@@ -99,7 +146,7 @@ router.put("/updateReturnExchange/:id", authenJWT, authorizePermission("process_
         updatedData.lastEditedUser = lastEditedUser;
         const result = await returnExchangeModel.updateReturnExchangeById(transactionId, updatedData);
         if(result){
-            await logAudit("edit_returnExchange", `Updated transaction ID ${transactionId})`, req.user.userId);
+            await logAudit("edit_returnExchange", `Updated transaction ID ${transactionId}`, req.user.userId);
             res.json({ message: "Return Exchange updated successfully!", id: transactionId });
         }
         else{
@@ -120,7 +167,7 @@ router.put("/updateReturnExchangeInfo/:id", authenJWT, authorizePermission("proc
         updatedData.lastEditedUser = lastEditedUser;
         const result = await returnExchangeInfoModel.updateReturnExchangeInfoById(detailId, updatedData);
         if(result){
-            await logAudit("edit_returnExchangeInfo", `Updated detail ID ${detailId})`, req.user.userId);
+            await logAudit("edit_returnExchangeInfo", `Updated detail ID ${detailId}`, req.user.userId);
             res.json({ message: "Return Exchange Info updated successfully!", id: detailId });
         }
         else{
@@ -130,6 +177,38 @@ router.put("/updateReturnExchangeInfo/:id", authenJWT, authorizePermission("proc
         res.status(500).json({ message: "Error updating Return Exchange Info" });
     }
 }); //test: Appened -H "Authorization: Bearer TOKEN_HERE" at the end of the header
+
+router.put("/updateMergedReturn/:detailId/:transactionId", authenJWT, authorizePermission("process_returns"), async (req, res) => {
+    try {
+        const detailId = parseInt(req.params.detailId);
+        const transactionId = parseInt(req.params.transactionId);
+        const updatedData = req.body;
+
+        const lastEditedDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace("T", " ");
+        const lastEditedUser = req.user.userId;
+
+        updatedData.lastEditedDate = lastEditedDate;
+        updatedData.lastEditedUser = lastEditedUser;
+
+        const detailResult = await returnExchangeInfoModel.updateReturnExchangeInfoById(detailId, updatedData);
+        const parentResult = await returnExchangeModel.updateReturnExchangeById(transactionId, updatedData);
+
+        if (detailResult || parentResult) {
+            await logAudit("edit_returnExchange", `Updated transaction ID ${transactionId}`, req.user.userId);
+            res.json({
+                message: "Return Exchange and Info updated successfully",
+                detailId,
+                transactionId: transactionId
+            });
+        } else {
+            res.status(404).json({ message: "Nothing was updated." });
+        }
+    } catch (err) {
+        console.error("Error updating merged return:", err);
+        res.status(500).json({ message: "Error updating merged return." });
+    }
+});
+
 
 router.delete("/deleteReturnExchange/:id", authenJWT, authorizePermission("process_returns"), async(req, res) =>{
     try{
