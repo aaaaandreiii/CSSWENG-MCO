@@ -140,7 +140,10 @@
 			// });
 			// const data = await res.json();
 
-			const { data } = await privateClient.get(`/api/${endpoint}`);
+			const { data } = await privateClient.get(`/api/${endpoint}`, {
+				params: { offset, limit: ITEMS_PER_PAGE }
+			});
+
         	console.log('Fetched data:', data);
 
 			let newRows: { [key: string]: string }[] = [];
@@ -368,16 +371,19 @@
 		}
 	}
 
-	export async function getEntryIdByWithdrawalId(withdrawalId: number): Promise<number | null> {
+export async function getEntryIdByWithdrawalId(withdrawalId: number): Promise<number | null> {
 	try {
-		const token = localStorage.getItem("token");
-		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/stockWithdrawal/entryId/${withdrawalId}`, {
-			headers: {
-				Authorization: `Bearer ${token}`
-			}
-		});
-		if (!res.ok) throw new Error("Failed to fetch entry ID");
-		const data = await res.json();
+		//fix: uses privateClient
+// 		const token = localStorage.getItem("token");
+// 		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/stockWithdrawal/entryId/${withdrawalId}`, {
+// 			headers: {
+// 				Authorization: `Bearer ${token}`
+// 			}
+// 		});
+// 		if (!res.ok) throw new Error("Failed to fetch entry ID");
+// 		const data = await res.json();
+// 		return data.entryId ?? null;
+		const { data } = await privateClient.get(`/api/stockWithdrawal/entryId/${withdrawalId}`);
 		return data.entryId ?? null;
 	} catch (err) {
 		console.error("getEntryIdByWithdrawalId error:", err);
@@ -387,14 +393,16 @@
 
 export async function getAuthorizedByById(withdrawalId: number): Promise<number | null> {
 	try {
-		const token = localStorage.getItem("token");
-		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/stockWithdrawal/authorizedBy/${withdrawalId}`, {
-			headers: {
-				Authorization: `Bearer ${token}`
-			}
-		});
-		if (!res.ok) throw new Error("Failed to fetch authorizedBy");
-		const data = await res.json();
+		//fix: uses privateClient
+		// const token = localStorage.getItem("token");
+		// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/stockWithdrawal/authorizedBy/${withdrawalId}`, {
+		// 	headers: {
+		// 		Authorization: `Bearer ${token}`
+		// 	}
+		// });
+		// if (!res.ok) throw new Error("Failed to fetch authorizedBy");
+		// const data = await res.json();
+		const { data } = await privateClient.get(`/api/stockWithdrawal/authorizedBy/${withdrawalId}`);
 		return data.authorizedBy ?? null;
 	} catch (err) {
 		console.error("getAuthorizedByById error:", err);
@@ -402,17 +410,18 @@ export async function getAuthorizedByById(withdrawalId: number): Promise<number 
 	}
 }
 
-
-	export async function getWithdrawnByById(withdrawalId: number): Promise<number | null> {
+export async function getWithdrawnByById(withdrawalId: number): Promise<number | null> {
 	try {
-		const token = localStorage.getItem("token");
-		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/stockWithdrawal/withdrawnBy/${withdrawalId}`, {
-			headers: {
-				Authorization: `Bearer ${token}`
-			}
-		});
-		if (!res.ok) throw new Error("Failed to fetch withdrawnBy");
-		const data = await res.json();
+		//fix: uses privateClient
+		// const token = localStorage.getItem("token");
+		// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/stockWithdrawal/withdrawnBy/${withdrawalId}`, {
+		// 	headers: {
+		// 		Authorization: `Bearer ${token}`
+		// 	}
+		// });
+		// if (!res.ok) throw new Error("Failed to fetch withdrawnBy");
+		// const data = await res.json();
+		const { data } = await privateClient.get(`/api/stockWithdrawal/withdrawnBy/${withdrawalId}`);
 		return data.withdrawnBy ?? null;
 	} catch (err) {
 		console.error("getWithdrawnByById error:", err);
@@ -422,20 +431,21 @@ export async function getAuthorizedByById(withdrawalId: number): Promise<number 
 
 export async function getLastEditedUserByWithdrawalId(withdrawalId: number): Promise<number | null> {
 	try {
-		const token = localStorage.getItem("token");
-		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/stockWithdrawal/lastEditedUser/${withdrawalId}`, {
-			headers: {
-				Authorization: `Bearer ${token}`
-			}
-		});
-		if (!res.ok) throw new Error("Failed to fetch lastEditedUser");
-		const data = await res.json();
+		//fix: uses privateClient
+		// const token = localStorage.getItem("token");
+		// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/stockWithdrawal/lastEditedUser/${withdrawalId}`, {
+		// 	headers: {
+		// 		Authorization: `Bearer ${token}`
+		// 	}
+		// });
+		// if (!res.ok) throw new Error("Failed to fetch lastEditedUser");
+		// const data = await res.json();
+		const { data } = await privateClient.get(`/api/stockWithdrawal/lastEditedUser/${withdrawalId}`);
 		return data.lastEditedUser ?? null;
 	} catch (err) {
 		console.error("getLastEditedUserByWithdrawalId error:", err);
 		return null;
 	}
-
 
 async function handleCellEditFormSave() {
 	if (modalRowIndex !== -1 && modalColumn) {
@@ -587,21 +597,22 @@ async function handleCellEditFormSave() {
 		console.log("Final form to be submitted:", finalForm);
 
 		try {
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${withdrawalId}`, {
-				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`
-				},
-				body: JSON.stringify(finalForm)
-			});
+			//fix: uses privateClient
+			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${withdrawalId}`, {
+			// 	method: "PUT",
+			// 	headers: {
+			// 		"Content-Type": "application/json",
+			// 		Authorization: `Bearer ${token}`
+			// 	},
+			// 	body: JSON.stringify(finalForm)
+			// });
 
-			if (!res.ok) {
-				alert("Error updating!");
-				return;
-			}
+			// if (!res.ok) {
+			// 	alert("Error updating!");
+			// 	return;
+			// }
 			
-			await privateClient.put(`/api/${endpoint}/${rowId}`, convertedRow);
+			await privateClient.put(`/api/${endpoint}/${withdrawalId}`, finalForm);
 
 			await fetchTabData(selected);
 			currentOffset = 0;

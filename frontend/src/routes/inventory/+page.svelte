@@ -660,11 +660,14 @@
 
 	async function fetchAllUsers() {
 		try {
-			const token = localStorage.getItem('token');
-			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getAllUsers`, {
-			headers: { Authorization: `Bearer ${token}` }
-			});
-			const data = await res.json();
+			//fix: uses privateClient
+			// const token = localStorage.getItem('token');
+			// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getAllUsers`, {
+			// headers: { Authorization: `Bearer ${token}` }
+			// });
+			// const data = await res.json();
+
+			const { data } = await privateClient.get('/api/getAllUsers');
         	console.log('Fetched data:', data);
 			userDetails = data.users.map((item: any) => ({
 				userId: Number(item.userId),
@@ -905,48 +908,60 @@
 				}
 			}
 			try{
-				let res;
-				if(primaryKey === 'Transaction ID'){
-					rowId = editForm['Detail ID'];
-					console.log(rowId);
-					console.log(editForm['Transaction ID']);
-					res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}/${editForm['Transaction ID']}`, {
-						method: 'PUT',
-						headers: {
-							'Content-Type': 'application/json',
-							Authorization: `Bearer ${token}`
-						},
-						body: JSON.stringify(finalForm)
-					});
-				}
-				else if(primaryKey === 'Order ID'){
-					rowId = editForm['Order Info ID'];
-					console.log(rowId);
-					console.log(editForm['Order ID']);
-					res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}/${editForm['Order ID']}`, {
-						method: 'PUT',
-						headers: {
-							'Content-Type': 'application/json',
-							Authorization: `Bearer ${token}`
-						},
-						body: JSON.stringify(finalForm)
-					});
-				}
-				else{
-					res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
-						method: 'PUT',
-						headers: {
-							'Content-Type': 'application/json',
-							Authorization: `Bearer ${token}`
-						},
-						body: JSON.stringify(finalForm)
-					});
-				}
-				// const data = await res.json();
-				if(!res.ok){
-					alert("Error updating!");
-					return;
-				}
+				//fix: uses privateClient instead of this long ahh block of code lmfao
+				// let res;
+				// if(primaryKey === 'Transaction ID'){
+				// 	rowId = editForm['Detail ID'];
+				// 	console.log(rowId);
+				// 	console.log(editForm['Transaction ID']);
+				// 	res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}/${editForm['Transaction ID']}`, {
+				// 		method: 'PUT',
+				// 		headers: {
+				// 			'Content-Type': 'application/json',
+				// 			Authorization: `Bearer ${token}`
+				// 		},
+				// 		body: JSON.stringify(finalForm)
+				// 	});
+				// }
+				// else if(primaryKey === 'Order ID'){
+				// 	rowId = editForm['Order Info ID'];
+				// 	console.log(rowId);
+				// 	console.log(editForm['Order ID']);
+				// 	res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}/${editForm['Order ID']}`, {
+				// 		method: 'PUT',
+				// 		headers: {
+				// 			'Content-Type': 'application/json',
+				// 			Authorization: `Bearer ${token}`
+				// 		},
+				// 		body: JSON.stringify(finalForm)
+				// 	});
+				// }
+				// else{
+				// 	res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
+				// 		method: 'PUT',
+				// 		headers: {
+				// 			'Content-Type': 'application/json',
+				// 			Authorization: `Bearer ${token}`
+				// 		},
+				// 		body: JSON.stringify(finalForm)
+				// 	});
+				// }
+				// // const data = await res.json();
+				// if(!res.ok){
+				// 	alert("Error updating!");
+				// 	return;
+				// }
+
+				const url =
+				primaryKey === 'Transaction ID'
+					? `/api/${endpoint}/${rowId}/${editForm['Transaction ID']}`
+					: primaryKey === 'Order ID'
+					? `/api/${endpoint}/${rowId}/${editForm['Order ID']}`
+					: `/api/${endpoint}/${rowId}`;
+
+				// then do the PUT
+				await privateClient.put(url, finalForm);
+
 				await fetchTabData(selected);
 				
 				// Reset pagination and reload from beginning after edit
@@ -1095,47 +1110,57 @@
 			// console.log("finalForm", finalForm);
 			// console.log("updatedRow", updatedRow);
 			try{
-				let res;
-				if(primaryKey === 'Transaction ID'){
-					rowId = rowData['Detail ID'];
-					console.log(rowData['Transaction ID']);
-					console.log(rowId);
-					res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}/${rowData['Transaction ID']}`, {
-						method: 'PUT',
-						headers: {
-							'Content-Type': 'application/json',
-							Authorization: `Bearer ${token}`
-						},
-						body: JSON.stringify(finalForm)
-					});
-				}
-				else if(primaryKey === 'Order ID'){
-					rowId = rowData['Order Info ID'];
-					console.log(rowId);
-					res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}/${rowData['Order ID']}`, {
-						method: 'PUT',
-						headers: {
-							'Content-Type': 'application/json',
-							Authorization: `Bearer ${token}`
-						},
-						body: JSON.stringify(finalForm)
-					});
-				}
-				else{
-					res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
-						method: 'PUT',
-						headers: {
-							'Content-Type': 'application/json',
-							Authorization: `Bearer ${token}`
-						},
-						body: JSON.stringify(finalForm)
-					});
-				}
-				// const data = await res.json();
-				if(!res.ok){
-					alert("Error updating!");
-					return;
-				}
+				//fix: uses privateClient
+				// let res;
+				// if(primaryKey === 'Transaction ID'){
+				// 	rowId = rowData['Detail ID'];
+				// 	console.log(rowData['Transaction ID']);
+				// 	console.log(rowId);
+				// 	res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}/${rowData['Transaction ID']}`, {
+				// 		method: 'PUT',
+				// 		headers: {
+				// 			'Content-Type': 'application/json',
+				// 			Authorization: `Bearer ${token}`
+				// 		},
+				// 		body: JSON.stringify(finalForm)
+				// 	});
+				// }
+				// else if(primaryKey === 'Order ID'){
+				// 	rowId = rowData['Order Info ID'];
+				// 	console.log(rowId);
+				// 	res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}/${rowData['Order ID']}`, {
+				// 		method: 'PUT',
+				// 		headers: {
+				// 			'Content-Type': 'application/json',
+				// 			Authorization: `Bearer ${token}`
+				// 		},
+				// 		body: JSON.stringify(finalForm)
+				// 	});
+				// }
+				// else{
+				// 	res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
+				// 		method: 'PUT',
+				// 		headers: {
+				// 			'Content-Type': 'application/json',
+				// 			Authorization: `Bearer ${token}`
+				// 		},
+				// 		body: JSON.stringify(finalForm)
+				// 	});
+				// }
+				// // const data = await res.json();
+				// if(!res.ok){
+				// 	alert("Error updating!");
+				// 	return;
+				// }
+
+				const url =
+				primaryKey === 'Transaction ID'
+					? `/api/${endpoint}/${rowId}/${rowData['Transaction ID']}`
+					: primaryKey === 'Order ID'
+					? `/api/${endpoint}/${rowId}/${rowData['Order ID']}`
+					: `/api/${endpoint}/${rowId}`;
+				await privateClient.put(url, finalForm);
+
 				await fetchTabData(selected);
 		
 				// Reset pagination and reload from beginning after edit
@@ -1257,21 +1282,23 @@
 					finalForm.transactions = [item];
 				}
 
+				//fix: uses privateClient
+				// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
+				// 	method: 'POST',
+				// 	headers: {
+				// 		'Content-Type': 'application/json',
+				// 		Authorization: `Bearer ${token}`
+				// 	},
+				// 	body: JSON.stringify(finalForm)
+				// });
+				// // const data = await res.json();
+				// // console.log("data: ", data);
+				// if(!res.ok){
+				// 	alert("Error creating!");
+				// 	return;
+				// }
 
-				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`
-					},
-					body: JSON.stringify(finalForm)
-				});
-				// const data = await res.json();
-				// console.log("data: ", data);
-				if(!res.ok){
-					alert("Error creating!");
-					return;
-				}
+				await privateClient.post(`/api/${endpoint}`, finalForm);
 				await fetchTabData(selected);
 
 				// Reset pagination and reload from beginning after add
@@ -1347,7 +1374,7 @@
 					// 	failedDeletes.push(productId);
 					// }
 
-					await privateClient.delete(`/api/deleteProduct/${productId}`);
+					await privateClient.delete(`/api/${endpoint}/${rowId}`);
 
 				} catch (err) {
 					console.error(`Failed to delete ${selected} ${rowId}:`, err);
