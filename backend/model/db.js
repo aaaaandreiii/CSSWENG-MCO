@@ -10,7 +10,7 @@ const sslOptions = process.env.CA
 
 const db = mysql.createPool({                           //edit your .env file to set these variables
     host: process.env.MYSQL_HOST || process.env.DB_HOST || 'localhost',               // hostname of the database server
-    port: Number(process.env.MYSQL_PORT || 3306),
+    port: Number(process.env.MYSQL_PORT),
     user: process.env.MYSQL_USER || process.env.DB_USER,                              //'root' or your username
     password: process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD,                      // '!1230#AzK' or your password
     database: process.env.MYSQL_DATABASE || process.env.DB_NAME,                          // 'mydb' or 'dbdbdb'
@@ -19,6 +19,18 @@ const db = mysql.createPool({                           //edit your .env file to
     waitForConnections: true,
     connectionLimit:    10,
     queueLimit:         0,
+
+    //uncomment for testing locally
+    // host: process.env.MYSQL_HOST,               // hostname of the database server
+    // port: Number(process.env.MYSQL_PORT),
+    // user: process.env.MYSQL_USER,                              //'root' or your username
+    // password: process.env.MYSQL_PASSWORD,                      // '!1230#AzK' or your password
+    // database: process.env.MYSQL_DATABASE,                          // 'mydb' or 'dbdbdb'
+    // timezone: 'Z',
+    // supportBigNumbers: true,
+    // waitForConnections: true,
+    // connectionLimit:    10,
+    // queueLimit:         0,
 
     //only include ssl when we have the CA for TiDB-Cloud:
     ...(sslOptions ? { ssl: sslOptions } : {})
