@@ -37,6 +37,20 @@ export async function getProducts(){
     return results;
 }
 
+export async function getAllProducts(){
+    // return new Promise((resolve, reject) =>{
+        const sql = 'SELECT * FROM Product';
+    //     db.query(sql, (err, results) =>{
+    //         if(err) return reject(err);
+    //         console.log("Products: ", results);
+    //         resolve (results);
+    //     });
+    // });
+    const [results] = await db.query(sql);
+    console.log("Products:", results.length);
+    return results;
+}
+
 // export function getProductById(productId){
 export async function getProductById(productId){
     // return new Promise((resolve, reject) =>{

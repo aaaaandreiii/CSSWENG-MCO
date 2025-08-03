@@ -2,6 +2,7 @@ export const rolePerms = {
   admin: [
     "view_users",
     "manage_users",
+    "view_inventory",
     "view_logs",
     "edit_product",
     "edit_stock",
@@ -10,6 +11,7 @@ export const rolePerms = {
     "view_orders"
   ],
   manager: [
+    "view_inventory",
     "view_users",
     "edit_product",
     "edit_stock",
@@ -19,6 +21,7 @@ export const rolePerms = {
     "view_logs"
   ],
   staff: [
+    "view_inventory",
     "edit_product",
     "edit_product",
     "edit_stock",

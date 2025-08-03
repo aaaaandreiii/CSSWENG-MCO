@@ -74,6 +74,7 @@ export async function bootstrapAdminUser() {
 // export function getUsers(){
 export async function getUsers() {
     // return new Promise((resolve, reject) =>{
+        // const sql = 'SELECT * FROM Users';
         const sql = 'SELECT * FROM Users WHERE deleteFlag = 0';
         // const sql = 'SELECT * FROM Users';
     //     db.query(sql, (err, results) =>{
@@ -86,9 +87,27 @@ export async function getUsers() {
     console.log("Users:", results.length);
     return results;
 }
+
+export async function getAllUsers() {
+    // return new Promise((resolve, reject) =>{
+        // const sql = 'SELECT * FROM Users';
+        const sql = 'SELECT * FROM Users';
+        // const sql = 'SELECT * FROM Users';
+    //     db.query(sql, (err, results) =>{
+    //         if(err) return reject(err);
+    //         console.log("Users: ", results);
+    //         resolve (results);
+    //     });
+    // });
+    const [results] = await db.query(sql);
+    console.log("Users:", results.length);
+    return results;
+}
+
 // export function getUserById(userId){
 export async function getUserById(userId) {
     // return new Promise((resolve, reject) =>{
+        // const sql = 'SELECT * FROM Users WHERE userId = ?';
         const sql = 'SELECT * FROM Users WHERE userId = ? AND deleteFlag = 0';
     //     db.query(sql, [userId], (err, results) =>{
     //         if(err) return reject(err);
@@ -115,6 +134,7 @@ export async function getUserById(userId) {
 // export function getUserByUsername(username){
 export async function getUserByUsername(username) {
     // return new Promise((resolve, reject) =>{
+        // const sql = 'SELECT * FROM Users WHERE username = ?';
         const sql = 'SELECT * FROM Users WHERE username = ? AND deleteFlag = 0';
     //     db.query(sql, [username], (err, results) =>{
     //         if(err) return reject(err);
@@ -280,6 +300,6 @@ export async function cascadeDeleteUser(userId) {
     if(!deleted){
         return false;
     }
-    await processCascade(userCascadeMap, userId)
+    // await processCascade(userCascadeMap, userId)
     return true;
 }

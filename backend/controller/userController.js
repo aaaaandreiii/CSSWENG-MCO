@@ -105,6 +105,21 @@ router.get("/getUsers", authenJWT, authorizePermission("view_users"), async(req,
     }
 }); //test: curl -X GET http://localhost:5000/api/getUsers -H "Authorization: Bearer TOKEN_HERE"
 
+router.get("/getAllUsers", authenJWT, authorizePermission("view_inventory"), async(req, res) =>{
+    try{
+        const users = await mysql.getAllUsers();
+        if(users){
+            // console.log("Users fetched: ", users);
+            res.json({message: "Users found!", users});
+        }
+        else{
+            res.status(404).json({ message: "Users not found or already deleted" });
+        }
+    }catch(err){
+        res.status(500).json({ message: "Error fetching Users" });
+    }
+});
+
 router.get("/getUserProfile", authenJWT, async(req, res) =>{
     try{
         const userId = req.user.userId;
