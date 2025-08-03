@@ -17,9 +17,10 @@ import dashboardRouter from './controller/dashboardController.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const allowedOrigin = process.env.PUBLIC_API_BASE_URL; 
 
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: 'http://localhost:5173' || allowedOrigin,
     methods: ['GET','POST','PUT','DELETE','OPTIONS'],
     allowedHeaders: ['Content-Type','Authorization']
 
