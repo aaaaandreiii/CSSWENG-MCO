@@ -65,6 +65,39 @@ export async function createStockEntry(data) {
 	}
 }
 
+export async function updateStockEntry(entryId, data) {
+	const sql = `
+		UPDATE StockEntry
+		SET
+			productId = ?,
+			branchName = ?,
+			dateReceived = ?,
+			quantityReceived = ?,
+			deliveryReceiptNumber = ?,
+			receivedBy = ?,
+			lastEditedUser = ?,
+			lastEditedDate = ?,
+			deleteFlag = ?
+		WHERE entryId = ?
+	`;
+
+	const values = [
+		data.productId ?? null,
+		data.branchName ?? null,
+		data.dateReceived ?? null,
+		data.quantityReceived ?? null,
+		data.deliveryReceiptNumber ?? null,
+		data.receivedBy ?? null,
+		data.lastEditedUser ?? null,
+		data.lastEditedDate ?? null,
+		data.deleteFlag ?? 0,
+		entryId
+	];
+
+	const [result] = await db.query(sql, values);
+	return result;
+}
+
 
 export async function deleteStockEntryById(entryId) {
 	try {
@@ -84,6 +117,69 @@ export async function deleteStockEntryById(entryId) {
 		return { success: true, entryId };
 	} catch (err) {
 		console.error(`[ERROR] deleteStockEntryById(${entryId}):`, err.message);
+		throw err;
+	}
+}
+
+export async function getProductIdByEntryId(entryId) {
+	const [rows] = await db.query(
+		"SELECT productId FROM StockEntry WHERE entryId = ? AND deleteFlag = 0",
+		[entryId]
+	);
+	return rows[0] || null;
+}
+
+export async function getReceivedByByEntryId(entryId) {
+	const [rows] = await db.query(
+		"SELECT receivedBy FROM StockEntry WHERE entryId = ? AND deleteFlag = 0",
+		[entryId]
+	);
+	return rows[0] || null;
+}
+
+export async function getLastEditedUserByEntryId(entryId) {
+	const [rows] = await db.query(
+		"SELECT lastEditedUser FROM StockEntry WHERE entryId = ? AND deleteFlag = 0",
+		[entryId]
+	);
+	return rows[0] || null;
+}
+
+export async function updateStockEntry(entryId, data) {
+	const query = `
+		UPDATE StockEntry
+		SET 
+			branchName = ?, 
+			dateReceived = ?, 
+			quantityReceived = ?, 
+			deliveryReceiptNumber = ?, 
+			receivedBy = ?, 
+			productId = ?, 
+			lastEditedUser = ?, 
+			lastEditedDate = ?, 
+			deleteFlag = ?
+		WHERE entryId = ?
+	`;
+
+	const values = [
+		data.branchName,
+		data.dateReceived,
+		data.quantityReceived,
+		data.deliveryReceiptNumber,
+		data.receivedBy,
+		data.productId,
+		data.lastEditedUser,
+		data.lastEditedDate,
+		data.deleteFlag ?? 0,
+		entryId
+	];
+
+	try {
+		const [result] = await db.query(query, values);
+		console.log(`[INFO] updateStockEntry: ID ${entryId} updated.`);
+		return result;
+	} catch (err) {
+		console.error(`[ERROR] updateStockEntry(${entryId}):`, err.message);
 		throw err;
 	}
 }

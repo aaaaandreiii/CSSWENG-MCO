@@ -17,7 +17,7 @@
 	};
 
 	const updateApiMap: Record<TabType, string> = {
-		StockEntryExpanded: 'getStockEntryExpanded'
+		StockEntryExpanded: 'updateStockEntryExpanded'
 	};
 	const deleteApiMap: Record<TabType, string> = {
 		StockEntryExpanded: "deleteStockEntryExpanded"
@@ -368,122 +368,238 @@
 		showModal = false;
 	}
 
+	function getUserIdFromToken(token: string): number | null {
+		try {
+			const payload = JSON.parse(atob(token.split('.')[1]));
+			return payload.userId || null; // change to payload.id or payload.sub if needed
+		} catch (err) {
+			console.error("Failed to decode token:", err);
+			return null;
+		}
+	}
+
+	async function getProductIdByEntryId(entryId: number): Promise<number | null> {
+		try {
+			const token = localStorage.getItem("token");
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/stockEntry/productId/${entryId}`, {
+				headers: {
+					Authorization: `Bearer ${token}`
+				}
+			});
+			if (!res.ok) throw new Error("Failed to fetch productId");
+			const data = await res.json();
+			return data.productId ?? null;
+		} catch (err) {
+			console.error("getProductIdByEntryId error:", err);
+			return null;
+		}
+	}
+
+	async function getReceivedByByEntryId(entryId: number): Promise<number | null> {
+		try {
+			const token = localStorage.getItem("token");
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/stockEntry/receivedBy/${entryId}`, {
+				headers: {
+					Authorization: `Bearer ${token}`
+				}
+			});
+			if (!res.ok) throw new Error("Failed to fetch receivedBy");
+			const data = await res.json();
+			return data.receivedBy ?? null;
+		} catch (err) {
+			console.error("getReceivedByByEntryId error:", err);
+			return null;
+		}
+	}
+
+	async function getLastEditedUserByEntryId(entryId: number): Promise<number | null> {
+		try {
+			const token = localStorage.getItem("token");
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/stockEntry/lastEditedUser/${entryId}`, {
+				headers: {
+					Authorization: `Bearer ${token}`
+				}
+			});
+			if (!res.ok) throw new Error("Failed to fetch lastEditedUser");
+			const data = await res.json();
+			return data.lastEditedUser ?? null;
+		} catch (err) {
+			console.error("getLastEditedUserByEntryId error:", err);
+			return null;
+		}
+	}
+
+	function toMySQLDate(date: string | Date): string {
+		const d = new Date(date);
+		return d.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+	}
+
+	function toMySQLDateTime(date: string | Date): string {
+		const d = new Date(date);
+		return d.toISOString().slice(0, 19).replace('T', ' '); // 'YYYY-MM-DD HH:MM:SS'
+	}
+
 	// func to handle saving the cell edit form
 	async function handleCellEditFormSave() {
 		if (modalRowIndex !== -1 && modalColumn) {
 			const token = localStorage.getItem('token');
 			const endpoint = updateApiMap[selected];
 			const primaryKey = primaryKeyMap[selected];
-			const rowId = rows[modalRowIndex][primaryKey]; //primary key: id
-			const rowData = rows[modalRowIndex]; //data before update
+			const rowId = rows[modalRowIndex][primaryKey];
+			const rowData = rows[modalRowIndex];
 			const varKey = keyMap[selected];
 
-			const updatedRow = {...rowData, [modalColumn]: cellEditForm.value}; 
+			const id = Number(rowId);
+
+
+			const [productId, receivedBy, lastEditedUser] = await Promise.all([
+				getProductIdByEntryId(id),
+				getReceivedByByEntryId(id),
+				getLastEditedUserByEntryId(id)
+			]);
 			
+
+			const updatedRow = {
+				...rowData,
+				[modalColumn]: cellEditForm.value,
+				productId,
+				receivedBy,
+				lastEditedUser
+			};
+
 			const validations = idValidationMap[selected] || [];
 			const foreignIds = validations.map(v => v.field);
 
-			const convertedRow: Record<string, any> = {}; //convert datatype
-			for(const displayKey in updatedRow){
-				const bKey = varKey[displayKey]; //converts Product Name to productName(match backend)
-				if(bKey){ 
-					let value = updatedRow[displayKey] as string | number;
-					if(foreignIds.includes(bKey)){ //if foreign Id
-						const num = Number(value);
-						value = num;
-					}
-					else if (typeof value === 'string') {
+			const convertedRow: Record<string, any> = {};
+			for (const displayKey in updatedRow) {
+				const bKey = varKey[displayKey];
+				if (bKey) {
+					let value = updatedRow[displayKey];
+					if (foreignIds.includes(bKey)) {
+						value = Number(value);
+					} else if (typeof value === 'string') {
 						value = value.trim();
-					}	
+					}
 					convertedRow[bKey] = value;
 				}
 			}
-			if(typeof convertedRow.cost === 'string'){
-				convertedRow.cost = Number(convertedRow.cost);
-			}
-			if(typeof convertedRow.retailPrice === 'string'){
-				convertedRow.retailPrice = Number(convertedRow.retailPrice);
-			}
-			if(typeof convertedRow.stockOnHand === 'string'){
-				convertedRow.stockOnHand = Number(convertedRow.stockOnHand);
-			}
-			if(typeof convertedRow.safeStockCount === 'string'){
-				convertedRow.safeStockCount = Number(convertedRow.safeStockCount);
-			}
-			if(typeof convertedRow.restockFlag === 'string'){
-				convertedRow.restockFlag = Number(convertedRow.restockFlag);
-			}
-			if(typeof convertedRow.discount === 'string'){
-				convertedRow.discount = Number(convertedRow.discount);
-			}
-			if(typeof convertedRow.quantity === 'string'){
-				convertedRow.quantity = Number(convertedRow.quantity);
-			}
-			if(typeof convertedRow.unitPriceAtPurchase === 'string'){
-				convertedRow.unitPriceAtPurchase = Number(convertedRow.unitPriceAtPurchase);
-			}
-			if(typeof convertedRow.quantityReceived === 'string'){
+
+			if (typeof convertedRow.quantityReceived === 'string') {
 				convertedRow.quantityReceived = Number(convertedRow.quantityReceived);
 			}
-			if(typeof convertedRow.deliveryReceiptNumber === 'string'){
+			if (typeof convertedRow.deliveryReceiptNumber === 'string') {
 				convertedRow.deliveryReceiptNumber = Number(convertedRow.deliveryReceiptNumber);
 			}
-			if(typeof convertedRow.quantityWithdrawn === 'string'){
-				convertedRow.quantityWithdrawn = Number(convertedRow.quantityWithdrawn);
+			if (convertedRow.dateReceived) {
+				convertedRow.dateReceived = toMySQLDate(convertedRow.dateReceived);
 			}
-			if(typeof convertedRow.returnedQuantity === 'string'){
-				convertedRow.returnedQuantity = Number(convertedRow.returnedQuantity);
-			}
-			if(typeof convertedRow.exchangeQuantity === 'string'){
-				convertedRow.exchangeQuantity = Number(convertedRow.exchangeQuantity);
+			if (convertedRow.lastEditedDate) {
+				convertedRow.lastEditedDate = toMySQLDateTime(convertedRow.lastEditedDate);
 			}
 
-			const finalForm: Record<string, any> ={
+			const finalForm: Record<string, any> = {
 				...convertedRow
 			};
-			
+
 			const field = modalColumn;
 			const raw = cellEditForm.value;
-			const trim = typeof raw === 'string' ? raw.trim(): raw;		
+			const trim = typeof raw === 'string' ? raw.trim() : raw;
 			const validation = validations.find(v => v.field === field);
-			if(validation){
-				if(trim === '' || isNaN(Number(trim))){
+
+			if (validation) {
+				if (trim === '' || isNaN(Number(trim))) {
 					alert(`${field} must be a number.`);
 					return;
 				}
 				const id = Number(trim);
-				const exists = await validate(validation.endpoint, id)
-				if(!exists){
+				const exists = await validate(validation.endpoint, id);
+				if (!exists) {
 					alert(`${field} ${id} does not exist in the database.`);
 					return;
 				}
 				const finalKey = varKey[field];
-				if(finalKey) {
+				if (finalKey) {
 					finalForm[finalKey] = id;
 				}
-			}
-			else{
+			} else {
 				const bKey = varKey[field];
-				if(bKey === 'pathName'){
-					finalForm[bKey] = trim === '' ? null: trim;
-				}
-				else if(trim !== '' && trim !== null && trim !== undefined){
-					if(['cost', 'retailPrice', 'stockOnHand', 'safeStockCount', 'restockFlag', 'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived', 'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'].includes(bKey)){
+				if (bKey === 'pathName') {
+					finalForm[bKey] = trim === '' ? null : trim;
+				} else if (trim !== '' && trim !== null && trim !== undefined) {
+					if (['quantityReceived', 'deliveryReceiptNumber'].includes(bKey)) {
 						const num = Number(trim);
-						if(isNaN(num) || num < 0){
+						if (isNaN(num) || num < 0) {
 							alert(`${bKey} must be a valid number`);
 							return;
 						}
-							finalForm[bKey] = num;
-					}
-					else{
+						finalForm[bKey] = num;
+					} else {
 						finalForm[bKey] = trim;
 					}
 				}
 			}
-			// console.log("finalForm", finalForm);
-			// console.log("updatedRow", updatedRow);
-			try{
+
+			const entryId = Number(rowId);
+
+			if (isNaN(entryId)) {
+				console.error("Invalid entry ID:", rowId);
+				return;
+			}
+
+			// 1. Parse foreign key display strings to IDs (if user edited them)
+			if ('productName' in finalForm) {
+				finalForm.productId = Number(finalForm.productName);
+				delete finalForm.productName;
+			}
+
+			if ('lastEditedBy' in finalForm) {
+				finalForm.lastEditedUser = Number(finalForm.lastEditedBy);
+				delete finalForm.lastEditedBy;
+			}
+
+			if ('receivedBy' in finalForm && typeof finalForm.receivedBy === 'string') {
+				const match = finalForm.receivedBy.match(/(\d+)/);
+				if (match) {
+					finalForm.receivedBy = parseInt(match[1], 10);
+				}
+			}
+
+			// 2. Fallback: fetch from DB if still missing
+			if (typeof finalForm.productId !== 'number' || isNaN(finalForm.productId)) {
+				finalForm.productId = await getProductIdByEntryId(entryId);
+			}
+			if (typeof finalForm.receivedBy !== 'number' || isNaN(finalForm.receivedBy)) {
+				finalForm.receivedBy = await getReceivedByByEntryId(entryId);
+			}
+			if (typeof finalForm.lastEditedUser !== 'number' || isNaN(finalForm.lastEditedUser)) {
+				finalForm.lastEditedUser = await getLastEditedUserByEntryId(entryId);
+			}
+
+			// 3. Fix MySQL date formats
+			convertedRow.lastEditedDate = toMySQLDateTime(new Date());
+
+			if (typeof convertedRow.dateReceived === 'string') {
+				convertedRow.dateReceived = toMySQLDate(convertedRow.dateReceived);
+			}
+
+			// 4. Sync date in finalForm if not already done
+			finalForm.lastEditedDate = convertedRow.lastEditedDate;
+			if (convertedRow.dateReceived) {
+				finalForm.dateReceived = convertedRow.dateReceived;
+			}
+
+			const userId = getUserIdFromToken(token);
+			if (userId !== null) {
+				finalForm.lastEditedUser = userId;
+			} else {
+				console.warn("Could not determine lastEditedUser from token");
+			}
+
+
+			// Debug: log what’s about to be submitted
+			console.log("Final form to be submitted:", finalForm);
+
+			try {
 				const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
 					method: 'PUT',
 					headers: {
@@ -492,24 +608,22 @@
 					},
 					body: JSON.stringify(finalForm)
 				});
-				// const data = await res.json();
-				if(!res.ok){
+
+				if (!res.ok) {
 					alert("Error updating!");
 					return;
 				}
+
 				await fetchTabData(selected);
-		
-				// Reset pagination and reload from beginning after edit
 				currentOffset = 0;
 				hasMoreData = true;
 				rows = [];
 				await fetchTabData(selected);
 
-				// rows[modalRowIndex][modalColumn] = cellEditForm.value;
 				isCellEditForm = false;
 				showModal = false;
-			}catch(err){
-			console.error("Error updating: ", err);
+			} catch (err) {
+				console.error("Error updating: ", err);
 			}
 		}
 	}
@@ -532,7 +646,7 @@
 		showModal = false;
 	}
 
-async function handleAddFormSave() {
+	async function handleAddFormSave() {
 	if (Object.values(addForm).some((v) => v?.trim() !== '')) {
 		const token = localStorage.getItem('token');
 		const endpoint = createApiMap[selected];
@@ -711,7 +825,6 @@ async function handleAddFormSave() {
 			alert("Successfully deleted all selected stock entries.");
 		}
 	}
-
 
 </script>
 
