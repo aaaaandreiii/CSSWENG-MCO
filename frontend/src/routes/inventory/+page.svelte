@@ -44,6 +44,16 @@
 		ReturnExchangelnfo: 'updateReturnExchangeInfo'
 	};
 
+	const deleteApiMap: Record<TabType, string> = {
+		Product: 'deleteProduct',
+		Orders: 'deleteOrder',
+		OrderInfo: 'deleteOrderInfo',
+		StockEntry: 'deleteStockEntry',
+		StockWithdrawal: 'deleteStockWithdrawal',
+		ReturnExchange: 'deleteReturnExchange',
+		ReturnExchangelnfo: 'deleteReturnExchangeInfo'
+	};
+
 	const keyMap: Record<TabType, Record<string, string>> = {
 		Product: {
 			'Product Name': 'productName',
@@ -261,7 +271,10 @@
 
 	onMount(() => {
 		ready = true;
-
+		fetchAllUsers();
+		// fetchAllProducts();
+		// fetchAllOrders();
+		// fetchAllTransactions();
 		const observer = new IntersectionObserver(([entry]) => {
 			if (entry.isIntersecting && hasMoreData && !isLoading) {
 				loadMoreData();
@@ -305,6 +318,7 @@
 			let newRows: { [key: string]: string }[] = [];
 
 			if(tab === "Product"){
+				// const filteredProducts = data.products.filter((item: any) => item.deleteFlag === 0);
 				newRows = data.products.map((item: any) =>({
 					'Product ID': item.productId,
 					'Product Name': item.productName,
@@ -321,7 +335,12 @@
 					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
 						timeZone: 'Asia/Manila'
 					}),
-					'Last Edited User': item.lastEditedUser
+					'Last Edited User': (() => {
+						const user = userDetails.find(u => u.userId === item.lastEditedUser);
+						if (!user || user.deleteFlag) return `Deleted User: ${item.lastEditedUser}`;
+						return item.lastEditedUser;
+					})()
+					// 'Deleted': item.deleteFlag
         		}));
 			}
 			else if(tab === "Orders"){
@@ -329,7 +348,11 @@
 					'Order ID': item.orderId,
 					'Discount': item.discount,
 					'Customer': item.customer,
-					'Handled By': item.handledBy,
+					'Handled By': (() => {
+						const user = userDetails.find(u => u.userId === item.handledBy);
+						if (!user || user.deleteFlag === 1) return `Deleted User: ${item.handledBy}`;
+						return item.handledBy;
+					})(),
 					'Payment Method': item.paymentMethod,
 					'Payment Status': item.paymentStatus,
 					'Date Ordered': new Date(item.dateOrdered).toLocaleDateString('en-PH', {
@@ -338,7 +361,12 @@
 					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
 						timeZone: 'Asia/Manila'
 					}),
-					'Last Edited User': item.lastEditedUser
+					'Last Edited User': (() => {
+						const user = userDetails.find(u => u.userId === item.lastEditedUser);
+						if (!user || user.deleteFlag) return `Deleted User: ${item.lastEditedUser}`;
+						return item.lastEditedUser;
+					})()
+					// 'Deleted': item.deleteFlag
 				}));
 			}
 			else if(tab === "OrderInfo"){
@@ -346,12 +374,27 @@
 					'Order Info ID': item.orderInfoId,
 					'Quantity': item.quantity,
 					'Order ID': item.orderId,
+					// (() => {
+					// 	const order = orderDetails.find(o => o.orderId === item.orderId);
+					// 	if (!order || order.deleteFlag) return `[Deleted]`;
+					// 	return item.orderId;
+					// })(),
 					'Product ID': item.productId,
+					// (() => {
+					// 	const product = productDetails.find(p => p.productId === item.productId);
+					// 	if (!product || product.deleteFlag) return `[Deleted]`;
+					// 	return item.productId;
+					// })(),
 					'Unit Price At Purchase': item.unitPriceAtPurchase,
 					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
 						timeZone: 'Asia/Manila'
 					}),
-					'Last Edited User': item.lastEditedUser
+					'Last Edited User': (() => {
+						const user = userDetails.find(u => u.userId === item.lastEditedUser);
+						if (!user || user.deleteFlag) return `Deleted User: ${item.lastEditedUser}`;
+						return item.lastEditedUser;
+					})()
+					// 'Deleted': item.deleteFlag
 				}));
 			}
 			else if(tab === "StockEntry"){
@@ -363,12 +406,26 @@
 					}),
 					'Quantity Received': item.quantityReceived,
 					'Delivery Receipt Number': item.deliveryReceiptNumber,
-					'Received By': item.receivedBy,
+					'Received By': (() => {
+						const user = userDetails.find(u => u.userId === item.receivedBy);
+						if (!user || user.deleteFlag) return `Deleted User: ${item.receivedBy}`;
+						return item.receivedBy;
+					})(),
 					'Product ID': item.productId,
+					// (() => {
+					// 	const product = productDetails.find(p => p.productId === item.productId);
+					// 	if (!product || product.deleteFlag) return `[Deleted]`;
+					// 	return item.productId;
+					// })(),
 					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
 						timeZone: 'Asia/Manila'
 					}),
-					'Last Edited User': item.lastEditedUser
+					'Last Edited User': (() => {
+						const user = userDetails.find(u => u.userId === item.lastEditedUser);
+						if (!user || user.deleteFlag) return `Deleted User: ${item.lastEditedUser}`;
+						return item.lastEditedUser;
+					})()
+					// 'Deleted': item.deleteFlag
 				}));
 			}
 			else if(tab === "StockWithdrawal"){
@@ -380,12 +437,25 @@
 					'Quantity Withdrawn': item.quantityWithdrawn,
 					'Purpose': item.purpose,
 					'Entry ID': item.entryId,
-					'Withdrawn By': item.withdrawnBy,
-					'Authorized By': item.authorizedBy,
+					'Withdrawn By': (() => {
+						const user = userDetails.find(u => u.userId === item.withdrawnBy);
+						if (!user || user.deleteFlag) return `Deleted User: ${item.withdrawnBy}`;
+						return item.withdrawnBy;
+					})(),
+					'Authorized By': (() => {
+						const user = userDetails.find(u => u.userId === item.authorizedBy);
+						if (!user || user.deleteFlag) return `Deleted User: ${item.authorizedBy}`;
+						return item.authorizedBy;
+					})(),
 					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
 						timeZone: 'Asia/Manila'
 					}),
-					'Last Edited User': item.lastEditedUser
+					'Last Edited User': (() => {
+						const user = userDetails.find(u => u.userId === item.lastEditedUser);
+						if (!user || user.deleteFlag) return `Deleted User: ${item.lastEditedUser}`;
+						return item.lastEditedUser;
+					})()
+					// 'Deleted': item.deleteFlag
 				}));
 			}
 			else if(tab === "ReturnExchange"){
@@ -396,28 +466,66 @@
 					}),
 					'Transaction Status': item.transactionStatus,
 					'Order ID': item.orderId,
-					'Handled By': item.handledBy,
-					'Approved By': item.approvedBy,
+					// (() => {
+					// 	const order = orderDetails.find(o => o.orderId === item.orderId);
+					// 	if (!order || order.deleteFlag) return `[Deleted]`;
+					// 	return item.orderId;
+					// })(),
+					'Handled By': (() => {
+						const user = userDetails.find(u => u.userId === item.handledBy);
+						if (!user || user.deleteFlag) return `Deleted User: ${item.handledBy}`;
+						return item.handledBy;
+					})(),
+					'Approved By': (() => {
+						const user = userDetails.find(u => u.userId === item.approvedBy);
+						if (!user || user.deleteFlag) return `Deleted User: ${item.approvedBy}`;
+						return item.approvedBy;
+					})(),
 					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
 						timeZone: 'Asia/Manila'
 					}),
-					'Last Edited User': item.lastEditedUser
+					'Last Edited User': (() => {
+						const user = userDetails.find(u => u.userId === item.lastEditedUser);
+						if (!user || user.deleteFlag) return `Deleted User: ${item.lastEditedUser}`;
+						return item.lastEditedUser;
+					})()
+					// 'Deleted': item.deleteFlag
 				}));
 			}
 			else if(tab === "ReturnExchangelnfo"){
 				newRows = data.returnExchangeInfo.map((item: any) =>({
 					'Detail ID': item.detailId,
 					'Returned Product ID': item.returnedProductId,
+					// (() => {
+					// 	const product = productDetails.find(p => p.productId === item.returnedProductId);
+					// 	if (!product || product.deleteFlag) return `[Deleted]`;
+					// 	return item.returnedProductId;
+					// })(),
 					'Returned Quantity': item.returnedQuantity,
 					'Exchange Product ID': item.exchangeProductId,
+					// (() => {
+					// 	const product = productDetails.find(p => p.productId === item.exchangeProductId);
+					// 	if (!product || product.deleteFlag) return `[Deleted]`;
+					// 	return item.exchangeProductId;
+					// })(),
 					'Exchange Quantity': item.exchangeQuantity,
 					'Reason': item.reason,
 					'Transaction ID': item.transactionId,
+					// (() => {
+					// 	const transaction = transactionDetails.find(t => t.transactionId === item.transactionId);
+					// 	if (!transaction || transaction.deleteFlag) return `[Deleted]`;
+					// 	return item.transactionId;
+					// })(),
 					'Return Type': item.returnType,
 					'Last Edited Date': new Date(item.lastEditedDate).toLocaleString('en-PH', {
 						timeZone: 'Asia/Manila'
 					}),
-					'Last Edited User': item.lastEditedUser
+					'Last Edited User': (() => {
+						const user = userDetails.find(u => u.userId === item.lastEditedUser);
+						if (!user || user.deleteFlag) return `Deleted User: ${item.lastEditedUser}`;
+						return item.lastEditedUser;
+					})()
+					// 'Deleted': item.deleteFlag
 				}));
 			}
 
@@ -441,6 +549,99 @@
 			isLoading = false;
 		}
 	}
+	
+	type UserDetails = { 
+		userId: number; 
+		name: string; //fullName
+		user: string; //username
+		deleteFlag: number;
+	};
+	let userDetails: UserDetails[] = [];
+
+	async function fetchAllUsers() {
+		try {
+			const token = localStorage.getItem('token');
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getAllUsers`, {
+			headers: { Authorization: `Bearer ${token}` }
+			});
+			const data = await res.json();
+        	console.log('Fetched data:', data);
+			userDetails = data.users.map((item: any) => ({
+				userId: Number(item.userId),
+				name: item.fullName,
+				user: item.username,
+				deleteFlag: Number(item.deleteFlag)
+			}));
+		} catch (err) {
+			console.error('Error fetching user lists:', err);
+		}
+	}
+
+	// type ProductDetails = { 
+	// 	productId: number; 
+	// 	deleteFlag: number;
+	// };
+	// let productDetails: ProductDetails[]= [];
+	// async function fetchAllProducts() {
+	// 	try {
+	// 		const token = localStorage.getItem('token');
+	// 		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getAllProducts`, {
+	// 		headers: { Authorization: `Bearer ${token}` }
+	// 		});
+	// 		const data = await res.json();
+    //     	console.log('Fetched data:', data);
+	// 		productDetails = data.products.map((item: any) => ({
+	// 			productId: Number(item.productId),
+	// 			deleteFlag: Number(item.deleteFlag)
+	// 		}));
+	// 	} catch (err) {
+	// 		console.error('Error fetching user lists:', err);
+	// 	}
+	// }
+
+	// type OrderDetails = { 
+	// 	orderId: number; 
+	// 	deleteFlag: number;
+	// };
+	// let orderDetails: OrderDetails[]= [];
+	// async function fetchAllOrders() {
+	// 	try {
+	// 		const token = localStorage.getItem('token');
+	// 		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getAllOrders`, {
+	// 		headers: { Authorization: `Bearer ${token}` }
+	// 		});
+	// 		const data = await res.json();
+    //     	console.log('Fetched data:', data);
+	// 		orderDetails = data.orders.map((item: any) => ({
+	// 			orderId: Number(item.orderId),
+	// 			deleteFlag: Number(item.deleteFlag)
+	// 		}));
+	// 	} catch (err) {
+	// 		console.error('Error fetching user lists:', err);
+	// 	}
+	// }
+
+	// type TransactionDetails = { 
+	// 	transactionId: number; 
+	// 	deleteFlag: number;
+	// };
+	// let transactionDetails: TransactionDetails[]= [];
+	// async function fetchAllTransactions() {
+	// 	try {
+	// 		const token = localStorage.getItem('token');
+	// 		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/getAllReturnExchanges`, {
+	// 		headers: { Authorization: `Bearer ${token}` }
+	// 		});
+	// 		const data = await res.json();
+    //     	console.log('Fetched data:', data);
+	// 		transactionDetails = data.returnExchanges.map((item: any) => ({
+	// 			transactionId: Number(item.transactionId),
+	// 			deleteFlag: Number(item.deleteFlag)
+	// 		}));
+	// 	} catch (err) {
+	// 		console.error('Error fetching user lists:', err);
+	// 	}
+	// }
 
 	async function loadMoreData() {
 		if (!hasMoreData || isLoading) return;
@@ -907,19 +1108,20 @@
 		) {
 			const token = localStorage.getItem('token');
 			const failedDeletes: number[] = []; 
-
+			const endpoint = deleteApiMap[selected];
+			const primaryKey = primaryKeyMap[selected];
 			for (const idx of selectedRows) {
-				const row = rows[idx];
-				const productId= row["Product ID"] || row.productId || row.id; // might need to change datatype to any to remove error
-
-				if (!productId) {
-					console.warn("No product ID found in row:", row);
+				// const row = rows[idx];
+				// const productId= row["Product ID"] || row.productId || row.id; // might need to change datatype to any to remove error
+				const rowId = rows[idx][primaryKey];
+				if (!rowId) {
+					console.warn("No ID found in row:", rowId);
 					failedDeletes.push(-1);
 					continue;
 				}
 
 				try {
-					const res = await fetch(`${PUBLIC_API_BASE_URL}/api/deleteProduct/${productId}`, {
+					const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
 						method: "DELETE",
 						headers: {
 							"Content-Type": "application/json",
@@ -929,12 +1131,12 @@
 
 					if (!res.ok) {
 						const err = await res.json();
-						console.error(`Failed to delete product ${productId}:`, err.message || err);
-						failedDeletes.push(productId);
+						console.error(`Failed to delete product ${rowId}:`, err.message || err);
+						failedDeletes.push(Number(rowId));
 					}
 				} catch (err) {
-					console.error(`Error deleting product ${productId}:`, err);
-					failedDeletes.push(productId);
+					console.error(`Error deleting product:`, err);
+					// failedDeletes.push(productId);
 				}
 			}
 
@@ -1064,6 +1266,7 @@
 		<tbody>
 			{#each rows as row, i}
 				<tr class="border-b border-black {i % 2 === 0 ? 'bg-[#eeeeee]' : 'bg-white'}">
+					<!-- <tr class={`border-b border-black ${i % 2 === 0 ? 'bg-[#eeeeee]' : 'bg-white'} ${row['Deleted'] === 1 ? 'text-red-500 italic bg-red-50' : ''}`}> -->
 					<td class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center"
 						><input type="checkbox" bind:group={selectedRows} value={i} /></td
 					>
@@ -1080,6 +1283,8 @@
 							{:else}
 								<span class="text-gray-400 italic">Null</span>
 							{/if}
+						<!-- {:else if head === "Product Name" && row['Deleted'] === 1}
+							<span class="text-red-500 italic">[Deleted] {row[head]}</span> -->
 						{:else}
 							{row[head]}
 						{/if}

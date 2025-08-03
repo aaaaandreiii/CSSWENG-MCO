@@ -68,7 +68,7 @@ router.get('/', async (req, res, next) => {
     // 4. top selling products
     const [topSellingProducts] = await db.query(
       `SELECT 
-        Product.productId, Product.productName, sum(OrderInfo.quantity) AS totalQty
+        Product.productId, Product.productName, sum(OrderInfo.quantity) AS totalQty, Product.pathName
         FROM Product 
         JOIN OrderInfo ON Product.productId = OrderInfo.productId 
         JOIN Orders ON OrderInfo.orderId = Orders.orderId

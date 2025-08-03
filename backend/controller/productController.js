@@ -43,6 +43,21 @@ router.get("/getProducts", authenJWT, authorizePermission("edit_product"), async
     }
 }); //test: curl -X GET http://localhost:5000/api/getProducts -H "Authorization: Bearer TOKEN_HERE"
 
+router.get("/getAllProducts", authenJWT, authorizePermission("edit_product"), async(req, res) =>{
+    try{
+        const products = await mysql.getAllProducts();
+        if(products){
+            // console.log("Products fetched: ", products);
+            res.json({message: "Products found!", products});
+        }
+        else{
+            res.status(404).json({ message: "Products not found or already deleted" });
+        }
+    }catch(err){
+        res.status(500).json({ message: "Error fetching Products" });
+    }
+}); 
+
 router.get("/getProductById/:id", authenJWT, authorizePermission("edit_product"), async(req, res) =>{
     try{
         const productId = parseInt(req.params.id);
