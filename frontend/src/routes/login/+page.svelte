@@ -12,7 +12,6 @@
 	let loginError = '';
 
 	async function login(){
-
 		if (!username.trim() || !password.trim()) {
 			loginError = 'Please enter username and password.';
 			return;
@@ -41,7 +40,6 @@
 			localStorage.setItem('actkn', data.token);
 			localStorage.setItem('reftkn', data.refreshToken);
 
-
 			loginError = '';
 			goto('/dashboard');
 
@@ -55,7 +53,6 @@
 <div style="display: flex;  height: 100vh">
 	<div id="white_box">
 		<header class="header text-center font-bold">Log in</header>
-
 		<div class="mt-13 mb-10">
 			<div class="flex-col">
 				<h1 class="text-lg">Username</h1>
@@ -63,19 +60,18 @@
 					type="text"
 					bind:value={username}
 					placeholder="Type your username"
-					id="input"
+					id="username"
 					class="gray3_txt"
 					on:keydown={(e) => { if (e.key === 'Enter') login(); }}
 				/>
 			</div>
-			
 			<div class="flex-scol pt-3">
 				<h1 class="text-lg">Password</h1>
 				<input
 					type={showPassword ? "text" : "password"}
 					bind:value={password}
 					placeholder="Type your password"
-					id="input"
+					id="password"
 					class="gray3_txt"
 					on:keydown={(e) => { if (e.key === 'Enter') login(); }}
 				/>
@@ -88,17 +84,14 @@
 					/>
 					<label for="show-password" class="text-sm select-none">Show password</label>
 				</div>
-
 				{#if loginError}
 					<p class="text-sm text-red-600 mt-2">{loginError}</p>
 				{/if}
 			</div>
-			
 		<h1 class="gray2_txt text-right font-bold">
 			<a href="/forgot_password" class="transition-colors duration-150 hover:text-gray-800">Forgot password</a>
 		</h1>
 		</div>
-
 		<div class="p-5 text-center">
 			<button
 				on:click={login}
