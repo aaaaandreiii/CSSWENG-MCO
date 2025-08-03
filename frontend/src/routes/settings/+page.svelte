@@ -1424,7 +1424,7 @@
 						</button>
 						<button
 							type="button"
-							class="px-4 py-2 rounded bg-[#de0101] hover:bg-[#a30000] text-white"
+							class="px-4 py-2 rounded bg-[#de0101] hover:bg-[#8a0000] text-white"
 							onclick={handleDeleteAccount}
 						>
 							Delete

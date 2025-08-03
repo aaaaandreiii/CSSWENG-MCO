@@ -1045,14 +1045,14 @@
 			class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold
 				{selectedRows.length === 0
 				? 'cursor-not-allowed bg-gray-400 text-gray-200'
-				: 'red1 text-white hover:bg-red-700'}"
+				: 'bg-red-600 text-white hover:bg-red-800'}"
 			disabled={selectedRows.length === 0}
 			on:click={handleDeleteSelectedRows}
 		>
 			Delete
 		</button>
 		<button
-			class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold bg-[#3d843f] text-white hover:bg-[#3b7f3b]"
+			class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold bg-[#3d843f] text-white hover:bg-[#057f3b]"
 			on:click={openAddModal}
 		>
 			Add

@@ -1249,7 +1249,7 @@
 			class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold
 				{selectedRows.length === 0
 				? 'cursor-not-allowed bg-gray-400 text-gray-200'
-				: 'red1 text-white hover:bg-red-700'}"
+				: 'red1 text-white hover:bg-[#8a0000]'}"
 			disabled={selectedRows.length === 0}
 			on:click={handleDeleteSelectedRows}
 		>
