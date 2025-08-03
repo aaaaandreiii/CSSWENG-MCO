@@ -8,6 +8,9 @@ const sslOptions = process.env.CA
   ? { ca: fs.readFileSync(process.env.CA) }
   : undefined;
 
+console.log('▶ DB HOST:', process.env.DB_HOST);
+console.log('▶ DB PORT:', process.env.DB_PORT);
+
 const db = mysql.createPool({                           //edit your .env file to set these variables
     host: process.env.MYSQL_HOST || process.env.DB_HOST || 'localhost',               // hostname of the database server
     port: Number(process.env.MYSQL_PORT),
