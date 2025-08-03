@@ -8,9 +8,6 @@ const sslOptions = process.env.CA
   ? { ca: fs.readFileSync(process.env.CA) }
   : undefined;
 
-console.log('▶ DB HOST:', process.env.DB_HOST);
-console.log('▶ DB PORT:', process.env.DB_PORT);
-
 const db = mysql.createPool({                           //edit your .env file to set these variables
     host: process.env.MYSQL_HOST || process.env.DB_HOST || 'localhost',               // hostname of the database server
     port: Number(process.env.MYSQL_PORT),
@@ -23,7 +20,7 @@ const db = mysql.createPool({                           //edit your .env file to
     connectionLimit:    10,
     queueLimit:         0,
 
-    //uncomment for testing locally
+    // // uncomment for testing locally
     // host: process.env.MYSQL_HOST,               // hostname of the database server
     // port: Number(process.env.MYSQL_PORT),
     // user: process.env.MYSQL_USER,                              //'root' or your username
@@ -43,8 +40,6 @@ console.log('MySQL pool created (promise API)');
 
 export default db;
 
-
-// in model/db.js (or wherever you import `db`)
 export async function processCascade(map, id) {
   for (const [table, config] of Object.entries(map)) {
     const values = typeof config.values === 'function'
