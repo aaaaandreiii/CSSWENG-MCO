@@ -347,114 +347,279 @@
 		return match.id;
 	}
 
-async function handleCellEditFormSave() {
-	if (modalRowIndex === -1 || !modalColumn) return;
-
-	const token = localStorage.getItem('actkn');
-	if (!token) {
-		alert("User not authenticated.");
-		return;
+	
+	function toMySQLDate(date: string | Date): string {
+		const d = new Date(date);
+		return d.toISOString().split('T')[0]; // 'YYYY-MM-DD'
 	}
 
-	const endpoint = updateApiMap[selected];
-	const primaryKey = primaryKeyMap[selected];
-	const rowId = rows[modalRowIndex][primaryKey];
-	const rowData = rows[modalRowIndex];
-	const varKey = keyMap[selected];
-	const foreignKeyMap = foreignKeyNameMap[selected] || {};
-	const validations = idValidationMap[selected] || [];
-	const foreignIds = validations.map(v => v.field);
+	function toMySQLDateTime(date: string | Date): string {
+		const d = new Date(date);
+		return d.toISOString().slice(0, 19).replace('T', ' '); // 'YYYY-MM-DD HH:MM:SS'
+	}
 
-	const editedValue = cellEditForm.value;
-	const updatedRow = { ...rowData, [modalColumn]: editedValue };
-
-	const convertedRow: Record<string, any> = {};
-
-	// Known numeric fields
-	const numericFields = [
-		'cost', 'retailPrice', 'stockOnHand', 'safeStockCount', 'restockFlag',
-		'discount', 'quantity', 'unitPriceAtPurchase', 'quantityReceived',
-		'deliveryReceiptNumber', 'quantityWithdrawn', 'returnedQuantity', 'exchangeQuantity'
-	];
-
-	// Map display values to backend keys and convert
-	for (const displayKey in updatedRow) {
-		const backendKey = varKey[displayKey];
-		if (!backendKey) continue;
-
-		let value: string | number = updatedRow[displayKey];
-
-		if (foreignIds.includes(displayKey)) {
-			// Convert display name to ID if needed
-			if (typeof value === 'string' && isNaN(Number(value))) {
-				const id = await getForeignKeyId(displayKey, value, token, foreignKeyMap);
-				if (id === null) {
-					alert(`Invalid ${displayKey}: ${value}`);
-					return;
-				}
-				value = id;
-			} else {
-				value = Number(value);
-			}
-		} else if (numericFields.includes(backendKey)) {
-			value = Number(value);
-		} else if (typeof value === 'string') {
-			value = value.trim();
+	function getUserIdFromToken(token: string): number | null {
+		try {
+			const payload = JSON.parse(atob(token.split('.')[1]));
+			return payload.userId || null; // change to payload.id or payload.sub if needed
+		} catch (err) {
+			console.error("Failed to decode token:", err);
+			return null;
 		}
-
-		convertedRow[backendKey] = value;
 	}
 
-	// Set lastEditedUser and lastEditedDate
+	export async function getEntryIdByWithdrawalId(withdrawalId: number): Promise<number | null> {
 	try {
-		const payload = JSON.parse(atob(token.split('.')[1]));
-		const userId = payload.userId || payload.id;
-		const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-		convertedRow.lastEditedUser = userId;
-		convertedRow.lastEditedDate = now;
-	} catch {
-		alert("Failed to decode user ID from token.");
-		return;
-	}
-
-	// Submit to backend
-	try {
-		//fix: uses privateClient
-		// const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${rowId}`, {
-		// 	method: 'PUT',
-		// 	headers: {
-		// 		'Content-Type': 'application/json',
-		// 		Authorization: `Bearer ${token}`
-		// 	},
-		// 	body: JSON.stringify(convertedRow)
-		// });
-
-		// if (!res.ok) {
-		// 	const err = await res.json();
-		// 	console.error("Backend response:", err);
-		// 	alert("Error updating: " + err.message);
-		// 	return;
-		// }
-
-		await privateClient.put(`/api/${endpoint}/${rowId}`, convertedRow);
-
-		await fetchTabData(selected);
-		currentOffset = 0;
-		hasMoreData = true;
-		rows = [];
-		await fetchTabData(selected);
-
-		isCellEditForm = false;
-		showModal = false;
-		alert("Update successful!");
+		const token = localStorage.getItem("token");
+		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/stockWithdrawal/entryId/${withdrawalId}`, {
+			headers: {
+				Authorization: `Bearer ${token}`
+			}
+		});
+		if (!res.ok) throw new Error("Failed to fetch entry ID");
+		const data = await res.json();
+		return data.entryId ?? null;
 	} catch (err) {
-		console.error("Update error:", err);
-		alert("Unexpected error during update.");
+		console.error("getEntryIdByWithdrawalId error:", err);
+		return null;
+	}
+}
+
+export async function getAuthorizedByById(withdrawalId: number): Promise<number | null> {
+	try {
+		const token = localStorage.getItem("token");
+		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/stockWithdrawal/authorizedBy/${withdrawalId}`, {
+			headers: {
+				Authorization: `Bearer ${token}`
+			}
+		});
+		if (!res.ok) throw new Error("Failed to fetch authorizedBy");
+		const data = await res.json();
+		return data.authorizedBy ?? null;
+	} catch (err) {
+		console.error("getAuthorizedByById error:", err);
+		return null;
 	}
 }
 
 
-	let addForm: { [key: string]: string | null } = {};
+	export async function getWithdrawnByById(withdrawalId: number): Promise<number | null> {
+	try {
+		const token = localStorage.getItem("token");
+		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/stockWithdrawal/withdrawnBy/${withdrawalId}`, {
+			headers: {
+				Authorization: `Bearer ${token}`
+			}
+		});
+		if (!res.ok) throw new Error("Failed to fetch withdrawnBy");
+		const data = await res.json();
+		return data.withdrawnBy ?? null;
+	} catch (err) {
+		console.error("getWithdrawnByById error:", err);
+		return null;
+	}
+}
+
+export async function getLastEditedUserByWithdrawalId(withdrawalId: number): Promise<number | null> {
+	try {
+		const token = localStorage.getItem("token");
+		const res = await fetch(`${PUBLIC_API_BASE_URL}/api/stockWithdrawal/lastEditedUser/${withdrawalId}`, {
+			headers: {
+				Authorization: `Bearer ${token}`
+			}
+		});
+		if (!res.ok) throw new Error("Failed to fetch lastEditedUser");
+		const data = await res.json();
+		return data.lastEditedUser ?? null;
+	} catch (err) {
+		console.error("getLastEditedUserByWithdrawalId error:", err);
+		return null;
+	}
+
+
+async function handleCellEditFormSave() {
+	if (modalRowIndex !== -1 && modalColumn) {
+		const token = localStorage.getItem("token");
+		const endpoint = updateApiMap[selected];
+		const primaryKey = primaryKeyMap[selected];
+		const rowId = rows[modalRowIndex][primaryKey];
+		const rowData = rows[modalRowIndex];
+		const varKey = keyMap[selected];
+
+		const id = Number(rowId);
+
+		const [entryId, withdrawnBy, authorizedBy, lastEditedUser] = await Promise.all([
+			getEntryIdByWithdrawalId(id),
+			getWithdrawnByById(id),
+			getAuthorizedByById(id),
+			getLastEditedUserByWithdrawalId(id)
+		]);
+
+		console.log({ entryId, withdrawnBy, authorizedBy, lastEditedUser });
+
+
+
+		const updatedRow = {
+			...rowData,
+			[modalColumn]: cellEditForm.value,
+			entryId,
+			withdrawnBy,
+			lastEditedUser
+		};
+
+		const validations = idValidationMap[selected] || [];
+		const foreignIds = validations.map(v => v.field);
+
+		const convertedRow: Record<string, any> = {};
+		for (const displayKey in updatedRow) {
+			const bKey = varKey[displayKey];
+			if (bKey) {
+				let value = updatedRow[displayKey];
+				if (foreignIds.includes(bKey)) {
+					value = Number(value);
+				} else if (typeof value === "string") {
+					value = value.trim();
+				}
+				convertedRow[bKey] = value;
+			}
+		}
+
+		if (typeof convertedRow.quantityWithdrawn === "string") {
+			convertedRow.quantityWithdrawn = Number(convertedRow.quantityWithdrawn);
+		}
+		if (convertedRow.dateWithdrawn) {
+			convertedRow.dateWithdrawn = toMySQLDate(convertedRow.dateWithdrawn);
+		}
+		if (convertedRow.lastEditedDate) {
+			convertedRow.lastEditedDate = toMySQLDateTime(convertedRow.lastEditedDate);
+		}
+
+		const finalForm = { ...convertedRow };
+
+		const field = modalColumn;
+		const raw = cellEditForm.value;
+		const trim = typeof raw === "string" ? raw.trim() : raw;
+		const validation = validations.find(v => v.field === field);
+
+		if (validation) {
+			if (trim === "" || isNaN(Number(trim))) {
+				alert(`${field} must be a number.`);
+				return;
+			}
+			const id = Number(trim);
+			const exists = await validate(validation.endpoint, id);
+			if (!exists) {
+				alert(`${field} ${id} does not exist in the database.`);
+				return;
+			}
+			const finalKey = varKey[field];
+			if (finalKey) {
+				finalForm[finalKey] = id;
+			}
+		} else {
+			const bKey = varKey[field];
+			if (bKey === "pathName") {
+				finalForm[bKey] = trim === "" ? null : trim;
+			} else if (trim !== "" && trim !== null && trim !== undefined) {
+				if (["quantityWithdrawn"].includes(bKey)) {
+					const num = Number(trim);
+					if (isNaN(num) || num < 0) {
+						alert(`${bKey} must be a valid number`);
+						return;
+					}
+					finalForm[bKey] = num;
+				} else {
+					finalForm[bKey] = trim;
+				}
+			}
+		}
+
+		const withdrawalId = Number(rowId);
+		if (isNaN(withdrawalId)) {
+			console.error("Invalid withdrawal ID:", rowId);
+			return;
+		}
+
+		// Parse foreign key display strings to IDs
+		if ("entryId" in finalForm) {
+			finalForm.entryId = Number(finalForm.entryId);
+		}
+		if ("withdrawnBy" in finalForm && typeof finalForm.withdrawnBy === "string") {
+			const match = finalForm.withdrawnBy.match(/(\d+)/);
+			if (match) {
+				finalForm.withdrawnBy = parseInt(match[1], 10);
+			}
+		}
+		if ("authorizedBy" in finalForm && typeof finalForm.authorizedBy === "string") {
+			const match = finalForm.authorizedBy.match(/(\d+)/);
+			if (match) {
+				finalForm.authorizedBy = parseInt(match[1], 10);
+			}
+		}
+		if ("lastEditedBy" in finalForm) {
+			finalForm.lastEditedUser = Number(finalForm.lastEditedBy);
+			delete finalForm.lastEditedBy;
+		}
+
+		// Fallback: fetch missing foreign keys
+		if (typeof finalForm.entryId !== "number" || isNaN(finalForm.entryId)) {
+			finalForm.entryId = await getEntryIdByWithdrawalId(withdrawalId);
+		}
+		if (typeof finalForm.withdrawnBy !== "number" || isNaN(finalForm.withdrawnBy)) {
+			finalForm.withdrawnBy = await getWithdrawnByById(withdrawalId);
+		}
+		if (typeof finalForm.authorizedBy !== "number" || isNaN(finalForm.authorizedBy)) {
+			finalForm.authorizedBy = await getAuthorizedByById(withdrawalId);
+		}
+		if (typeof finalForm.lastEditedUser !== "number" || isNaN(finalForm.lastEditedUser)) {
+			finalForm.lastEditedUser = await getLastEditedUserByWithdrawalId(withdrawalId);
+		}
+
+		// Set timestamp + user from token
+		finalForm.lastEditedDate = toMySQLDateTime(new Date());
+		const userId = getUserIdFromToken(token);
+		if (userId !== null) {
+			finalForm.lastEditedUser = userId;
+		} else {
+			console.warn("Could not determine lastEditedUser from token");
+		}
+
+		console.log("Final form to be submitted:", finalForm);
+
+		try {
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/api/${endpoint}/${withdrawalId}`, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`
+				},
+				body: JSON.stringify(finalForm)
+			});
+
+			if (!res.ok) {
+				alert("Error updating!");
+				return;
+			}
+			
+			await privateClient.put(`/api/${endpoint}/${rowId}`, convertedRow);
+
+			await fetchTabData(selected);
+			currentOffset = 0;
+			hasMoreData = true;
+			rows = [];
+			await fetchTabData(selected);
+
+			isCellEditForm = false;
+			showModal = false;
+		} catch (err) {
+			console.error("Error updating: ", err);
+		}
+	}
+}
+
+
+
+let addForm: { [key: string]: string | null } = {};
 	let isAddForm = false;
 
 	function openAddModal() {
@@ -471,6 +636,7 @@ async function handleCellEditFormSave() {
 		isAddForm = false;
 		showModal = false;
 	}
+
 
 	async function handleAddFormSave() {
 		if (Object.values(addForm).some((v) => v?.trim() !== '')) {

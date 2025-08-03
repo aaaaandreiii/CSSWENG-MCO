@@ -86,10 +86,17 @@ export async function createStockWithdrawal(data) {
 
 export async function updateStockWithdrawal(withdrawalId, data) {
 	const query = `
-		UPDATE StockWithdrawal SET
-			entryId = ?, quantityWithdrawn = ?, purpose = ?,
-			withdrawnBy = ?, authorizedBy = ?, lastEditedUser = ?,
-			dateWithdrawn = ?, lastEditedDate = ?
+		UPDATE StockWithdrawal
+		SET
+			entryId = ?,
+			quantityWithdrawn = ?,
+			purpose = ?,
+			withdrawnBy = ?,
+			authorizedBy = ?,
+			lastEditedUser = ?,
+			dateWithdrawn = ?,
+			lastEditedDate = ?,
+			deleteFlag = ?
 		WHERE withdrawalId = ?
 	`;
 
@@ -102,15 +109,48 @@ export async function updateStockWithdrawal(withdrawalId, data) {
 		data.lastEditedUser,
 		data.dateWithdrawn,
 		data.lastEditedDate,
+		data.deleteFlag ?? 0, // default to 0 if undefined
 		withdrawalId
 	];
 
 	try {
 		const [result] = await db.query(query, values);
-		console.log("[INFO] updateStockWithdrawal:", result);
+		console.log(`[INFO] updateStockWithdrawal: ID ${withdrawalId} updated.`);
 		return result;
 	} catch (err) {
-		console.error("[ERROR] updateStockWithdrawal:", err);
+		console.error(`[ERROR] updateStockWithdrawal(${withdrawalId}):`, err.message);
 		throw err;
 	}
+}
+
+export async function getEntryIdByWithdrawalId(withdrawalId) {
+	const [rows] = await db.query(
+		"SELECT entryId FROM StockWithdrawal WHERE withdrawalId = ? AND deleteFlag = 0",
+		[withdrawalId]
+	);
+	return rows[0] || null;
+}
+
+export async function getWithdrawnByByWithdrawalId(withdrawalId) {
+	const [rows] = await db.query(
+		"SELECT withdrawnBy FROM StockWithdrawal WHERE withdrawalId = ? AND deleteFlag = 0",
+		[withdrawalId]
+	);
+	return rows[0] || null;
+}
+
+export async function getAuthorizedByByWithdrawalId(withdrawalId) {
+	const [rows] = await db.query(
+		"SELECT authorizedBy FROM StockWithdrawal WHERE withdrawalId = ? AND deleteFlag = 0",
+		[withdrawalId]
+	);
+	return rows[0] || null;
+}
+
+export async function getLastEditedUserByWithdrawalId(withdrawalId) {
+	const [rows] = await db.query(
+		"SELECT lastEditedUser FROM StockWithdrawal WHERE withdrawalId = ? AND deleteFlag = 0",
+		[withdrawalId]
+	);
+	return rows[0] || null;
 }
