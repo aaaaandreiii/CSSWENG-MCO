@@ -23,6 +23,8 @@ const allowedOrigins = [
   process.env.PUBLIC_API_BASE_URL
 ].filter(Boolean);
 
+console.log("▶️ CORS — allowedOrigins:", allowedOrigins);
+
 const corsOptions = {
   origin: (incomingOrigin, callback) => {
     if (!incomingOrigin || allowedOrigins.includes(incomingOrigin)) {
