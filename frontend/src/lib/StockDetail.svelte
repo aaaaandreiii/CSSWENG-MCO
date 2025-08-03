@@ -1,6 +1,8 @@
 <script lang="ts">
-    import { PUBLIC_API_BASE_URL } from '$env/static/public';
-    import { onMount } from 'svelte';
+    // import { PUBLIC_API_BASE_URL } from '$env/static/public';    //replaced by privateClient and publicClient
+    import { publicClient } from '$lib/api/public.client';
+    import privateClient   from '$lib/api/private.client';
+	import { onMount } from 'svelte';
     import Chart from 'chart.js/auto';
     export let item;
 
@@ -8,8 +10,13 @@
     let chart: any;
 
     onMount(async () => {
-        const res = await fetch(`${PUBLIC_API_BASE_URL}/api/stockHistory?productId=${item.productId}`);
-        const { dates, stockLevels, sales } = await res.json();
+        // const res = await fetch(`${PUBLIC_API_BASE_URL}/api/stockHistory?productId=${item.productId}`);
+        // const { dates, stockLevels, sales } = await res.json();
+        const { data } = await privateClient.get('/api/stockHistory', {
+            params: { productId: item.productId }
+        });
+        const { dates, stockLevels, sales } = data;
+
 
         chart = new Chart(chartEl, {
         type: 'line',
