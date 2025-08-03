@@ -1,3 +1,4 @@
+USE `test` ;
 INSERT INTO OrderInfo (quantity, orderId, productId, unitPriceAtPurchase, lastEditedDate, lastEditedUser, deleteFlag)
 VALUES
 (5, 1, 367, 200.0, '2025-07-28 07:06:53', 1, 0),
@@ -44,4 +45,3 @@ VALUES
 (1, 19, 379, 120.0, '2025-07-28 07:06:53', 2, 0),
 (1, 20, 344, 25.0, '2025-07-28 07:06:53', 2, 0),
 (2, 20, 83, 1900.0, '2025-07-28 07:06:53', 1, 0);
-

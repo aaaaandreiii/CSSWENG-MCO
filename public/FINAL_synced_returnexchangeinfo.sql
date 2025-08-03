@@ -1,3 +1,4 @@
+USE test;
 INSERT INTO ReturnExchangeInfo (detailId, returnedProductId, returnedQuantity, exchangeProductId, exchangeQuantity, reason, transactionId, returnType, lastEditedDate, lastEditedUser, deleteFlag)
 VALUES
 (1, 367, 3, NULL, NULL, 'Changed my mind', 1, 'Warranty', '2025-07-28 07:25:43', 1, 0),
@@ -35,4 +36,3 @@ VALUES
 (33, 255, 4, 338.0, NULL, 'Received used item', 19, 'Warranty', '2025-07-28 07:25:43', 2, 0),
 (34, 344, 1, 28.0, 3.0, 'Ordered by mistake', 20, 'Return', '2025-07-28 07:25:43', 2, 0),
 (35, 83, 1, 199.0, NULL, 'Size doesn’t fit', 20, 'Exchange', '2025-07-28 07:25:43', 1, 0);
-

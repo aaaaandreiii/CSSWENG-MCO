@@ -5,21 +5,21 @@ SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
 -- -----------------------------------------------------
--- Schema mydb
+-- Schema test
 -- -----------------------------------------------------
 
 -- -----------------------------------------------------
--- Schema mydb
+-- Schema test
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `mydb` DEFAULT CHARACTER SET utf8mb4 ;
-USE `mydb` ;
+CREATE SCHEMA IF NOT EXISTS `test` DEFAULT CHARACTER SET utf8mb4 ;
+USE `test` ;
 
 -- -----------------------------------------------------
--- Table `mydb`.`Product`
+-- Table `test`.`Product`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `mydb`.`Product` ;
+DROP TABLE IF EXISTS `test`.`Product` ;
 
-CREATE TABLE IF NOT EXISTS `mydb`.`Product` (
+CREATE TABLE IF NOT EXISTS `test`.`Product` (
   `productId` INT NOT NULL AUTO_INCREMENT,
   `productName` VARCHAR(255) NOT NULL,
   `category` VARCHAR(45) NOT NULL,
@@ -36,24 +36,24 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Product` (
   `lastEditedUser` INT NOT NULL,
   `deleteFlag` TINYINT NOT NULL,
   PRIMARY KEY (`productId`),
-  INDEX `fk_Product_lastEditedUser` (`lastEditedUser` ASC) VISIBLE,
+  INDEX `fk_Product_lastEditedUser` (`lastEditedUser` ASC),
   CONSTRAINT `fk_Product_lastEditedUser`
     FOREIGN KEY (`lastEditedUser`)
-    REFERENCES `mydb`.`Users` (`userId`))
+    REFERENCES `test`.`Users` (`userId`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4;
 
 
 -- -----------------------------------------------------
--- Table `mydb`.`Users`
+-- Table `test`.`Users`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `mydb`.`Users` ;
+DROP TABLE IF EXISTS `test`.`Users` ;
 
-CREATE TABLE IF NOT EXISTS `mydb`.`Users` (
+CREATE TABLE IF NOT EXISTS `test`.`Users` (
   `userId` INT NOT NULL AUTO_INCREMENT,
   `fullName` VARCHAR(45) NOT NULL,
   `userRole` ENUM('admin', 'staff', 'manager') NOT NULL,
-  `username` VARCHAR(45) NOT NULL,
+  `username` VARCHAR(45) UNIQUE NOT NULL,
   `userPassword` VARCHAR(255) NOT NULL,
   `pathName` VARCHAR(255) DEFAULT NULL,
   `dateAdded` DATE NOT NULL,
@@ -66,11 +66,11 @@ DEFAULT CHARACTER SET = utf8mb4;
 
 
 -- -----------------------------------------------------
--- Table `mydb`.`StockEntry`
+-- Table `test`.`StockEntry`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `mydb`.`StockEntry` ;
+DROP TABLE IF EXISTS `test`.`StockEntry` ;
 
-CREATE TABLE IF NOT EXISTS `mydb`.`StockEntry` (
+CREATE TABLE IF NOT EXISTS `test`.`StockEntry` (
   `entryId` INT NOT NULL AUTO_INCREMENT,
   `branchName` VARCHAR(45) NOT NULL,
   `dateReceived` DATE NOT NULL,
@@ -87,17 +87,17 @@ CREATE TABLE IF NOT EXISTS `mydb`.`StockEntry` (
   INDEX `fk_StockEntry_lastEditedUser` (`lastEditedUser`),
   CONSTRAINT `fk_StockEntry_lastEditedUser`
     FOREIGN KEY (`lastEditedUser`)
-    REFERENCES `mydb`.`Users` (`userId`)
+    REFERENCES `test`.`Users` (`userId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_StockEntry_Product1`
     FOREIGN KEY (`productId`)
-    REFERENCES `mydb`.`Product` (`productId`)
+    REFERENCES `test`.`Product` (`productId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_StockEntry_Users1`
     FOREIGN KEY (`receivedBy`)
-    REFERENCES `mydb`.`Users` (`userId`)
+    REFERENCES `test`.`Users` (`userId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -109,11 +109,11 @@ CREATE TABLE IF NOT EXISTS `mydb`.`StockEntry` (
   -- with what were previously declared in ching man's implementation
 
 -- -----------------------------------------------------
--- Table `mydb`.`StockWithdrawal`
+-- Table `test`.`StockWithdrawal`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `mydb`.`StockWithdrawal` ;
+DROP TABLE IF EXISTS `test`.`StockWithdrawal` ;
 
-CREATE TABLE IF NOT EXISTS `mydb`.`StockWithdrawal` (
+CREATE TABLE IF NOT EXISTS `test`.`StockWithdrawal` (
   `withdrawalId` INT NOT NULL AUTO_INCREMENT,
   `dateWithdrawn` DATE NOT NULL,
   `quantityWithdrawn` VARCHAR(45) NOT NULL,
@@ -127,32 +127,32 @@ CREATE TABLE IF NOT EXISTS `mydb`.`StockWithdrawal` (
   `deleteFlag` TINYINT NOT NULL,
   PRIMARY KEY (`withdrawalId`),
   -- INDEX `fk_StockWithdrawal_Product1_idx` (`productId` ASC) VISIBLE,      -- not in ching man's
-  INDEX `fk_StockWithdrawal_Users2_idx` (`withdrawnBy` ASC) VISIBLE,
-  INDEX `fk_StockWithdrawal_Users1_idx` (`authorizedBy` ASC) VISIBLE,
-  INDEX `fk_StockWithdrawal_StockEntry1_idx` (`entryId` ASC) VISIBLE,  
+  INDEX `fk_StockWithdrawal_Users2_idx` (`withdrawnBy` ASC),
+  INDEX `fk_StockWithdrawal_Users1_idx` (`authorizedBy` ASC),
+  INDEX `fk_StockWithdrawal_StockEntry1_idx` (`entryId` ASC),  
   -- INDEX `fk_StockWithdrawal_StockEntry` (`stockEntryId` ASC) VISIBLE,     -- different foreign key name in ching man's
-  INDEX `fk_StockWithdrawal_lastEditedUser` (`lastEditedUser` ASC) VISIBLE,
+  INDEX `fk_StockWithdrawal_lastEditedUser` (`lastEditedUser` ASC),
   CONSTRAINT `fk_StockWithdrawal_lastEditedUser`
     FOREIGN KEY (`lastEditedUser`)
-    REFERENCES `mydb`.`Users` (`userId`)
+    REFERENCES `test`.`Users` (`userId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   -- CONSTRAINT `fk_StockWithdrawal_Product1`                                -- not in ching man's
   --   FOREIGN KEY (`productId`)
-  --   REFERENCES `mydb`.`Product` (`productId`),
+  --   REFERENCES `test`.`Product` (`productId`),
   CONSTRAINT `fk_StockWithdrawal_StockEntry1`                                -- previously called fk_StockWithdrawal_StockEntry
     FOREIGN KEY (`entryId`)
-    REFERENCES `mydb`.`StockEntry` (`entryId`)
+    REFERENCES `test`.`StockEntry` (`entryId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_StockWithdrawal_Users1`
     FOREIGN KEY (`authorizedBy`)
-    REFERENCES `mydb`.`Users` (`userId`)
+    REFERENCES `test`.`Users` (`userId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_StockWithdrawal_Users2`
     FOREIGN KEY (`withdrawnBy`)
-    REFERENCES `mydb`.`Users` (`userId`)
+    REFERENCES `test`.`Users` (`userId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -160,11 +160,11 @@ DEFAULT CHARACTER SET = utf8mb4;
 
 
 -- -----------------------------------------------------
--- Table `mydb`.`Orders`
+-- Table `test`.`Orders`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `mydb`.`Orders` ;
+DROP TABLE IF EXISTS `test`.`Orders` ;
 
-CREATE TABLE IF NOT EXISTS `mydb`.`Orders` (
+CREATE TABLE IF NOT EXISTS `test`.`Orders` (
   `orderId` INT UNIQUE NOT NULL AUTO_INCREMENT,
   `discount` FLOAT DEFAULT '0',
   `customer` VARCHAR(45),
@@ -177,16 +177,16 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Orders` (
   `lastEditedUser` INT NOT NULL,
   `deleteFlag` TINYINT NOT NULL,
   PRIMARY KEY (`orderId`),
-  INDEX `fk_Sales_Users1_idx` (`handledBy`) VISIBLE,
-  INDEX `fk_Orders_lastEditedUser` (`lastEditedUser`) VISIBLE,
+  INDEX `fk_Sales_Users1_idx` (`handledBy`),
+  INDEX `fk_Orders_lastEditedUser` (`lastEditedUser`),
   CONSTRAINT `fk_Orders_lastEditedUser`
     FOREIGN KEY (`lastEditedUser`)
-    REFERENCES `mydb`.`Users` (`userId`)
+    REFERENCES `test`.`Users` (`userId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_Sales_Users1`
     FOREIGN KEY (`handledBy`)
-    REFERENCES `mydb`.`Users` (`userId`)
+    REFERENCES `test`.`Users` (`userId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -194,11 +194,11 @@ DEFAULT CHARACTER SET = utf8mb4;
 
 
 -- -----------------------------------------------------
--- Table `mydb`.`OrderInfo`
+-- Table `test`.`OrderInfo`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `mydb`.`OrderInfo` ;
+DROP TABLE IF EXISTS `test`.`OrderInfo` ;
 
-CREATE TABLE IF NOT EXISTS `mydb`.`OrderInfo` (
+CREATE TABLE IF NOT EXISTS `test`.`OrderInfo` (
   `orderInfoId` INT NOT NULL AUTO_INCREMENT,
   `quantity` INT NOT NULL,
   `orderId` INT NOT NULL,
@@ -208,22 +208,22 @@ CREATE TABLE IF NOT EXISTS `mydb`.`OrderInfo` (
   `lastEditedUser` INT NOT NULL,
   `deleteFlag` TINYINT NOT NULL,
   PRIMARY KEY (`orderInfoId`, `orderId`, `productId`),
-  INDEX `fk_OrderInfo_Sales_idx` (`orderId` ASC) VISIBLE,
-  INDEX `fk_OrderInfo_Product1_idx` (`productId` ASC) VISIBLE,
-  INDEX `fk_OrderInfo_lastEditedUser` (`lastEditedUser` ASC) VISIBLE,
+  INDEX `fk_OrderInfo_Sales_idx` (`orderId` ASC),
+  INDEX `fk_OrderInfo_Product1_idx` (`productId` ASC),
+  INDEX `fk_OrderInfo_lastEditedUser` (`lastEditedUser` ASC),
   CONSTRAINT `fk_OrderInfo_lastEditedUser`
     FOREIGN KEY (`lastEditedUser`)
-    REFERENCES `mydb`.`Users` (`userId`)
+    REFERENCES `test`.`Users` (`userId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_OrderInfo_Product1`
     FOREIGN KEY (`productId`)
-    REFERENCES `mydb`.`Product` (`productId`)
+    REFERENCES `test`.`Product` (`productId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_OrderInfo_Sales`
     FOREIGN KEY (`orderId`)
-    REFERENCES `mydb`.`Orders` (`orderId`)
+    REFERENCES `test`.`Orders` (`orderId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -231,13 +231,13 @@ DEFAULT CHARACTER SET = utf8mb4;
 
 
 -- -----------------------------------------------------
--- Table `mydb`.`ReturnExchange`
+-- Table `test`.`ReturnExchange`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `mydb`.`ReturnExchange` ;
+DROP TABLE IF EXISTS `test`.`ReturnExchange` ;
 
-CREATE TABLE IF NOT EXISTS `mydb`.`ReturnExchange` (
+CREATE TABLE IF NOT EXISTS `test`.`ReturnExchange` (
   `transactionId` INT NOT NULL,
-  `dateTransaction` DATE NOT NULL,
+  `dateTransaction` DATETIME NOT NULL,
   `transactionStatus` ENUM('refunded', 'replaced', 'denied') NOT NULL,
   `orderId` INT NOT NULL,
   `handledBy` INT NOT NULL,
@@ -246,28 +246,28 @@ CREATE TABLE IF NOT EXISTS `mydb`.`ReturnExchange` (
   `lastEditedUser` INT NOT NULL,
   `deleteFlag` TINYINT NOT NULL,
   PRIMARY KEY (`transactionId`),
-  INDEX `fk_ReturnExchangeRecord_Users1_idx` (`handledBy` ASC) VISIBLE,
-  INDEX `fk_ReturnExchangeRecord_Users2_idx` (`approvedBy` ASC) VISIBLE,
-  INDEX `fk_ReturnExchangeRecord_Sales1_idx` (`orderId` ASC) VISIBLE,
-  INDEX `fk_ReturnExchange_lastEditedUser` (`lastEditedUser` ASC) VISIBLE,
+  INDEX `fk_ReturnExchangeRecord_Users1_idx` (`handledBy` ASC),
+  INDEX `fk_ReturnExchangeRecord_Users2_idx` (`approvedBy` ASC),
+  INDEX `fk_ReturnExchangeRecord_Sales1_idx` (`orderId` ASC),
+  INDEX `fk_ReturnExchange_lastEditedUser` (`lastEditedUser` ASC),
   CONSTRAINT `fk_ReturnExchange_lastEditedUser`
     FOREIGN KEY (`lastEditedUser`)
-    REFERENCES `mydb`.`Users` (`userId`)
+    REFERENCES `test`.`Users` (`userId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_ReturnExchangeRecord_Sales1`
     FOREIGN KEY (`orderId`)
-    REFERENCES `mydb`.`Orders` (`orderId`)
+    REFERENCES `test`.`Orders` (`orderId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_ReturnExchangeRecord_Users1`
     FOREIGN KEY (`handledBy`)
-    REFERENCES `mydb`.`Users` (`userId`)
+    REFERENCES `test`.`Users` (`userId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_ReturnExchangeRecord_Users2`
     FOREIGN KEY (`approvedBy`)
-    REFERENCES `mydb`.`Users` (`userId`)
+    REFERENCES `test`.`Users` (`userId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -275,11 +275,11 @@ DEFAULT CHARACTER SET = utf8mb4;
 
 
 -- -----------------------------------------------------
--- Table `mydb`.`ReturnExchangeInfo`
+-- Table `test`.`ReturnExchangeInfo`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `mydb`.`ReturnExchangeInfo` ;
+DROP TABLE IF EXISTS `test`.`ReturnExchangeInfo` ;
 
-CREATE TABLE IF NOT EXISTS `mydb`.`ReturnExchangeInfo` (
+CREATE TABLE IF NOT EXISTS `test`.`ReturnExchangeInfo` (
   `detailId` INT NOT NULL AUTO_INCREMENT,
   `returnedProductId` INT NOT NULL,
   `returnedQuantity` INT NOT NULL,
@@ -292,28 +292,28 @@ CREATE TABLE IF NOT EXISTS `mydb`.`ReturnExchangeInfo` (
   `lastEditedUser` INT NOT NULL,
   `deleteFlag` TINYINT NOT NULL,
   PRIMARY KEY (`detailId`, `returnedProductId`, `transactionId`),
-  INDEX `fk_ReturnExchangeDetail_Product1_idx` (`returnedProductId` ASC) VISIBLE,
-  INDEX `fk_ReturnExchangeDetail_ReturnExchangeRecord1_idx` (`transactionId` ASC) VISIBLE,
-  INDEX `fk_ReturnExchangeInfo_Product1_idx` (`exchangeProductId` ASC) VISIBLE,
-  INDEX `fk_ReturnExchangeInfo_lastEditedUser` (`lastEditedUser` ASC) VISIBLE,
+  INDEX `fk_ReturnExchangeDetail_Product1_idx` (`returnedProductId` ASC),
+  INDEX `fk_ReturnExchangeDetail_ReturnExchangeRecord1_idx` (`transactionId` ASC),
+  INDEX `fk_ReturnExchangeInfo_Product1_idx` (`exchangeProductId` ASC),
+  INDEX `fk_ReturnExchangeInfo_lastEditedUser` (`lastEditedUser` ASC),
   CONSTRAINT `fk_ReturnExchangeDetail_Product1`
     FOREIGN KEY (`returnedProductId`)
-    REFERENCES `mydb`.`Product` (`productId`)
+    REFERENCES `test`.`Product` (`productId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_ReturnExchangeDetail_ReturnExchangeRecord1`
     FOREIGN KEY (`transactionId`)
-    REFERENCES `mydb`.`ReturnExchange` (`transactionId`)
+    REFERENCES `test`.`ReturnExchange` (`transactionId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_ReturnExchangeInfo_lastEditedUser`
     FOREIGN KEY (`lastEditedUser`)
-    REFERENCES `mydb`.`Users` (`userId`)
+    REFERENCES `test`.`Users` (`userId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_ReturnExchangeInfo_Product1`
     FOREIGN KEY (`exchangeProductId`)
-    REFERENCES `mydb`.`Product` (`productId`)
+    REFERENCES `test`.`Product` (`productId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -321,21 +321,21 @@ DEFAULT CHARACTER SET = utf8mb4;
 
 
 -- -----------------------------------------------------
--- Table `mydb`.`AuditLog`
+-- Table `test`.`AuditLog`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `mydb`.`AuditLog` ;
+DROP TABLE IF EXISTS `test`.`AuditLog` ;
 
-CREATE TABLE IF NOT EXISTS `mydb`.`AuditLog` (
+CREATE TABLE IF NOT EXISTS `test`.`AuditLog` (
   `auditId` INT NOT NULL AUTO_INCREMENT,
   `actionType` ENUM('login', 'logout', 'add_user', 'edit_user', 'delete_user', 'add_product', 'edit_product', 'delete_product', 'add_stockEntry', 'edit_stockEntry', 'delete_stockEntry', 'add_stockWithdrawal', 'edit_stockWithdrawal', 'delete_stockWithdrawal', 'add_order', 'edit_order', 'edit_orderInfo', 'delete_order', 'delete_orderInfo', 'add_returnExchange', 'edit_returnExchange', 'edit_returnExchangeInfo', 'delete_returnExchange', 'delete_returnExchangeInfo') NOT NULL,
   `description` TEXT NOT NULL,
   `userId` INT NOT NULL,
   `timestamp` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`auditId`),
-  INDEX `fk_AuditLog_Users_idx` (`userId` ASC) VISIBLE,
+  INDEX `fk_AuditLog_Users_idx` (`userId` ASC),
   CONSTRAINT `fk_AuditLog_Users`
     FOREIGN KEY (`userId`)
-    REFERENCES `mydb`.`Users` (`userId`)
+    REFERENCES `test`.`Users` (`userId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION
 )
