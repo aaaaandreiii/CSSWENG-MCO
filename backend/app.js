@@ -41,9 +41,7 @@ const corsOptions = {
   credentials: false,  //or true if using cookies/auth headers
 };
 app.use(cors(corsOptions));
-app.options("/api/*", cors(corsOptions), (_req, res) => {
-  res.sendStatus(204);
-});
+app.options("/api/*", cors(corsOptions));
 
 //controllers
 app.use("/api", userController);
