@@ -3,15 +3,9 @@
   "builds": [
     { "src": "app.js", "use": "@vercel/node" }
   ],
-"routes": [
-  {
-    "src": "/api/(.*)",
-    "dest": "/app.js"
-  }
-],
   "headers": [
     {
-      "source": "/api/:path*",
+      "source": "/api/(.*)",
       "headers": [
         { "key": "Access-Control-Allow-Origin",      "value": "https://cssweng-mco.vercel.app" },
         { "key": "Access-Control-Allow-Methods",     "value": "GET,POST,PUT,DELETE,OPTIONS" },
