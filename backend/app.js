@@ -59,8 +59,6 @@ app.use('/api/dashboard', dashboardRouter);
 
 bootstrapAdminUser().catch(console.error);
 
-// app.listen(PORT, () => {
-//   console.log(`Backend listening on http://localhost:${PORT}`);
-// });
-
-export default app;
+app.listen(PORT, () => {
+  console.log(`Backend listening on http://localhost:${PORT}`);
+});
