@@ -17,6 +17,8 @@ import dashboardRouter from './controller/dashboardController.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// --- Allow listed domains for CORS ---
 const allowedOrigins = [
   process.env.PUBLIC_API_BASE_URL,
   'https://cssweng-mco.vercel.app',
@@ -25,21 +27,23 @@ const allowedOrigins = [
 
 console.log("▶️ CORS — allowedOrigins:", allowedOrigins);
 
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
-
+// --- CORS middleware ---
 const corsOptions = {
   origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
     if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, origin); // ✅ return origin string
+      callback(null, origin);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error('❌ Not allowed by CORS'));
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true // ✅ REQUIRED when using cookies or Authorization headers
+  credentials: true
 };
+
+app.use(cors(corsOptions));
+app.options("/api/*", cors(corsOptions));
 
 app.use(cors(corsOptions));
 app.options("/api/*", cors(corsOptions));
