@@ -25,8 +25,8 @@ const allowedOrigins = [
 
 console.log("▶️ CORS — allowedOrigins:", allowedOrigins);
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
 
 const corsOptions = {
   origin: (incomingOrigin, callback) => {
