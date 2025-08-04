@@ -610,7 +610,8 @@ async function handleDeleteSelected() {
         'Reason':                item.reason || '',
         'Return Type':           item.returnType || ''
 			}));
-            hasMoreData = false; //disable infinite scroll while in search
+
+        hasMoreData = false; //disable infinite scroll while in search
         } catch (err: any) {
 			searchError = err.message;
             rows = [];
@@ -627,7 +628,7 @@ async function handleDeleteSelected() {
 
 </script>
 
-<header class="flex justify-between p-7">
+<header class="flex justify-between p-7 fixed gray1 pr-70" style="width: 100%; z-index: 10;">
   <h1>Orders</h1>
 
   <div class="flex gap-3">
@@ -659,127 +660,134 @@ async function handleDeleteSelected() {
   </div>
 </header>
 
+<div class = "pt-17"></div>
 
-<!-- Top bar: Tab + Buttons -->
-<div class="flex items-center justify-between px-4 py-2 bg-white border-b border-black">
-  <!-- Static "Orders" tab styled like a table tab -->
-  <div class="text-sm font-semibold text-gray-800 px-2">
-    Order Details
+<!-- entire table -->
+<div class = "m-5 border-1 rounded-lg border-gray-400 shadow-lg">
+
+  <!-- Top bar: Tab + Buttons -->
+  <div class="grid grid-cols-2">
+    <!-- Static "Orders" tab styled like a table tab -->
+    <div class = " flex w-full">
+      <div class="selected bg-white font-bold buttonss flex w-full items-center justify-center text-center transition-all duration-150">
+        Order Details
+      </div>
   </div>
 
-  <!-- Buttons -->
-  <div class="flex gap-5">
-    <button
-      class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold
-        {(selectedIndividualRows.size === 0 && selectedOrders.size === 0)
-          ? 'cursor-not-allowed bg-gray-400 text-gray-200'
-          : isLoading ? 'bg-gray-500 text-white' 
-          : 'bg-red-600 text-white hover:bg-red-800'}"
-      disabled={selectedIndividualRows.size === 0 && selectedOrders.size === 0 || isLoading}
-      on:click={handleDeleteSelected}
-    >
-      {isLoading ? 'Deleting...' : 'Delete'}
-    </button>
+    <!-- Buttons -->
+    <div class="ml-auto flex gap-5 p-2.5 pr-10">
+      <button
+        class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold
+          {(selectedIndividualRows.size === 0 && selectedOrders.size === 0)
+            ? 'cursor-not-allowed bg-gray-400 text-gray-200'
+            : isLoading ? 'bg-gray-500 text-white' 
+            : 'red1 text-white hover:bg-red-700'}"
+        disabled={selectedIndividualRows.size === 0 && selectedOrders.size === 0 || isLoading}
+        on:click={handleDeleteSelected}
+      >
+        {isLoading ? 'Deleting...' : 'Delete'}
+      </button>
 
-    <button
-      class="w-28 py-2 items-center justify-center gap-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
-      on:click={openAddModal}
-    >
-      Add Order
-    </button>
+      <button
+        class="w-28 py-2 items-center justify-center gap-2 rounded-lg font-bold bg-[#3d843f] text-white hover:bg-[#2c5f2c]"
+        on:click={openAddModal}
+      >
+        Add Order
+      </button>
+    </div>
   </div>
-</div>
 
 
-<!-- Main table -->
-<div class="w-full overflow-x-auto" on:scroll={handleScroll}>
-  <table class="w-full table-fixed border-collapse">
-    <thead class="border-b border-black bg-white">
-      <tr>
-        <th class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center"></th>
-        {#each headerMap as head}
-          <th
-            class="px-4 py-5 text-center align-middle break-words whitespace-normal"
-            style="width: calc({head.length}ch + 40px);"
-          >
-            <button
-              class="flex w-full items-center justify-center gap-1 font-bold"
-              on:click={() => sortBy(head)}
+  <!-- Main table -->
+  <div class="w-full overflow-x-auto" on:scroll={handleScroll}>
+    <table class="w-full table-fixed border-collapse">
+      <thead class="border-b border-black bg-white">
+        <tr>
+          <th class="w-[40px] max-w-[40px] min-w-[40px] py-5 text-center"></th>
+          {#each headerMap as head}
+            <th
+              class="px-4 py-5 text-center align-middle break-words whitespace-normal"
+              style="width: calc({head.length}ch + 40px);"
             >
-              <span class="w-full break-words whitespace-normal">{head}</span>
-              <span class="inline-block w-4 min-w-[1rem] text-center align-middle">
-                {sortColumn === head
-                  ? sortDirection === 'asc'
-                    ? '▲'
-                    : '▼'
-                  : ''}
-              </span>
-            </button>
-          </th>
-        {/each}
+              <button
+                class="flex w-full items-center justify-center gap-1 font-bold"
+                on:click={() => sortBy(head)}
+              >
+                <span class="w-full break-words whitespace-normal">{head}</span>
+                <span class="inline-block w-4 min-w-[1rem] text-center align-middle">
+                  {sortColumn === head
+                    ? sortDirection === 'asc'
+                      ? '▲'
+                      : '▼'
+                    : ''}
+                </span>
+              </button>
+            </th>
+          {/each}
+        </tr>
+      </thead>
+      <tbody>
+        {#each groupRowsByOrderId(rows) as groupedOrder, i}
+          <!-- Order summary header row -->
+          <tr class="bg-blue-100 border-t border-black cursor-pointer" 
+        on:click={() => toggleOrderCollapse(groupedOrder.orderId)}>
+        <td colspan={headerMap.length + 1} class="text-left px-4 py-2 font-bold">
+          <div class="flex items-center">
+            <input 
+            type="checkbox" 
+            class="mr-3"
+            checked={selectedOrders.has(groupedOrder.orderId.toString())}
+            on:click|stopPropagation={(e) => {
+              e.stopPropagation();
+              toggleOrderSelection(groupedOrder.orderId);
+            }}
+            />
+            <span class="transform transition-transform duration-200 {collapsedOrders.has(groupedOrder.orderId.toString()) ? '-rotate-90' : ''}">
+              <img src = '../src/icons/arrow-right.svg' alt="arrow-right" class = "w-5 rotate-90">
+            </span>
+            <span class="ml-2">
+              Order #{groupedOrder.orderId} • {groupedOrder.baseInfo['Customer']} • 
+              {formatDate(groupedOrder.baseInfo['Date Ordered'])}
+            </span>
+          </div>
+        </td>
       </tr>
-    </thead>
-    <tbody>
-      {#each groupRowsByOrderId(rows) as groupedOrder, i}
-        <!-- Order summary header row -->
-        <tr class="bg-blue-100 border-t border-black cursor-pointer" 
-			on:click={() => toggleOrderCollapse(groupedOrder.orderId)}>
-			<td colspan={headerMap.length + 1} class="text-left px-4 py-2 font-bold">
-				<div class="flex items-center">
-					<input 
-					type="checkbox" 
-					class="mr-3"
-					checked={selectedOrders.has(groupedOrder.orderId.toString())}
-					on:click|stopPropagation={(e) => {
-						e.stopPropagation();
-						toggleOrderSelection(groupedOrder.orderId);
-					}}
-					/>
-					<span class="transform transition-transform duration-200 {collapsedOrders.has(groupedOrder.orderId.toString()) ? 'rotate-90' : ''}">
-						▶
-					</span>
-					<span class="ml-2">
-						Order #{groupedOrder.orderId} • {groupedOrder.baseInfo['Customer']} • 
-						{formatDate(groupedOrder.baseInfo['Date Ordered'])}
-					</span>
-				</div>
-			</td>
-		</tr>
 
-        <!-- Each line item -->
-		{#if !collapsedOrders.has(groupedOrder.orderId.toString())}
-			{#each groupedOrder.lineItems as item, j}
-			<tr class="{i % 2 === 0 ? 'bg-[#eeeeee]' : 'bg-white'} border-b border-black">
-				<td class="w-[40px] text-center">
-				<input 
-					type="checkbox" 
-					checked={selectedIndividualRows.has(item['Order Info ID'])}
-					on:click|stopPropagation={() => toggleIndividualRowSelection(item['Order Info ID'])}
-				/>
-				</td>
+          <!-- Each line item -->
+      {#if !collapsedOrders.has(groupedOrder.orderId.toString())}
+        {#each groupedOrder.lineItems as item, j}
+        <tr class="{i % 2 === 0 ? 'bg-[#eeeeee]' : 'bg-white'} border-b border-black">
+          <td class="w-[40px] text-center">
+          <input 
+            type="checkbox" 
+            checked={selectedIndividualRows.has(item['Order Info ID'])}
+            on:click|stopPropagation={() => toggleIndividualRowSelection(item['Order Info ID'])}
+          />
+          </td>
 
-				{#each headerMap as head}
-				<td
-					class="px-4 py-3 text-center text-ellipsis whitespace-nowrap"
-					title={item[head] || groupedOrder.baseInfo[head] || ''}
-					on:click={() => openModal(item[head] || groupedOrder.baseInfo[head] || '', i, head)}
-				>
-					{#if head === 'Date Ordered'}
-					<div>{(item[head] || groupedOrder.baseInfo[head] || '').split('T')[0]}</div>
-					<div class="text-xs text-gray-500">
-						{(item[head] || groupedOrder.baseInfo[head] || '').split('T')[1]?.slice(0,5)}
-					</div>
-					{:else}
-					{item[head] || groupedOrder.baseInfo[head] || '-'}
-					{/if}
-				</td>
-				{/each}
-			</tr>
-			{/each}
-		{/if}
-      {/each}
-    </tbody>
-  </table>
+          {#each headerMap as head}
+          <td
+            class="px-4 py-3 text-center text-ellipsis whitespace-nowrap"
+            title={item[head] || groupedOrder.baseInfo[head] || ''}
+            on:click={() => openModal(item[head] || groupedOrder.baseInfo[head] || '', i, head)}
+          >
+            {#if head === 'Date Ordered'}
+            <div>{(item[head] || groupedOrder.baseInfo[head] || '').split('T')[0]}</div>
+            <div class="text-xs text-gray-500">
+              {(item[head] || groupedOrder.baseInfo[head] || '').split('T')[1]?.slice(0,5)}
+            </div>
+            {:else}
+            {item[head] || groupedOrder.baseInfo[head] || '-'}
+            {/if}
+          </td>
+          {/each}
+        </tr>
+        {/each}
+      {/if}
+        {/each}
+      </tbody>
+    </table>
+  </div>
   {#if rows.length === 0 && isLoading}
 	<div class="text-center p-4 text-gray-500">Loading orders...</div>
   {/if}

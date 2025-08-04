@@ -148,27 +148,36 @@
 		await fetchDashboard();
 		if (salesPerMonth.length) initChart();
 	}
+
+	
+	//stocks: 28123 -> 28.1k
+	function formatStockAmount(num: number): string {
+		if (num >= 1_000_000) return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+		if (num >= 1_000) return (num / 1_000).toFixed(1).replace(/\.0$/, '') + 'k';
+		return String(num);
+	}
+
 </script>
 
-<header class="p-7 fixed gray1 pr-70" style="width: 100%; z-index: 10;">
+<header class="flex justify-between p-7 fixed gray1 pr-70" style="width: 100%; z-index: 10;">
 	<h1>Dashboard</h1>
 </header>
 
-<div id="bg_faded" class = "pt-20">
-	<div class="flex justify-evenly">
+<div id="bg_faded" class = "pt-22 max-w-full">
+	<div class="flex flex-wrap gap-6 p-6 justify-evenly items-center w-full">
 		<!-- sales summary -->
-		<div class="flex-col">
-			<div class="pt-7 pl-7">
+		<div class="flex flex-col flex-wrap min-w-[300px]">
+			<div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
 				<h1 class="text-xl font-bold">Sales Summary</h1>
 			</div>
-			<div class="flex gap-7 p-7">
+			<div class="flex flex-wrap gap-7 pt-7 ">
 				{#each stocks as stock, index}
 					<div class="stock flex-col content-center">
-						<h1 class="header">{stock.amount}</h1>
-						<div 
+						<h1 class="header">{formatStockAmount(stock.amount)}</h1>
+						<div 	
 							id={stock.label} 
-							class="flex items-center gap-1 px-2 rounded-full"
-							style="background-color: {stock.color}"
+							class=" flex items-center gap-1 px-2 rounded-full gray2_txt text-sm"
+							
 						>
 						<p class="text-center">{stock.label}</p></div>
 					</div>
@@ -177,7 +186,7 @@
 		</div>
 
 		<!-- stock alerts -->
-		<div class="flex gap-7 p-7">
+		<div class="flex gap-7 p-7 min-w-[300px] flex-wrap">
 			{#each products as product, index}
 				<div class="whitebox flex-col content-center">
 					<div 
@@ -205,9 +214,9 @@
 							}).format(product.capital)}
 						</p>
 					</div>
-					<a href="/inventory"
-						><p class="text-s pt-4 font-bold" style="color: #1E8570">Check Inventory</p></a
-					>
+					<a href="/inventory">
+						<p id = "checkinv" class="text-s pt-4 font-bold">Check Inventory</p>
+					</a>
 				</div>
 			{/each}
 		</div>
@@ -216,7 +225,7 @@
 
 <!-- top selling -->
 <div class="flex justify-evenly pt-7">
-	<div id="report" class="">
+	<div id="report">
 		<div>
 			<h1 class="text-base font-bold">Top-selling products</h1>
 			<div class="flex items-center gap-1 p-3">
@@ -264,38 +273,41 @@
 				</div>
 			</div>
 		</div>
-		<div id="topimg" class="grid grid-cols-2 justify-items-center gap-5">
-			{#each items as item}
-				<div>
-					<!-- can add href to link in inventory -->
-					<img src={item.link || 'https://png.pngtree.com/png-vector/20221125/ourmid/pngtree-no-image-available-icon-flatvector-illustration-picture-coming-creative-vector-png-image_40968940.jpg'} alt={item.name} />
-					<p class="text-center text-sm">{item.name}</p>
-				</div>
-			{/each}
+		<div class="w-full overflow-hidden">
+			<div id="topimg" class="grid grid-cols justify-items-center gap-5 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] max-w-full">
+				{#each items as item}
+					<div class="flex flex-col items-center gap-2 min-w-0">
+						<!-- can add href to link in inventory -->
+						<img src={item.link || 'https://png.pngtree.com/png-vector/20221125/ourmid/pngtree-no-image-available-icon-flatvector-illustration-picture-coming-creative-vector-png-image_40968940.jpg'} alt={item.name} />
+						<p class="text-center text-sm">{item.name}</p>
+					</div>
+				{/each}
+			</div>
 		</div>
 	</div>
 
 	<!-- sales report -->
-	<div id="report" style="width: 50%">
-		<div class="flex items-center gap-5">
+	<div id="report" class="max-w-full w-full">
+		<div class="flex flex-col">
 			<h1 class="text-start text-base font-bold">Sales Report</h1>
-			<div class="flex">
+			
+			<div class="flex flex-wrap items-center justify-start">
 				<button
-					class="buttons {selectedButton === '12months' ? 'selected' : ''}"
+					class="buttons {selectedButton === '12months' ? 'selected' : 'hover'}"
 					onclick={() => handleClick('12months')}
 				>
 					12 months
 				</button>
 
 				<button
-					class="buttons {selectedButton === '6months' ? 'selected' : ''}"
+					class="buttons {selectedButton === '6months' ? 'selected' : 'hover'}"
 					onclick={() => handleClick('6months')}
 				>
 					6 months
 				</button>
 
 				<button
-					class="buttons {selectedButton === '30days' ? 'selected' : ''}"
+					class="buttons {selectedButton === '30days' ? 'selected' : 'hover'}"
 					onclick={() => handleClick('30days')}
 				>
 					30 days
