@@ -19,8 +19,14 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const allowedOrigins = [
   process.env.PUBLIC_API_BASE_URL,
-  'https://cssweng-mco.vercel.app'
+  'https://cssweng-mco.vercel.app',
+  'http://localhost:5173',
 ].filter(Boolean);
+
+console.log("▶️ CORS — allowedOrigins:", allowedOrigins);
+
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -36,13 +42,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-// app.use(cors({
-//   origin: allowedOrigins,
-//   methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-//   allowedHeaders: ['Content-Type','Authorization']
-// })); //enable CORS during development
-// app.use(express.json());
+app.options("/api/*", cors(corsOptions));
 
 //controllers
 app.use("/api", userController);

@@ -152,7 +152,7 @@
 	}
 </script>
 
-<header class="flex justify-between p-7">
+<header class="flex justify-between p-7 fixed gray1 pr-70" style="width: 100%; z-index: 10;">
 	<h1>Activity Logs</h1>
 	<div class="flex gap-3">
 		<div class="flex w-fit rounded-4xl bg-white px-3">
@@ -186,47 +186,52 @@
 	</div>
 </header>
 
-<!-- Table -->
-<div class="w-full overflow-x-auto">
-	<table class="w-full table-fixed border-collapse">
-		<thead class="border-b border-black bg-white">
-			<tr>
-				{#each header as head}
-					<th class="px-4 py-5 text-center">
-						<button
-							class="flex w-full items-center justify-center gap-1 font-bold"
-							on:click={() => sortBy(head)}
-						>
-							<span class="w-full break-words whitespace-normal">{head}</span>
-							<span class="inline-block w-4 min-w-[1rem] text-center align-middle"
-								>{sortColumn === head
-									? sortDirection === 'asc'
-										? '▲'
-										: sortDirection === 'desc'
-											? '▼'
-											: ''
-									: ''}</span
-							>
-						</button>
-					</th>
-				{/each}
-			</tr>
-		</thead>
-		<tbody>
-			{#each filteredRows as row, i}
-				<tr class="border-b border-black {i % 2 === 0 ? 'bg-[#eeeeee]' : 'bg-white'}">
+<div class = "pt-17"></div>
+
+<!-- entire table -->
+<div class = "m-5 border-1 rounded-lg border-gray-400 shadow-lg">
+	<!-- Table -->
+	<div class="w-full overflow-x-auto rounded-lg">
+		<table class="w-full table-fixed border-collapse">
+			<thead class="border-b border-black bg-white">
+				<tr>
 					{#each header as head}
-						<td class="px-4 py-5 text-center">{row[head]}</td>
+						<th class="px-4 py-5 text-center">
+							<button
+								class="flex w-full items-center justify-center gap-1 font-bold"
+								on:click={() => sortBy(head)}
+							>
+								<span class="w-full break-words whitespace-normal">{head}</span>
+								<span class="inline-block w-4 min-w-[1rem] text-center align-middle"
+									>{sortColumn === head
+										? sortDirection === 'asc'
+											? '▲'
+											: sortDirection === 'desc'
+												? '▼'
+												: ''
+										: ''}</span
+								>
+							</button>
+						</th>
 					{/each}
 				</tr>
-			{/each}
-			{#if isLoading}
-				<tr><td colspan={header.length} class="py-8 text-center">Loading...</td></tr>
-			{/if}
-			{#if !hasMoreData && filteredRows.length > 0}
-				<tr><td colspan={header.length} class="py-4 text-center text-gray-500">No more data to load</td></tr>
-			{/if}
-		</tbody>
-	</table>
-	<div bind:this={sentinel}></div>
+			</thead>
+			<tbody>
+				{#each filteredRows as row, i}
+					<tr class="border-b border-black {i % 2 === 0 ? 'bg-[#eeeeee]' : 'bg-white'}">
+						{#each header as head}
+							<td class="px-4 py-5 text-center">{row[head]}</td>
+						{/each}
+					</tr>
+				{/each}
+				{#if isLoading}
+					<tr><td colspan={header.length} class="py-8 text-center">Loading...</td></tr>
+				{/if}
+				{#if !hasMoreData && filteredRows.length > 0}
+					<tr><td colspan={header.length} class="py-4 text-center text-gray-500">No more data to load</td></tr>
+				{/if}
+			</tbody>
+		</table>
+		<div bind:this={sentinel}></div>
+	</div>
 </div>

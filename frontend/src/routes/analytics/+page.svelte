@@ -384,7 +384,7 @@
 
 </script>
 
-<header class="p-7 fixed gray1 flex justify-between pr-70" style="width: 100%; z-index: 10;">
+<header class="flex justify-between p-7 fixed gray1 pr-70" style="width: 100%; z-index: 10;">
     <h1>Analytics</h1>
     <nav class="flex gap-4 text-sm align-end pt-1">
         <a href="#item-sales" class="hover:underline font-semibold text-black">Item Sales</a>
@@ -397,7 +397,7 @@
 </header>
 
 <!-- colorful thing -->
-<div class="flex justify-evenly gap-4 px-7 pt-20">
+<div class="flex justify-evenly gap-4 px-7 pt-22">
   {#each infos as info}
     <div
       class="whitebox flex-col content-center p-6 rounded shadow"
